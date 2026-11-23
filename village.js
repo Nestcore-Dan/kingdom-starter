@@ -2370,7 +2370,7 @@
   const keys = new Set();
   const KEYMAP = { ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down', ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right', ShiftLeft: 'run', ShiftRight: 'run' };
   const RUN = 1.8;  // hold Shift to run
-  const isTyping = () => { const a = document.activeElement; return !!a && (a.tagName === 'TEXTAREA' || a.tagName === 'INPUT'); };
+  const isTyping = () => { const a = document.activeElement; return !!a && (a.tagName === 'TEXTAREA' || a.tagName === 'INPUT' || a.tagName === 'SELECT' || a.isContentEditable); };
 
   // ---------- Vizier, your chief of staff (guide step 24) ----------
   // Vizier lives in the town hall and is your right hand: follows you everywhere (through doors too), takes
@@ -2848,8 +2848,8 @@
     const now = performance.now();
     if (now - statusCache.at > 500) {
       const map = {}, reqs = (typeof toolReqs !== 'undefined' ? toolReqs : []);
-      for (const t of todos) for (const k of new Set([t.by, t.with].filter(Boolean))) {
-        if (['ready', 'needs', 'failed'].includes(t.status)) map[k] = 'you';
+      for (const t of todos) for (const k of new Set([t.by, t.with, ['needs', 'failed'].includes(t.status) ? t.doneBy : null, ['needs', 'failed'].includes(t.status) ? 'vizier' : null].filter(Boolean))) {
+        if (['ready', 'needs', 'failed'].includes(t.status)) map[k] = 'you';  // Vizier too, while anyone is stuck: she's chasing it
         else if (t.status === 'working' && map[k] !== 'you') map[k] = 'busy';
       }
       for (const r of reqs) if (r.status === 'waiting' && r.agent) map[r.agent] = 'you';
@@ -3200,6 +3200,7 @@
     dispatchEvent(new CustomEvent('kingdom:chat', { detail: key }));
     front(chatBox);
     chatWith = key; renderChat(); chatBox.style.display = 'flex'; keys.clear(); hideHover && hideHover();
+    renderPermBar();
     setTimeout(() => chatInput.focus(), 0);
     if (key === 'vizier') openLog();
   }
@@ -3252,6 +3253,8 @@
     if (key === 'vizier' || !asksToDo(text) || !AGREES.test(reply || '')) return null;
     return addTodo(text, { to: key, from: nameOf(key), direct: true });
   }
+  // what you said to Vizier just before an order (feedback round 4): it goes with the task so nothing gets lost or changed
+  const chatContext = (key) => (chats[key] || []).slice(-8).filter((m) => m.from === 'you').map((m) => `- ${String(m.text).slice(0, 300)}`).join('\n');
   function routeAndLog(text) {  // Vizier records the order, phones the owner, and the hand-over shows in her log
     const r = placeOrder(text);
     let hint = r.to === 'vizier' ? 'The village recorded this as an order for Vizier herself to keep.' : r.to === 'hire' ? 'The village noted this as a hiring request, for later.' : '';
@@ -3260,7 +3263,7 @@
       logSay('vizier', `To ${d.name}: ${personal ? 'a personal order from the Chief (kept private).' : `"${text}"${a.boss ? ` This one is for ${a.name}, on your team.` : ''}`}`);
       logSay(d.key, a.boss ? `Got it, Vizier. I'll decide whether ${a.name} can take it, and check the work.` : "Got it, Vizier. I'll report back when it's done.");
       renderLog();
-      hint = `The village recorded this as an order and Vizier phoned it through to ${d.name} (${d.role})${a.boss ? `, for ${a.name} on ${d.name}'s team` : ''}.${personal ? ' It is personal, so keep the details private.' : ''}`;
+      hint = `The village recorded this as an order and Vizier phoned it through to ${d.name} (${d.role})${a.boss ? `, for ${a.name} on ${d.name}'s team` : ''}, with the Chief's own words.${personal ? ' It is personal, so keep the details private.' : ''} Tell the Chief only what was passed on: don't add deadlines, promises or details the Chief didn't give.`;
     }
     return { r, hint };
   }
@@ -3290,12 +3293,12 @@
         const wait = thinking(chatBody, key);
         try { reply = await window.kingdomBrain(key, chats[key], isCand(key) ? { room: 'candidate', job: candidate } : { hint: routed ? routed.hint : '' }); } catch (e) { reply = (routed ? routed.r.reply.replace(/^Vizier: /, '') : scriptedReply(key, text)) + ` (The helper couldn't answer: ${e.message})`; }
         wait.remove();
-        if (routed) addTodo(text, { to: routed.r.to, from: 'Vizier', logged: true });
+        if (routed) addTodo(text, { to: routed.r.to, from: 'Vizier', logged: true, context: chatContext('vizier') });
         else if (!isCand(key)) taskFromChat(key, text, reply);
       } else {
         const routed = key === 'vizier' && !(GREETING.test(text) && text.length < 40) ? routeAndLog(text) : null;
         reply = routed ? routed.r.reply.replace(/^Vizier: /, '') : scriptedReply(key, text);
-        if (routed) addTodo(text, { to: routed.r.to, from: 'Vizier', logged: true });
+        if (routed) addTodo(text, { to: routed.r.to, from: 'Vizier', logged: true, context: chatContext('vizier') });
       }
     }
     say(key, key, reply); if (chatWith === key) bubble(chatBody, key, reply, false);
@@ -3352,22 +3355,28 @@
   // wait: nothing is ever marked done that wasn't. One task at a time, in order.
   const TODO_KEY = 'kingdom-one-todo';
   let toolReqs = [], toolNames = {};  // the Chief's existing tools: requests waiting for the Chief
+  const seenAuto = new Set(); let autoPrimed = false;  // requests that ran on a standing permission: each mentioned once, none from before this visit
   const todos = load(TODO_KEY, []);
   for (const t of todos) if (t.status === 'working') t.status = 'waiting';  // the page closed mid-task: try again
   // guide step 48: only the Chief approves finished work. Anything marked done before this rule, without the Chief's OK, goes back to waiting for it.
-  for (const t of todos) if (t.status === 'done' && t.approvedBy !== 'you') Object.assign(t, { status: 'ready', pdf: null, pdfError: null });
+  for (const t of todos) if (t.status === 'done' && t.approvedBy !== 'you' && t.approvedBy !== 'project') Object.assign(t, { status: 'ready', pdf: null, pdfError: null });
   const saveTodos = () => { store(TODO_KEY, todos); updateTodoBadge(); };
   // The mustard count on the To-do button: everything waiting on the Chief (finished work to OK, tasks that need you,
   // ones that couldn't finish, and tool requests to approve). The tooltip also says how many are still in progress.
   function updateTodoBadge() {
     const btn = document.querySelector('#menu [data-act="todo"]'); if (!btn) return;
     const reqs = (typeof toolReqs !== 'undefined' ? toolReqs : []).filter((r) => r.status === 'waiting').length;
-    const mine = todos.filter((t) => ['ready', 'needs', 'failed'].includes(t.status)).length + reqs;
+    // feedback round 4: the number is what isn't finished yet, so it goes down as work gets done. It turns gold with a
+    // ! when something needs you (a question, a stuck task or a tool request). Finished work isn't counted.
+    const mine = todos.filter((t) => ['needs', 'failed'].includes(t.status)).length + reqs;
     const open = todos.filter((t) => ['waiting', 'working'].includes(t.status)).length;
+    const toCheck = todos.filter((t) => t.status === 'ready').length;
     let b = btn.querySelector('.badge');
     if (!b) { b = document.createElement('span'); b.className = 'badge'; b.setAttribute('aria-live', 'polite'); btn.append(b); }
-    b.textContent = mine > 99 ? '99+' : String(mine); b.hidden = !mine;
-    btn.title = `Your to-do list (K): ${mine} waiting on you${open ? `, ${open} in progress` : ''}`;
+    const n = mine + open;
+    b.textContent = (n > 99 ? '99+' : String(n)) + (mine ? '!' : ''); b.hidden = !n;
+    b.style.background = mine ? '#f6ca33' : '#2b8a8a'; b.style.color = mine ? '#1b1406' : '#fbf6ec';
+    btn.title = `Your to-do list (K): ${mine ? `${mine} need you, ` : ''}${open} in progress${toCheck ? `, ${toCheck} done and ready for you to check` : ''}`;
   }
   setTimeout(updateTodoBadge, 0);
   const todoBox = mk('div', { ...panelStyle, left: '16px', top: '130px', bottom: '56px', width: 'min(340px, calc(100vw - 32px))' }); todoBox.className = 'hud';
@@ -3386,7 +3395,7 @@
   const todoTip = mk('div', { position: 'fixed', display: 'none', zIndex: '30', maxWidth: '360px', background: 'rgba(18,20,28,.97)', border: '1px solid rgba(232,196,106,.55)',
     borderRadius: '10px', padding: '10px 12px', font: '12.5px system-ui', color: '#f5efe2', pointerEvents: 'none', whiteSpace: 'pre-wrap', lineHeight: '1.4' });
   document.body.appendChild(todoTip);
-  const STATUS = { waiting: ['Waiting', '#c9c1ae'], working: ['Working on it', '#7cc4c0'], ready: ['Ready for your OK', '#e8c46a'], done: ['Approved by you', '#8fc27a'], needs: ['Needs you', '#e8b04b'], failed: ["Couldn't finish", '#e08a72'] };
+  const STATUS = { waiting: ['Waiting', '#c9c1ae'], working: ['Working on it', '#7cc4c0'], ready: ['Done, ready for your OK', '#b9d98a'], done: ['Approved by you', '#8fc27a'], needs: ['Needs you', '#e8b04b'], failed: ["Couldn't finish", '#e08a72'] };
   const when = (iso) => { const d = new Date(iso); return `${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`; };
   const IDLE_NOTE = "The AI helper isn't running, so tasks wait. Nothing gets marked done until someone has really done it.";
   const LIVE_NOTE = 'Live: each task is done by Claude on your subscription, talk-only. Hover a task to see what was done.';
@@ -3414,17 +3423,38 @@
   function renderTodos() {
     todoNote.textContent = brainOn() ? LIVE_NOTE : IDLE_NOTE;
     todoBody.replaceChildren();
-    for (const r of toolReqs.filter((x) => x.status === 'waiting')) todoBody.append(requestRow(r));
-    if (!todos.length) todoBody.append(mk('div', { color: '#c9c1ae' }, 'No tasks yet. Add one above: Vizier passes it to the right director, who does it or hands it to their worker and checks the work.'));
-    for (const t of todos.slice().reverse()) {
+    // feedback round 4: three parts, so it's clear what needs you, what's under way and what's finished
+    const waitingReqs = toolReqs.filter((x) => x.status === 'waiting');
+    const needs = todos.filter((t) => ['needs', 'failed'].includes(t.status)).reverse();
+    const going = todos.filter((t) => ['waiting', 'working'].includes(t.status)).reverse();
+    const doneList = todos.filter((t) => ['ready', 'done'].includes(t.status)).reverse();
+    const section = (title, n, colour, note) => { const h = mk('div', { display: 'flex', alignItems: 'baseline', gap: '6px', margin: '8px 2px 2px', color: colour, font: '700 11px system-ui', letterSpacing: '.06em' }); h.style.flexWrap = 'wrap'; h.append(mk('span', { whiteSpace: 'nowrap' }, `${title} (${n})`), mk('span', { color: '#9a9486', fontWeight: '400', letterSpacing: '0' }, note)); todoBody.append(h); };
+    if (!todos.length && !waitingReqs.length) todoBody.append(mk('div', { color: '#c9c1ae' }, 'No tasks yet. Add one above: Vizier passes it to the right director, who does it or hands it to their worker and checks the work.'));
+    if (needs.length || waitingReqs.length) section('\u2757 NEEDS YOU', needs.length + waitingReqs.length, '#f6ca33', 'someone is waiting for your answer or OK');
+    for (const r of waitingReqs) todoBody.append(requestRow(r));
+    const order = [...needs, ...(going.length ? [{ _section: ['\u23F3 IN PROGRESS', going.length, '#5fc0bd', 'nothing to do: they report back'] }] : []), ...going,
+      ...(doneList.length ? [{ _section: ['\u2714 DONE', doneList.length, '#b9d98a', 'check and approve, or send back'] }] : []), ...doneList];
+    for (const t of order) {
+      if (t._section) { section(...t._section); continue; }
       const row = mk('div', { display: 'flex', gap: '8px', alignItems: 'flex-start', padding: '6px 8px', borderRadius: '8px', background: 'rgba(255,255,255,.04)', cursor: 'default' });
       const img = faceImg(t.with || t.doneBy || t.by, 24); if (img) row.append(img);
       const mid = mk('div', { flex: '1', minWidth: '0' });
-      const txt = mk('div', { textDecoration: t.status === 'done' ? 'line-through' : 'none', color: t.status === 'done' ? '#9a9486' : '#f5efe2', overflowWrap: 'anywhere' }, t.text);
-      const [label, col] = STATUS[t.status];
+      const txt = mk('div', { color: t.status === 'done' ? '#9a9486' : '#f5efe2', overflowWrap: 'anywhere' });
+      txt.append(mk('div', { fontWeight: '650' }, titleOf(t)), mk('div', { fontSize: '11px', color: '#9a9486', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }, t.text));
+      const [label, col] = t.status === 'done' && t.approvedBy === 'project' ? ['Approved within the project (it works on its own)', '#8fc27a'] : STATUS[t.status];
       const who = t.status === 'working' ? (t.now || `${nameOf(t.by)} is on it`)
         : t.doneBy ? `${label} · by ${nameOf(t.doneBy)}${t.checkedBy ? `, checked by ${nameOf(t.checkedBy)}` : ''}` : `${label} · ${nameOf(t.by)}`;
       mid.append(txt, mk('div', { fontSize: '11px', color: col, marginTop: '2px' }, (t.emailDraft ? '✉ Draft, not sent · ' : '') + (t.toolAsk ? '🔧 Tool options for you · ' : '') + who));
+      if (t.status === 'needs' || t.status === 'failed') {
+        row.style.background = 'rgba(246,202,51,.1)'; row.style.border = '1px solid rgba(246,202,51,.45)';
+        const why = plain(t.report || '').replace(/\s+/g, ' ');
+        if (why) mid.append(mk('div', { fontSize: '12px', color: '#f5efe2', background: 'rgba(0,0,0,.25)', borderRadius: '6px', padding: '4px 6px', marginTop: '4px', display: '-webkit-box', WebkitLineClamp: '3', WebkitBoxOrient: 'vertical', overflow: 'hidden' }, `${nameOf(t.doneBy || t.by)}: ${why}`));
+        const bar = mk('div', { display: 'flex', gap: '6px', marginTop: '5px', flexWrap: 'wrap' });
+        const rep = mk('button', { background: '#e8b04b', color: '#1b1406', border: '0', borderRadius: '6px', padding: '2px 10px', cursor: 'pointer', font: '700 11px system-ui' }, 'Reply');
+        rep.title = 'Answer them: Vizier passes it on word for word and they carry on';
+        rep.onclick = (e) => { e.stopPropagation(); openTask(t, true); };
+        bar.append(rep); mid.append(bar);
+      }
       if (t.status === 'ready' || (t.emailDraft && t.report)) {
         const bar = mk('div', { display: 'flex', gap: '6px', marginTop: '5px', flexWrap: 'wrap' });
         const btn = (label, bg, title) => { const b = mk('button', { background: bg, color: '#fff', border: '0', borderRadius: '6px', padding: '2px 8px', cursor: 'pointer', font: '600 11px system-ui' }, label); b.title = title; return b; };
@@ -3432,13 +3462,7 @@
           const ok = btn('Approve', '#3f7d5a', 'Only you can approve finished work');
           ok.onclick = (e) => approveTask(t, e);
           const back = btn('Send back', '#9a6a2b', 'Send it back with a note: it goes to the end of the list and is done again');
-          back.onclick = (e) => {
-            e.stopPropagation(); if (bar.querySelector('input')) return;
-            const inp = mk('input', { flex: '1 1 140px', minWidth: '0', background: 'rgba(0,0,0,.35)', border: '1px solid rgba(232,196,106,.4)', borderRadius: '6px', color: '#f5efe2', padding: '2px 6px', font: '12px system-ui' });
-            inp.placeholder = 'What needs changing? Enter to send';
-            inp.addEventListener('keydown', (k) => { k.stopPropagation(); if (k.key === 'Enter' && inp.value.trim()) sendBackTask(t, inp.value.trim(), k); if (k.key === 'Escape') renderTodos(); });
-            bar.append(inp); inp.focus();
-          };
+          back.onclick = (e) => { e.stopPropagation(); openTask(t, true); };
           bar.append(ok, back);
         }
         if (t.emailDraft && t.report) {
@@ -3456,18 +3480,153 @@
         pdf.href = BRAIN + t.pdf; pdf.target = '_blank'; pdf.rel = 'noopener'; pdf.title = 'Open the report for this task';
         row.append(mid, pdf, del);
       } else row.append(mid, del);
-      row.onmouseenter = (e) => { todoTip.textContent = relabel(tipFor(t)); todoTip.style.display = 'block'; row.onmousemove(e); };
-      row.onmousemove = (e) => { const r = todoTip.getBoundingClientRect(); todoTip.style.left = Math.max(8, Math.min(e.clientX + 14, innerWidth - r.width - 8)) + 'px'; todoTip.style.top = Math.max(8, Math.min(e.clientY + 14, innerHeight - r.height - 8)) + 'px'; };
-      row.onmouseleave = () => { todoTip.style.display = 'none'; };
+      row.style.cursor = 'pointer'; row.title = 'Open it to read everything and answer';
+      if (taskOpen === t.id) row.style.outline = '2px solid #e8c46a';
+      row.onclick = (e) => { if (e.target.closest('button, a, input')) return; openTask(t); };
       todoBody.append(row);
     }
   }
+
+  // ---------- quests from your own tasks (feedback round 6) ----------
+  // Every task gets a short, friendly name and goes in the quest log under the map, so you can follow your ideas and
+  // requests: a gold ! when it needs you, a silver ! while it's under way, a gold ? when it's done and ready for you to
+  // check, and a tick once you've approved it.
+  const FILLER = /^(?:(?:hi|hey|hello|ok|okay)\b[ ,!]*)?(?:(?:please|pls|can you|could you|would you|will you|i need you to|i want you to|i'd like you to|we need to|i need to|let's|lets)\s+)*(?:(?:ask|tell|get|have)\s+(?:@?[a-z]+)\s+(?:to\s+)?)?(?:(?:please)\s+)?/i;
+  function shortName(text) {
+    let s = String(text || '').replace(/\s+/g, ' ').trim()
+      .replace(/^(?:(?:hi|hey|hello|ok|okay|right)\b[^,.!?]{0,20}[,.!]\s*)/i, '')   // "Hey Vizier, ..."
+      .replace(/^@?[A-Z][a-z]+(?: [A-Z][a-z]+)?\s*[,:]\s+/, '')                   // "Keeper: ..." or "Merchant, ..."
+      .replace(FILLER, '')
+      .replace(/^(?:give|hand|pass) (?:this|it) (?:to|on to) (?:your|a|the) (?:worker|helper|team)\s*[:,-]?\s*/i, '');  // the job itself, not who it's for
+    s = s.split(/(?<=[.?!])\s|[\n;]|: |, (?:and|but|so|then)\b/)[0].replace(/[.?!,]+$/, '');
+    const head = s.split(/\s+and\s+/)[0];
+    if (head !== s && head.split(' ').length >= 3) s = head;                         // the first thing asked for
+    const words = s.split(' ').filter((w, i) => i === 0 || !/^(the|a|an|some|my|our|for me|please)$/i.test(w));
+    let out = words.slice(0, 6).join(' ');
+    if (words.length > 6) out = out.replace(/\s+(to|for|of|and|with|about|on|in|the|a)$/i, '');
+    out = out.charAt(0).toUpperCase() + out.slice(1);
+    return out.length > 44 ? out.slice(0, 43).replace(/\s+\S*$/, '') + '…' : out || 'A new task';
+  }
+  const titleOf = (t) => t.title || (t.title = shortName(t.text));
+  // what they need from you, in two parts: the issue in a sentence or two, then the list of what's needed
+  function needsOf(t) {
+    const rep = plain(t.report || '');
+    if (['needs', 'failed'].includes(t.status)) {
+      const m = /ISSUE:\s*([\s\S]*?)(?:NEEDED FROM (?:THE CHIEF|YOU)\s*:\s*([\s\S]*))?$/i.exec(rep);
+      let main = '', list = [];
+      if (m && /ISSUE:/i.test(rep)) { main = m[1].trim(); list = (m[2] || '').split('\n').map((x) => x.replace(/^\s*[-•*\d.)]+\s*/, '').trim()).filter(Boolean); }
+      else if (/NEEDED FROM (?:THE CHIEF|YOU)\s*:/i.test(rep)) { const [a, b] = rep.split(/NEEDED FROM (?:THE CHIEF|YOU)\s*:/i); main = a.trim(); list = b.split('\n').map((x) => x.replace(/^\s*[-•*\d.)]+\s*/, '').trim()).filter(Boolean); }
+      else {  // not in the two-part form: the questions become the list, the rest is the issue
+        const parts = rep.replace(/^\W*NEEDS THE CHIEF\W*/i, '').split(/(?<=[.?!])\s+/);
+        list = parts.filter((x) => /\?\s*$/.test(x)); main = parts.filter((x) => !/\?\s*$/.test(x)).join(' ');
+      }
+      if (t.status === 'failed' && !list.length) list = ['Read what happened, then answer with what to do, or remove the task and add it again'];
+      if (!list.length) list = ['Answer them in the box below'];
+      return { main: main || 'They got stuck and need your help to carry on.', list, kind: 'needs' };
+    }
+    if (t.status === 'ready') {
+      const first = rep.split(/\n\s*\n/)[0];
+      const list = ['Read the result', 'Approve it, or send it back with what to change'];
+      if (t.emailDraft) list.push('Copy the draft and send it yourself if you want to: nobody here can send it');
+      if (t.toolAsk) list.push('Choose a tool from the options, or say no: nothing is added without you');
+      return { main: first.length > 420 ? first.slice(0, 417) + '...' : first, list, kind: 'ready' };
+    }
+    if (t.status === 'done') return { main: (rep.split(/\n\s*\n/)[0] || '').slice(0, 420), list: [], kind: 'done' };
+    return { main: t.status === 'working' ? (t.now || `${nameOf(t.by)} is on it.`) : `Waiting its turn with ${nameOf(t.by)}.`, list: [], kind: 'going' };
+  }
+  // the two-part card: <Title> and a short main part, then <Title> of what's needed and the list
+  function twoPart(t, opts = {}) {
+    const n = needsOf(t), card = mk('div', { display: 'grid', gap: '8px' });
+    const h = (txt, colour) => mk('div', { font: '700 14px system-ui', color: colour || '#f5efe2' }, txt);
+    card.append(h(titleOf(t)), mk('div', { color: '#e6dfcf', lineHeight: '1.45', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }, n.main || t.text));
+    const needTitle = n.kind === 'needs' ? `What ${nameOf(t.doneBy || t.by)} needs from you` : n.kind === 'ready' ? 'To do: check it' : n.kind === 'done' ? 'Nothing needed: it’s finished' : 'Nothing needed from you yet';
+    card.append(mk('div', { height: '2px' }), h(needTitle, n.kind === 'needs' ? '#f6ca33' : n.kind === 'ready' ? '#b9d98a' : '#9fb4c0'));
+    if (n.list.length) { const ul = mk('ul', { margin: '0', paddingLeft: '18px', display: 'grid', gap: '4px', color: '#f5efe2', lineHeight: '1.4' }); for (const x of n.list) ul.append(mk('li', {}, x)); card.append(ul); }
+    else card.append(mk('div', { color: '#9a9486', fontSize: '12px' }, n.kind === 'done' ? 'Approved.' : "They'll report back when it's done."));
+    return card;
+  }
+
+  // ---------- one task, in full (feedback round 5) ----------
+  // Click a task to open it beside the list: everything it says, who did what, and a big box to answer, approve or send
+  // it back. It isn't redrawn while you type, so what you're writing is never lost and shortcuts stay off.
+  const taskBox = mk('div', { ...panelStyle, top: '130px', bottom: '56px', width: 'min(460px, calc(100vw - 32px))', zIndex: 12 }); taskBox.className = 'hud';
+  taskBox.setAttribute('role', 'dialog'); taskBox.setAttribute('aria-label', 'Task details');
+  document.body.appendChild(taskBox);
+  taskBox.addEventListener('pointerdown', () => front(taskBox), true);
+  for (const type of ['keydown', 'keyup']) taskBox.addEventListener(type, (e) => { e.stopPropagation(); if (e.key === 'Escape' && type === 'keydown') closeTask(); });
+  let taskOpen = null, taskSig = '';
+  const box6 = (style, text) => mk('div', { whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', lineHeight: '1.45', ...style }, text);
+  function placeTask() {
+    const r = todoBox.style.display === 'flex' ? todoBox.getBoundingClientRect() : null;
+    const left = r && innerWidth - r.right > 480 ? r.right + 12 : 16;
+    taskBox.style.left = left + 'px';
+  }
+  function openTask(t, focusReply) { taskOpen = t.id; taskSig = ''; placeTask(); taskBox.style.display = 'flex'; front(taskBox); renderTask(true); if (focusReply) setTimeout(() => { const a = taskBox.querySelector('textarea'); if (a) a.focus(); }, 0); }
+  function closeTask() { taskOpen = null; taskBox.style.display = 'none'; }
+  function renderTask(force) {
+    const t = todos.find((x) => x.id === taskOpen); if (!t) { closeTask(); return; }
+    const sig = [t.status, (t.steps || []).length, t.now, t.report && t.report.length].join('|');
+    const area = taskBox.querySelector('textarea');
+    if (!force && (sig === taskSig || (area && (area.value || document.activeElement === area)))) return;  // never while you're writing
+    taskSig = sig;
+    const head = mk('div', { padding: '10px 12px', borderBottom: '1px solid rgba(232,196,106,.25)', display: 'flex', gap: '10px', alignItems: 'flex-start' });
+    const img = faceImg(t.with || t.doneBy || t.by, 34); if (img) head.append(img);
+    const [label, col] = t.status === 'done' && t.approvedBy === 'project' ? ['Approved within the project', '#8fc27a'] : STATUS[t.status];
+    const ht = mk('div', { flex: '1', minWidth: '0' });
+    ht.append(box6({ fontWeight: '650', color: '#f5efe2', fontSize: '15px' }, titleOf(t)), mk('div', { fontSize: '12px', color: col, marginTop: '3px' }, `${t.status === 'working' ? t.now || 'Working on it' : label} · ${nameOf(t.by)}${t.doneBy && t.doneBy !== t.by ? `, done by ${nameOf(t.doneBy)}` : ''}`));
+    const x = mk('button', { background: 'none', border: '0', color: '#c9c1ae', cursor: 'pointer', fontSize: '18px' }, '×'); x.title = 'Close'; x.onclick = closeTask;
+    head.append(ht, x);
+    const body = mk('div', { flex: '1', overflow: 'auto', padding: '10px 12px', display: 'grid', gap: '10px', alignContent: 'start', fontSize: '13px' });
+    const label2 = (s) => mk('div', { color: '#c9c1ae', fontSize: '11px', letterSpacing: '.06em' }, s);
+    const card = twoPart(t);
+    Object.assign(card.style, { background: ['needs', 'failed'].includes(t.status) ? 'rgba(246,202,51,.08)' : 'rgba(255,255,255,.04)', border: `1px solid ${['needs', 'failed'].includes(t.status) ? 'rgba(246,202,51,.45)' : 'rgba(232,196,106,.2)'}`, borderRadius: '10px', padding: '10px 12px' });
+    body.append(card);
+    if (t.report && (t.status === 'ready' || t.status === 'done')) {  // the full result, for reading it all
+      const more = mk('details', {}); more.append(mk('summary', { cursor: 'pointer', color: '#e8c46a', fontSize: '12px' }, 'The full result'), box6({ background: 'rgba(255,255,255,.05)', borderRadius: '8px', padding: '8px 10px', color: '#f5efe2', marginTop: '6px' }, plain(t.report)));
+      body.append(more);
+    }
+    body.append(label2('YOUR ORIGINAL REQUEST'), box6({ color: '#c9c1ae' }, t.text));
+    if (t.context) body.append(label2(`WHAT YOU TOLD ${relabel(nameOf('vizier')).toUpperCase()}`), box6({ color: '#c9c1ae' }, t.context));
+    if ((t.steps || []).length) {
+      body.append(label2('HOW IT WENT'));
+      for (const st of t.steps) {
+        const r = mk('div', { display: 'flex', gap: '8px', alignItems: 'flex-start' }); const f = faceImg(st.who, 20); if (f) r.append(f);
+        const m = mk('div', { flex: '1', minWidth: '0' }); m.append(mk('div', { fontSize: '12px', color: '#e8c46a' }, `${nameOf(st.who)} ${st.what}`));
+        if (st.text) m.append(box6({ fontSize: '12px', color: '#c9c1ae' }, st.text.length > 700 ? st.text.slice(0, 697) + '...' : st.text));
+        r.append(m); body.append(r);
+      }
+    }
+    if (t.chiefNotes && t.chiefNotes.length) body.append(label2('WHAT YOU SAID'), ...t.chiefNotes.map((n) => box6({ color: '#f5efe2' }, '• ' + n)));
+    const foot = mk('div', { padding: '10px 12px', borderTop: '1px solid rgba(232,196,106,.25)', display: 'grid', gap: '8px' });
+    const btn = (label, bg, fn, fg) => { const b = mk('button', { background: bg, color: fg || '#fff', border: '0', borderRadius: '8px', padding: '7px 14px', cursor: 'pointer', font: '650 13px system-ui' }, label); b.onclick = fn; return b; };
+    const writeBox = (ph, sendLabel, onSend) => {
+      const a = mk('textarea', { width: '100%', boxSizing: 'border-box', minHeight: '96px', resize: 'vertical', background: 'rgba(0,0,0,.35)', border: '1px solid rgba(232,196,106,.55)', borderRadius: '8px', color: '#f5efe2', padding: '8px 10px', font: '13px/1.45 system-ui' });
+      a.placeholder = ph; a.setAttribute('aria-label', ph);
+      const send = (e) => { const v = a.value.trim(); if (v) onSend(v, e); };
+      a.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(e); } });
+      const bar = mk('div', { display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' });
+      bar.append(mk('span', { color: '#9a9486', fontSize: '11px', marginRight: 'auto' }, 'Enter sends · Shift+Enter for a new line'), btn(sendLabel, '#e8b04b', send, '#1b1406'));
+      foot.append(a, bar);
+    };
+    if (['needs', 'failed'].includes(t.status)) writeBox(`Your answer for ${nameOf(t.doneBy || t.by)}. Vizier passes it on word for word.`, 'Send answer', (v, e) => { sendBackTask(t, v, e); renderTask(true); });
+    else if (t.status === 'ready') {
+      const row = mk('div', { display: 'flex', gap: '8px', flexWrap: 'wrap' });
+      row.append(btn('Approve', '#3f7d5a', (e) => { approveTask(t, e); renderTask(true); }));
+      if (t.emailDraft && t.report) row.append(btn('Copy draft', '#2b8a8a', () => { navigator.clipboard && navigator.clipboard.writeText(t.report).then(() => toast('Draft copied. Nothing was sent.', 'vizier')); }));
+      if (t.pdf) { const a = mk('a', { color: '#e8c46a', alignSelf: 'center', fontWeight: '650' }, 'Open the PDF'); a.href = BRAIN + t.pdf; a.target = '_blank'; a.rel = 'noopener'; row.append(a); }
+      foot.append(row);
+      writeBox('Or send it back: what needs changing?', 'Send back', (v, e) => { sendBackTask(t, v, e); renderTask(true); });
+    } else if (t.status === 'done') foot.append(mk('div', { color: '#8fc27a', fontSize: '12px' }, t.approvedBy === 'project' ? 'Approved within the project, which works on its own.' : `Approved by you${t.approvedAt ? ' · ' + when(t.approvedAt) : ''}.`));
+    else foot.append(mk('div', { color: '#c9c1ae', fontSize: '12px' }, "Nothing to do: they're on it and will report back."));
+    taskBox.replaceChildren(head, body, foot);
+  }
+  setInterval(() => { if (taskOpen) renderTask(false); }, 1000);
   function addTodo(text, opts = {}) {  // opts (guide step 44): { to, from, logged } for a task agreed in a chat
     text = text.trim(); if (!text) return null;
     const dup = todos.find((x) => x.text.toLowerCase() === text.toLowerCase() && Date.now() - new Date(x.at).getTime() < 10 * 60 * 1000);
     if (dup) return dup;
     const r = opts.to ? { to: opts.to, reply: null } : placeOrder(text);  // Vizier records it and phones the director who owns it
-    const by = ownerOf(r.to), t = { id: Date.now().toString(36), text, to: r.to, by, status: 'waiting', at: new Date().toISOString(), from: opts.from || null, direct: !!opts.direct };
+    const by = ownerOf(r.to), t = { id: Date.now().toString(36), text, title: shortName(text), to: r.to, by, status: 'waiting', at: new Date().toISOString(), from: opts.from || null, direct: !!opts.direct, context: opts.context || '' };
     todos.push(t); saveTodos();
     if (!opts.from) questEvent('task');  // one you added yourself
     const personal = r.to === 'steward';
@@ -3487,7 +3646,11 @@
     if (!brainOn()) return;
     try {
       const j = await (await fetch(BRAIN + '/requests')).json();
-      toolReqs = Array.isArray(j.requests) ? j.requests : []; toolNames = j.tools || {}; updateTodoBadge();
+      toolReqs = Array.isArray(j.requests) ? j.requests : []; toolNames = j.tools || {}; updateTodoBadge(); renderPermBar();
+      for (const r of toolReqs) if (r.decidedBy && r.status !== 'waiting' && !seenAuto.has(r.id)) {  // ran without a click, because you'd allowed it
+        seenAuto.add(r.id); if (autoPrimed && Date.now() - new Date(r.decidedAt).getTime() < 120000) { toast(`${nameOf(r.agent)} ran ${toolNames[r.tool] || r.tool}: ${r.action} (${r.decidedBy}).`, r.agent); logSay(r.agent, `Ran ${toolNames[r.tool] || r.tool}: ${r.action}, ${r.decidedBy}.`); }
+      }
+      autoPrimed = true;
       for (const r of toolReqs) if (r.status === 'waiting' && !seenReqs.has(r.id)) {
         seenReqs.add(r.id);
         toast(`${nameOf(r.agent)} asks to run ${toolNames[r.tool] || r.tool}: ${r.action}. It waits for your Approve on the to-do list (K).`, r.agent);
@@ -3505,15 +3668,16 @@
       mk('div', { fontSize: '11px', color: '#e8c46a', marginTop: '2px' }, `${r.why || 'No reason given.'} · Hasn't run: it only runs if you approve.`));
     const bar = mk('div', { display: 'flex', gap: '6px', marginTop: '5px' });
     const btn = (label, bg) => mk('button', { background: bg, color: '#fff', border: '0', borderRadius: '6px', padding: '2px 8px', cursor: 'pointer', font: '600 11px system-ui' }, label);
-    const ok = btn('Approve', '#3f7d5a'), no = btn('Decline', '#7d776a');
-    ok.onclick = (e) => decideRequest(r, 'approve', e); no.onclick = (e) => decideRequest(r, 'decline', e);
-    bar.append(ok, no); mid.append(bar); row.append(mid);
+    const ok = btn('Approve', '#3f7d5a'), hour = btn('Allow for an hour', '#2b8a8a'), no = btn('Decline', '#7d776a');
+    ok.onclick = (e) => decideRequest(r, 'approve', e); hour.onclick = (e) => decideRequest(r, 'approve', e, 'hour'); no.onclick = (e) => decideRequest(r, 'decline', e);
+    bar.append(ok, hour, no); mid.append(bar); row.append(mid);
     return row;
   }
-  async function decideRequest(r, decision, e) {
+  async function decideRequest(r, decision, e, grant) {
     if (!e || !e.isTrusted) return;  // only the Chief's own click
     try {
-      const j = await (await fetch(BRAIN + '/requests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: r.id, decision }) })).json();
+      const j = await (await fetch(BRAIN + '/requests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: r.id, decision, grant: grant || null }) })).json();
+      if (grant === 'hour') toast(`Allowed for an hour: ${nameOf(r.agent)} can run ${toolNames[r.tool] || r.tool} ${r.action} again without asking until then.`, r.agent);
       const d = j.request || {};
       toast(decision === 'approve' ? (d.status === 'done' ? `Started: ${toolNames[r.tool] || r.tool} ${r.action}.` : `It didn't start: ${d.result || j.error}`) : `Declined. ${nameOf(r.agent)}'s request won't run.`, r.agent);
       logSay('vizier', `The Chief ${decision === 'approve' ? 'approved' : 'declined'} ${nameOf(r.agent)}'s request to run ${toolNames[r.tool] || r.tool}: ${r.action}.`); renderLog();
@@ -3531,12 +3695,13 @@
     makeReport(t);
   }
   function sendBackTask(t, note, e) {
-    if (!e || !e.isTrusted || t.status !== 'ready') return;
+    if (!e || !e.isTrusted || !['ready', 'needs', 'failed'].includes(t.status)) return;
+    t.answered = t.status !== 'ready';  // a reply to someone who was stuck, not a correction
     (t.chiefNotes = t.chiefNotes || []).push(note.slice(0, 500));
     t.lastResult = t.report;
     Object.assign(t, { status: 'waiting', pdf: null, pdfError: null, doneAt: null, now: null });
-    saveTodos(); renderTodos(); logSay('vizier', `To ${nameOf(t.by)}: the Chief sent "${t.text.length > 40 ? t.text.slice(0, 37) + '...' : t.text}" back: ${note}`); renderLog();
-    toast(`Sent back to ${nameOf(t.by)} with your note. It's queued again.`, 'vizier');
+    saveTodos(); renderTodos(); logSay('vizier', `To ${nameOf(t.by)}: ${t.answered ? 'the Chief answered on' : 'the Chief sent'} "${t.text.length > 40 ? t.text.slice(0, 37) + '...' : t.text}"${t.answered ? '' : ' back'}: ${note}`); renderLog();
+    toast(t.answered ? `Vizier: I've passed your answer to ${nameOf(t.by)}, word for word. They're carrying on.` : `Sent back to ${nameOf(t.by)} with your note. It's queued again.`, 'vizier');
     runTodos();
   }
   // guide step 43: every finished task gets a PDF report, made on this computer by the brain helper (Edge prints it)
@@ -3615,7 +3780,17 @@
     Object.assign(t, { status, report: plain(report), doneBy, checkedBy: checkedBy || null, doneAt: new Date().toISOString(), now: null, with: null,
       emailDraft: status !== 'failed' && ((emailTask && EMAIL_DRAFT.test(plain(report))) || /^\s*\**POST DRAFT\b/im.test(plain(report)) || /Saved as a draft in (Gmail|Outlook)/i.test(plain(report))),  // email or social media drafts
       toolAsk: /^\s*TOOL OPTIONS\b/im.test(plain(report)) });  // a tool was missing: the agent compared options for the Chief
+    const own = projectOn(t);
+    if (status === 'ready' && own && !t.emailDraft && !t.toolAsk) {  // feedback round 4: the project works on its own
+      Object.assign(t, { status: 'done', approvedBy: 'project', approvedAt: new Date().toISOString() });
+      logSay(own.head.key, `Finished and approved within ${own.name} (it works on its own): "${t.text.slice(0, 60)}".`);
+    }
     saveTodos();
+  }
+  // the building a task belongs to, if you've set it to work on its own
+  function projectOn(t) {
+    const bs = (W && W.buildings ? W.buildings() : []);
+    return bs.find((b) => b.autonomy === 'own' && b.head && [t.by, t.to, t.doneBy].includes(b.head.key)) || null;
   }
   async function runTodos() {
     if (todoBusy || !brainOn()) return;
@@ -3634,9 +3809,11 @@
     const note = [a && a.boss ? `Vizier routed this to ${a.name}'s area, on your team.` : '', t.to === 'vizier' ? 'Nobody else owns this one, so it is yours.' : '',
       asked && team.length ? 'The Chief asked you to give this to your worker, so hand it on.' : '',
       t.direct && a && a.boss ? `The Chief asked ${a.name} directly and ${a.name} agreed, so hand it to ${a.name}.` : '',
-      t.chiefNotes && t.chiefNotes.length ? `The Chief sent the last result back with this note: "${t.chiefNotes[t.chiefNotes.length - 1]}". Fix exactly that. The last result was: ${String(t.lastResult || '').slice(0, 1200)}` : ''].filter(Boolean).join(' ');
+      t.chiefNotes && t.chiefNotes.length ? (t.answered
+        ? `You (or your worker) were stuck and asked the Chief for help. The Chief answered: "${t.chiefNotes[t.chiefNotes.length - 1]}". Carry on with the task using that answer. Your last report was: ${String(t.lastResult || '').slice(0, 1200)}`
+        : `The Chief sent the last result back with this note: "${t.chiefNotes[t.chiefNotes.length - 1]}". Fix exactly that. The last result was: ${String(t.lastResult || '').slice(0, 1200)}`) : ''].filter(Boolean).join(' ');
     try {
-      const out = await ask(t, d, 'task', { text: t.text, note }, `${nameOf(d)} is deciding who does it`);
+      const out = await ask(t, d, 'task', { text: t.text, note, context: t.context || '' }, `${nameOf(d)} is deciding who does it`);
       const v = verdict(out, ['HAND TO', 'DONE', 'NEEDS THE CHIEF']);
       const w = v.word === 'HAND TO' && team.find((k) => v.tail.toLowerCase().includes(nameOf(k).toLowerCase()) || v.tail.toLowerCase().includes(k));
       if (!w) {  // the director did it themselves
@@ -3647,11 +3824,24 @@
         step(t, d, `handed it to ${nameOf(w)}`, instructions);
         logSay(d, `To ${nameOf(w)}: a task from the Chief's list. ${instructions}`); logSay(w, "On it. I'll bring it back for you to check."); renderLog();
         showCall(d, w, `Handing a task to ${nameOf(w)}.`, 4);
-        let feedback = '', report = '', head2 = '', last = '';
+        let feedback = '', report = '', head2 = '', last = '', escalated = '';
         for (let round = 0; round <= MAX_SENDBACKS; round++) {
-          const wo = await ask(t, w, 'task', { text: t.text, instructions, report: round ? report : '', worker: w, feedback }, `${nameOf(w)} is working on it${round ? ` again (try ${round + 1})` : ''}`);
+          const wo = await ask(t, w, 'task', { text: t.text, instructions, report: round ? report : '', worker: w, feedback, context: t.context || '' }, `${nameOf(w)} is working on it${round ? ` again (try ${round + 1})` : ''}`);
           const wv = verdict(wo, ['DONE', 'NEEDS THE CHIEF']); head2 = wv.word || ''; report = wv.rest;
           step(t, w, round ? `did it again (try ${round + 1})` : 'did it', report);
+          if (wv.word === 'NEEDS THE CHIEF') {  // feedback round 5: stuck? the director answers first
+            const sv = await ask(t, d, 'review', { text: t.text, instructions, report, worker: w, stuck: true }, `${nameOf(d)} is answering ${nameOf(w)}'s question`);
+            const svv = verdict(sv, ['ANSWER', 'ASK THE CHIEF']);
+            if (svv.word === 'ANSWER' && round < MAX_SENDBACKS) {
+              step(t, d, `answered ${nameOf(w)}'s question`, svv.rest);
+              logSay(d, `To ${nameOf(w)}: ${svv.rest}`); renderLog();
+              feedback = `You asked for help and your director answered: ${svv.rest} Carry on with the task.`;
+              continue;
+            }
+            escalated = svv.rest || report;
+            step(t, d, 'asked the Chief', escalated);
+            break;
+          }
           const rv = await ask(t, d, 'review', { text: t.text, instructions, report, worker: w }, `${nameOf(d)} is checking ${nameOf(w)}'s work`);
           const rvv = verdict(rv, ['APPROVED', 'SEND BACK']); last = rvv.rest;
           if (rvv.word === 'APPROVED') { step(t, d, 'checked it: approved', last); break; }
@@ -3660,7 +3850,8 @@
           if (round < MAX_SENDBACKS) { logSay(d, `To ${nameOf(w)}: not yet. ${last}`); renderLog(); }
         }
         const approved = t.steps[t.steps.length - 1].what.startsWith('checked');
-        if (approved) finish(t, head2 === 'DONE' ? 'done' : 'needs', report, w, d);
+        if (escalated) finish(t, 'needs', escalated, d, null);  // one question, from the director, not each person on the way
+        else if (approved) finish(t, head2 === 'DONE' ? 'done' : 'needs', report, w, d);
         else finish(t, 'needs', `${nameOf(d)} sent it back ${MAX_SENDBACKS + 1} times and it still isn't right. ${nameOf(d)}'s last notes: ${last}\n\n${nameOf(w)}'s last attempt: ${report}`, w, d);
       }
     } catch (e) {
@@ -3672,6 +3863,14 @@
     logSay(t.checkedBy || t.doneBy, `To Vizier: ${t.status === 'ready' ? 'ready for the Chief' : 'reported back on'} "${short}" (by ${nameOf(t.doneBy)}${checked}).`); renderLog();
     if (todoBox.style.display === 'flex') renderTodos();
     const how = t.status === 'ready' ? 'Ready for your OK' : t.status === 'needs' ? 'Did what we could, and the rest needs you' : "Couldn't finish";
+    if (t.status === 'needs' || t.status === 'failed') {  // feedback round 4: Vizier chases it and tells you herself
+      const stuck = nameOf(t.doneBy || t.by), why = plain(t.report || '').replace(/\s+/g, ' ').slice(0, 220);
+      const msg = `${stuck} is stuck on "${short}" and needs you${why ? `: ${why}${why.length >= 220 ? '...' : ''}` : '.'} Open your to-do list (K), find it under "Needs you" and press Reply. I'll pass your answer on word for word.`;
+      say('vizier', 'vizier', msg); if (chatWith === 'vizier') bubble(chatBody, 'vizier', msg, false);
+      logSay('vizier', `To the Chief: ${stuck} needs you on "${short}".`); renderLog();
+      toast(`Vizier: ${msg}`, 'vizier');
+      todoBusy = false; await makeReport(t); runTodos(); return;
+    }
     toast(`${nameOf(t.checkedBy || t.doneBy)}: ${how}: "${short}" (by ${nameOf(t.doneBy)}${checked}). ${t.status === 'ready' ? ' Approve it on your to-do list (K).' : ' Hover it on your to-do list (K) to see the hand-over.'}`, t.checkedBy || t.doneBy);
     todoBusy = false; await makeReport(t); runTodos();
   }
@@ -3682,7 +3881,7 @@
     todoBox.style.left = beside ? mBox.offsetLeft + mBox.offsetWidth + 12 + 'px' : '16px';
     todoBox.style.display = 'flex'; front(todoBox); keys.clear(); setTimeout(() => todoInput.focus(), 0);
   }
-  function closeTodos() { todoBox.style.display = 'none'; todoTip.style.display = 'none'; todoInput.blur(); }
+  function closeTodos() { todoBox.style.display = 'none'; todoTip.style.display = 'none'; todoInput.blur(); closeTask(); }
   window.__todo = () => (todoBox.style.display === 'flex' ? closeTodos() : openTodos());
   todoClose.onclick = closeTodos;
   todoAdd.onclick = () => { addTodo(todoInput.value); todoInput.value = ''; };
@@ -3777,6 +3976,25 @@
   const hireYes = mk('button', { background: '#e8b04b', color: '#12151c', border: '0', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer', font: '650 13px system-ui' }, 'Hire');
   const hireNo = mk('button', { background: 'none', color: '#c9c1ae', border: '1px solid #4b5a5c', borderRadius: '8px', padding: '6px 10px', cursor: 'pointer', font: '13px system-ui' }, 'Not this time');
   hireBar.append(hireText, hireNo, hireYes); chatBox.insertBefore(hireBar, chatBody);
+  // feedback round 4: permission live in chat. When the person you're talking to asks to run one of your tools, the
+  // request shows here with Approve (just this once), Allow for an hour (the same request from them runs for the next
+  // hour without asking) and Decline. Only your own click counts.
+  const permBar = mk('div', { display: 'none', flexDirection: 'column', gap: '6px', padding: '8px 12px', background: 'rgba(246,202,51,.12)', borderBottom: '1px solid rgba(246,202,51,.45)' });
+  chatBox.insertBefore(permBar, chatBody);
+  function renderPermBar() {
+    const mine = chatWith ? toolReqs.filter((r) => r.status === 'waiting' && r.agent === chatWith) : [];
+    if (!mine.length) { permBar.style.display = 'none'; permBar.replaceChildren(); return; }
+    permBar.style.display = 'flex';
+    permBar.replaceChildren(...mine.map((r) => {
+      const box = mk('div', { fontSize: '12px', color: '#f5efe2' });
+      const f = Object.entries(r.fields || {}).map(([k, v]) => `${k}: ${v}`).join(', ');
+      box.append(mk('div', {}, `\u{1F511} ${nameOf(r.agent)} asks to run ${toolNames[r.tool] || r.tool}: ${r.action}${f ? ` (${f})` : ''}`), mk('div', { color: '#e8c46a', fontSize: '11px' }, `${r.why || 'No reason given.'} Nothing runs until you say.`));
+      const bar = mk('div', { display: 'flex', gap: '6px', marginTop: '4px', flexWrap: 'wrap' });
+      const b = (label, bg, fn) => { const x = mk('button', { background: bg, color: '#fff', border: '0', borderRadius: '6px', padding: '3px 9px', cursor: 'pointer', font: '600 11px system-ui' }, label); x.onclick = fn; return x; };
+      bar.append(b('Approve', '#3f7d5a', (e) => decideRequest(r, 'approve', e)), b('Allow for an hour', '#2b8a8a', (e) => decideRequest(r, 'approve', e, 'hour')), b('Decline', '#7d776a', (e) => decideRequest(r, 'decline', e)));
+      box.append(bar); return box;
+    }));
+  }
   function showHireBar(key) {
     if (!isCand(key)) { hireBar.style.display = 'none'; return; }
     hireText.textContent = `Interviewing for ${candidate.role}, working for ${candidate.bossName}. Hire makes their agent folder and they start work.`;
@@ -4688,7 +4906,7 @@
   function renderQuestTracker() {
     const rows = QUESTS.filter((q) => ['active', 'ready'].includes(questState(q.key)));
     const done = questsDone();
-    if (done === QUESTS.length || !questsOpen()) { questTracker.style.display = 'none'; return; }
+    questTracker.style.display = 'none'; return;  // feedback round 6: the directors' quests are shown in the quest log under the map now
     questTracker.style.display = 'block';
     questTracker.replaceChildren(mk('div', { color: '#e8c46a', fontWeight: '700', marginBottom: rows.length ? '4px' : '0' }, `Quests ${done}/${QUESTS.length}${rows.length ? '' : ' · look for a gold ! to start one'}`),
       ...rows.map((q) => { const ready = questState(q.key) === 'ready';
@@ -4816,7 +5034,7 @@
   function renderStudio(force) {
     const st = studio; if (!st) return;
     const mine = todos.filter((t) => t.by === st.h.key || t.to === st.h.key || st.crew.includes(t.by) && t.to === st.h.key).slice(-6).reverse();
-    const sig = JSON.stringify([studioMeet, mine.map((t) => t.id + t.status), st.crew.map(statusOf), studioLog(st).length, RES.filter((r) => r.boss === st.h.key).length]);
+    const sig = JSON.stringify([st.b.custom.autonomy, studioMeet, mine.map((t) => t.id + t.status), st.crew.map(statusOf), studioLog(st).length, RES.filter((r) => r.boss === st.h.key).length]);
     if (!force && sig === studioRendered) return; studioRendered = sig;
     const parts = [];
     const top = mk('div', { display: 'flex', alignItems: 'center', justifyContent: 'space-between' });
@@ -4824,6 +5042,14 @@
     parts.push(top);
     if (st.b.custom.purpose) parts.push(mk('div', { color: '#c9c1ae', fontSize: '12px', marginTop: '2px' }, st.b.custom.purpose));
     parts.push(sHead('HEAD'), personRow(st.h.key, [sBtn('Talk', true, () => openChat(st.h.key, true))]));
+    // feedback round 4: how this project works
+    const own = st.b.custom.autonomy === 'own';
+    parts.push(sHead('HOW THIS PROJECT WORKS'));
+    const pick = mk('div', { display: 'flex', gap: '6px', flexWrap: 'wrap' });
+    pick.append(sBtn(own ? 'Ask me first' : '\u2714 Ask me first', !own, () => setAutonomy(st, 'ask')), sBtn(own ? '\u2714 Work on its own' : 'Work on its own', own, () => setAutonomy(st, 'own')));
+    parts.push(pick, mk('div', { color: '#c9c1ae', fontSize: '11px', marginTop: '4px', lineHeight: '1.4' }, own
+      ? `${st.h.name} and the project workers approve their own finished work and run the tool actions you've listed, without waiting for you. You'll see everything they did. Still always yours: sending, spending, publishing, deleting, settings, and anything outside ${st.b.custom.name}.`
+      : 'Every finished task and every tool action waits for your click. Switch to "Work on its own" to let this project get on without you.'));
     const workers = RES.filter((r) => r.boss === st.h.key).map((r) => r.key);
     const others = st.crew.filter((k) => !workers.includes(k));
     if (others.length) { parts.push(sHead('WORKS HERE')); for (const k of others) parts.push(personRow(k)); }
@@ -4890,6 +5116,14 @@
     toast(studioMeet ? `The ${st.b.custom.name} team is coming in for a studio meeting.` : 'Studio meeting over.', st.h.key);
     renderStudio(true);
   }
+  function setAutonomy(st, v) {
+    if (!W || !W.updateBuilding) return;
+    W.updateBuilding(st.b.custom.id, { autonomy: v }).then(() => {
+      st.b.custom.autonomy = v;
+      toast(v === 'own' ? `${st.b.custom.name} now works on its own. Sending, spending, publishing and deleting still always come to you.` : `${st.b.custom.name} asks you first again.`, st.h.key);
+      renderStudio(true);
+    }).catch((e) => toast(`Couldn't save that: ${e.message}`, 'vizier'));
+  }
   function takeOn(st) {
     const t = addTodo(`Hire a project worker for ${st.h.name}, head of ${st.b.custom.name}`);
     toast(`Vizier will find a candidate for ${st.b.custom.name} and bring them to the town hall for your interview. Only you can say yes.`, 'vizier');
@@ -4916,6 +5150,52 @@
     if (!studio || studio.room !== st.room) { studio = st; studioMeet = false; studioRendered = ''; studioBox.style.display = 'block'; questTracker.style.display = 'none'; }
     if (studioBox.style.display === 'block') renderStudio(false);
   }, 400);
+
+  // ---------- the quest log, under the map (feedback round 6) ----------
+  const QLOG_KEY = 'kingdom-one-questlog-open';
+  let qlogOpen = (() => { try { return localStorage.getItem(QLOG_KEY) !== 'no'; } catch (e) { return true; } })();
+  const qlog = mk('div', { position: 'fixed', right: '16px', top: '260px', width: 'min(270px, calc(100vw - 32px))', maxHeight: 'calc(100vh - 360px)', overflow: 'auto', background: 'rgba(18,20,28,.88)',
+    border: '1px solid rgba(232,196,106,.45)', borderRadius: '12px', padding: '8px 10px', color: '#f5efe2', font: '12px system-ui, sans-serif', zIndex: 5, pointerEvents: 'auto' });
+  qlog.className = 'hud'; qlog.setAttribute('aria-label', 'Quest log');
+  document.body.appendChild(qlog);
+  let qlogSig = '';
+  const markOf = (t) => (['needs', 'failed'].includes(t.status) ? ['!', '#f6ca33', 'Needs you'] : t.status === 'ready' ? ['?', '#f6ca33', 'Done: check it'] : t.status === 'done' ? ['✔', '#8fc27a', 'Finished'] : ['!', '#cfd4dc', 'Under way']);
+  function renderQuestLog() {
+    const r = state.mapRect, big = !!state.mapBig;
+    qlog.style.display = big || state.meeting ? 'none' : 'block';
+    if (r && !big) qlog.style.top = Math.round(r.y + r.h + 22) + 'px';
+    const rank = (t) => (['needs', 'failed'].includes(t.status) ? 0 : t.status === 'ready' ? 1 : 2);  // what needs you first
+    const mine = todos.filter((t) => t.status !== 'done').slice().reverse().sort((a, b) => rank(a) - rank(b));
+    const finished = todos.filter((t) => t.status === 'done').slice(-3).reverse();
+    const meet = questsOpen() && questsDone() < QUESTS.length ? QUESTS.filter((q) => questState(q.key)) : [];
+    const sig = JSON.stringify([qlogOpen, mine.map((t) => t.id + t.status + titleOf(t)), finished.map((t) => t.id), meet.map((q) => q.key + questState(q.key)), taskOpen]);
+    if (sig === qlogSig) return; qlogSig = sig;
+    const head = mk('button', { display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: '0', color: '#e8c46a', font: '700 13px system-ui', cursor: 'pointer', padding: '0' });
+    const needN = mine.filter((t) => ['needs', 'failed', 'ready'].includes(t.status)).length;
+    head.append(mk('span', {}, `\u{1F4DC} Quest log${mine.length ? ` (${mine.length})` : ''}${needN ? ` · ${needN} for you` : ''}`), mk('span', { color: '#c9c1ae' }, qlogOpen ? '▴' : '▾'));
+    head.onclick = () => { qlogOpen = !qlogOpen; try { localStorage.setItem(QLOG_KEY, qlogOpen ? 'yes' : 'no'); } catch (e) { /* this visit */ } qlogSig = ''; renderQuestLog(); };
+    const parts = [head];
+    if (qlogOpen) {
+      const row = (mark, colour, title, sub, onclick, on) => {
+        const b = mk('button', { display: 'flex', gap: '8px', width: '100%', textAlign: 'left', alignItems: 'flex-start', background: on ? 'rgba(232,196,106,.14)' : 'rgba(255,255,255,.04)', border: '1px solid rgba(232,196,106,.15)', borderRadius: '8px', padding: '5px 7px', marginTop: '4px', color: '#f5efe2', cursor: 'pointer', font: '12px system-ui' });
+        const m = mk('b', { color: colour, font: '900 15px Georgia, serif', width: '12px', textAlign: 'center', textShadow: '0 0 2px #2a1c08', flex: 'none' }, mark);
+        const tx = mk('div', { flex: '1', minWidth: '0' }); tx.append(mk('div', { fontWeight: '650', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }, title), mk('div', { color: '#9a9486', fontSize: '11px' }, sub));
+        b.append(m, tx); b.onclick = onclick; return b;
+      };
+      const sec = (t) => mk('div', { color: '#9a9486', fontSize: '10px', letterSpacing: '.08em', margin: '8px 0 0' }, t);
+      if (!mine.length && !finished.length && !meet.length) parts.push(mk('div', { color: '#9a9486', marginTop: '6px' }, 'Add a task (press 1) and it becomes a quest here.'));
+      if (mine.length) { parts.push(sec('YOUR QUESTS')); for (const t of mine) { const [mk2, c, sub] = markOf(t); parts.push(row(mk2, c, titleOf(t), `${sub} · ${nameOf(t.doneBy || t.by)}`, () => openTask(t), taskOpen === t.id)); } }
+      if (finished.length) { parts.push(sec('RECENTLY FINISHED')); for (const t of finished) parts.push(row('✔', '#8fc27a', titleOf(t), `Finished · ${nameOf(t.doneBy || t.by)}`, () => openTask(t), taskOpen === t.id)); }
+      if (meet.length) {
+        parts.push(sec('MEET THE DIRECTORS'));
+        const waitingQ = meet.filter((q) => questState(q.key) === 'available');
+        if (waitingQ.length) parts.push(row('!', '#f6ca33', `${waitingQ.length} director${waitingQ.length > 1 ? 's have' : ' has'} a quest for you`, 'Look for the gold ! over their heads', () => toast(`Quests waiting with ${waitingQ.map((q) => relabel(nameOf(q.key))).join(', ')}. Walk up and talk to them.`, 'vizier'), false));
+        for (const q of meet.filter((x) => questState(x.key) !== 'available')) { const st = questState(q.key); parts.push(row(st === 'ready' ? '?' : '!', st === 'active' ? '#cfd4dc' : '#f6ca33', q.title, st === 'available' ? `Talk to ${relabel(nameOf(q.key))} to start` : st === 'ready' ? `Hand it in to ${relabel(nameOf(q.key))}` : relabel(q.how), () => showQuestCard(q.key), false)); }
+      }
+    }
+    qlog.replaceChildren(...parts);
+  }
+  setInterval(renderQuestLog, 700);
 
   // ---------- the hotbar: T, then 1 to 4, like an RPG's spell bar ----------
   // T talks to whoever is in front of you (feedback round 1), and to Vizier when nobody is.
@@ -4965,7 +5245,7 @@
     window.__v = {
       state, scenes,
       go(id, tx, ty, dir = 'down') { state.scene = scenes[id]; Object.assign(state.player, { x: (tx + 0.5) * T, y: (ty + 0.8) * T, dir }); placeVizierBehind(); updatePlace(); },
-      vizier, plotNear: () => plotNear(), openBuild, orders: () => orders, routeOrder, update: (dt) => update(dt), draw: () => draw(performance.now() / 1000), directors, canLand: (id, x, y) => canLand(scenes[id], x, y), callMeeting, endMeeting, seats: HALL_SEATS, summon, backToWork, commandReply, setWorking, notes: () => villageNotes, chat: (a, b) => { const f = (k) => directors().find((d) => d.key === k); startChat(f(a), f(b)); }, findPath: (id, a, b) => findPath(scenes[id], a, b), walkStats: (id) => walkStats(scenes[id]), sendOrder: (text) => { orderText.value = text; sendOrder(); }, callCard: () => callCard, openChat, todos: () => todos, candidate: () => candidate, hireCandidate, declineCandidate,
+      vizier, plotNear: () => plotNear(), openBuild, finish: (t, st, rep, by) => finish(t, st, rep, by, null), orders: () => orders, routeOrder, update: (dt) => update(dt), draw: () => draw(performance.now() / 1000), directors, canLand: (id, x, y) => canLand(scenes[id], x, y), callMeeting, endMeeting, seats: HALL_SEATS, summon, backToWork, commandReply, setWorking, notes: () => villageNotes, chat: (a, b) => { const f = (k) => directors().find((d) => d.key === k); startChat(f(a), f(b)); }, findPath: (id, a, b) => findPath(scenes[id], a, b), walkStats: (id) => walkStats(scenes[id]), sendOrder: (text) => { orderText.value = text; sendOrder(); }, callCard: () => callCard, openChat, todos: () => todos, candidate: () => candidate, hireCandidate, declineCandidate,
     };
   }
   let last = performance.now();

@@ -89,7 +89,8 @@ def buildings(items):
                     "name": name, "purpose": clean(b.get("purpose"), 80),
                     "agents": [a for a in (b.get("agents") if isinstance(b.get("agents"), list) else []) if isinstance(a, str) and KEY.match(a)][:20],
                     "tools": [clean(t, 24) for t in (b.get("tools") if isinstance(b.get("tools"), list) else []) if isinstance(t, str)][:20],
-                    "added": clean(b.get("added"), 40), "head": head(b.get("head"))})
+                    "added": clean(b.get("added"), 40), "head": head(b.get("head")),
+                    "autonomy": "own" if b.get("autonomy") == "own" else "ask"})  # feedback round 4: may the project work on its own?
     return out
 
 

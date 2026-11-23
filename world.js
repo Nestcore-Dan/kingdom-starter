@@ -58,7 +58,8 @@
   const worldName = () => (settings && clean(settings.worldName, LIMIT.world)) || defaults?.world || DEFAULT_WORLD;
   function agentName(key) {
     const d = defaults && defaults.agents.find((a) => a.key === key);
-    return (settings && settings.agents && clean(settings.agents[key], LIMIT.agent)) || (d ? d.name : key);
+    const chosen = settings && (settings.setupDone ? settings.agents : { ...(settings.agents || {}), ...((settings.draft && settings.draft.agents) || {}) });  // during setup, the names typed so far
+    return (chosen && clean(chosen[key], LIMIT.agent)) || (d ? d.name : key);
   }
 
 
@@ -889,6 +890,7 @@
   }
   window.__world = { start, relabel, worldName, agentName, ownerName: () => (settings && clean(settings.ownerName, LIMIT.owner)) || '',
     names: () => Object.fromEntries((defaults ? [...defaults.agents.map((a) => a.key)] : []).map((k) => [k, agentName(k)])),
-    connections: () => ((settings && settings.connections) || []).slice(), buildings: () => ((settings && settings.buildings) || []).slice(), buildMenu, settings: () => settings, open: personalisation, openConnections: connectionsPanel, tour: () => tour(true), saved: () => got.ok };
+    connections: () => ((settings && settings.connections) || []).slice(), buildings: () => ((settings && settings.buildings) || []).slice(), buildMenu,
+    updateBuilding: (id, patch) => save({ ...(settings || {}), buildings: ((settings && settings.buildings) || []).map((b) => (b.id === id ? { ...b, ...patch } : b)) }), settings: () => settings, open: personalisation, openConnections: connectionsPanel, tour: () => tour(true), saved: () => got.ok };
   const style = document.createElement('style'); style.textContent = css; document.head.append(style);
 })();

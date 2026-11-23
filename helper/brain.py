@@ -352,6 +352,42 @@ TOOL_CACHE = {}                  # villager -> (allowed tool names, every other 
 LOCK = threading.Lock()
 REPORT_LOCK = threading.Lock()
 RECENT = []                      # times of recent replies, for the hourly limit
+GRANTS = {}                      # feedback round 4: (agent, tool, action) -> until when the Chief allowed it, from a chat or the to-do list
+
+
+def project_of(agent):
+    """The building an agent works for as its head or project worker, if the Chief set it to work on its own."""
+    try:
+        rec = json.loads(CONN_FILE.read_text(encoding="utf-8")) if CONN_FILE.exists() else {}
+    except (OSError, ValueError):
+        return None
+    head = agent if agent.startswith("head-") else next((h.get("boss") for h in hiring.load_hires() if h.get("key") == agent and not h.get("released")), None)
+    for b in rec.get("buildings") or []:
+        if isinstance(b, dict) and (b.get("head") or {}).get("key") == head and head and b.get("autonomy") == "own":
+            return b
+    return None
+
+
+def auto_run(reqs):
+    """Run the waiting requests the Chief has already allowed: a project set to work on its own (only the actions the
+    Chief listed in tools.json, never a POST to a connected tool), or something allowed for an hour. Returns True if
+    anything changed."""
+    changed, now, registry = False, time.time(), tool_registry()
+    for r in reqs:
+        if r.get("status") != "waiting":
+            continue
+        key = (r.get("agent"), r.get("tool"), r.get("action"))
+        why = "for an hour, from your Approve" if GRANTS.get(key, 0) > now else None
+        if not why and r.get("tool") in registry and project_of(str(r.get("agent", ""))):
+            why = "the project works on its own"
+        if not why:
+            continue
+        try:
+            r.update(status="done", result=run_request(r))
+        except Exception as e:
+            r.update(status="failed", result=str(e)[:300])
+        r.update(decidedAt=time.strftime("%Y-%m-%dT%H:%M:%S"), decidedBy=why); changed = True
+    return changed
 
 
 def usage_summary():
@@ -469,7 +505,17 @@ def task_rules(key, room):
     can = f"What you can do: think, plan, write and answer{TASK_EXTRA.get(key, '')}. {LIMITS}"
     done = (f"First line: DONE if the task is finished, or NEEDS THE CHIEF if any part of it needs something you can't do. "
             f"Then a short report, under 150 words, {PLAIN}: exactly what you did and the result. If the task is writing, planning "
-            "or thinking, include the work itself. If something is left for the Chief, say exactly what and why.")
+            "or thinking, include the work itself. If something is left for the Chief, say exactly what and why. "
+            "When it's NEEDS THE CHIEF, write the report in two parts: a line starting ISSUE: with the problem in one or two short "
+            "sentences, then a line NEEDED FROM THE CHIEF: followed by each thing you need from the Chief on its own line starting with a dash.")
+    if room == "review" and job.get("stuck"):  # feedback round 5: a worker who is stuck asks their director first
+        return ("## Your worker is stuck and has asked for help\n"
+                "Your worker couldn't finish a task you handed them and says they need a decision or information. You answer first: "
+                "the Chief only hears about it if you can't.\n"
+                f"Reply in exactly this form. First line: ANSWER or ASK THE CHIEF. Then, {PLAIN}, under 80 words: if ANSWER, the answer or "
+                "decision your worker needs, from what you know, your notes and the task; if ASK THE CHIEF, only when the Chief alone can decide "
+                "(their money, their client, their personal details, approval, or facts nobody here has): a line ISSUE: with the problem "
+                "in one or two short sentences and what you've already worked out, then NEEDED FROM THE CHIEF: with each thing needed on its own line starting with a dash.")
     if room == "review":
         return ("## Checking your worker's work (guide step 42)\n"
                 "Your worker has done a task you handed them. You check every piece of their work before it counts as done. "
@@ -498,6 +544,9 @@ def task_rules(key, room):
 def task_ask(key, room, job):
     text = str(job.get("text", ""))[:2000]
     parts = [f"The task from the Chief: {text}"]
+    if job.get("context"):
+        parts.append("What the Chief said to Vizier when giving this task (use these details exactly, and don't add any the Chief didn't give):\n"
+                     + str(job["context"])[:2000])
     if job.get("note"):
         parts.append(f"(Village note: {str(job['note'])[:500]})")
     if job.get("instructions"):
@@ -511,7 +560,7 @@ def task_ask(key, room, job):
             parts.append(f"You asked {str(c.get('name', 'a colleague'))[:30]}: {str(c.get('q', ''))[:500]}\nThey answered: {str(c.get('a', ''))[:1500]}")
     if len(job.get("consults") or []) >= 2:
         parts.append("You've asked your two questions: finish the task now, without asking again.")
-    parts.append("Check it now and reply in the form above." if room == "review" else f"Do it now as {NAMES.get(key, key)}, and reply in the form above.")
+    parts.append("Answer your worker now, or ask the Chief, in the form above." if room == "review" and job.get("stuck") else "Check it now and reply in the form above." if room == "review" else f"Do it now as {NAMES.get(key, key)}, and reply in the form above.")
     return "\n".join(parts)
 
 
@@ -788,7 +837,10 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/usage":  # the usage tracker (feedback round 3): counts from usage.jsonl, never any message text
             return self._send(200, usage_summary())
         if self.path == "/requests":  # the Chief's existing tools: requests waiting for the Chief, and recent ones
-            reqs = json.loads(REQUESTS.read_text(encoding="utf-8")) if REQUESTS.exists() else []
+            with REPORT_LOCK:
+                reqs = json.loads(REQUESTS.read_text(encoding="utf-8")) if REQUESTS.exists() else []
+                if auto_run(reqs):
+                    REQUESTS.write_text(json.dumps(reqs[-200:], indent=1), encoding="utf-8")
             names = {k: t["name"] for k, t in tool_registry().items()}
             names.update({"conn:" + str(c.get("id")): c.get("name") for c in connections() if c.get("kind") == "local"})
             return self._send(200, {"requests": reqs[-30:], "tools": names})
@@ -860,6 +912,8 @@ class Handler(BaseHTTPRequestHandler):
                     if not r:
                         return self._send(404, {"error": "no such request waiting"})
                     if data.get("decision") == "approve":
+                        if data.get("grant") == "hour":  # the Chief said yes to this kind of request for the next hour
+                            GRANTS[(r.get("agent"), r.get("tool"), r.get("action"))] = time.time() + 3600
                         try:
                             r.update(status="done", result=run_request(r))
                         except Exception as e:
