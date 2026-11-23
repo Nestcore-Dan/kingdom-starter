@@ -1,0 +1,4 @@
+{
+ "_about": "Your existing local tools that agents may use. Reading is direct; every action only asks and waits for your Approve on the to-do list. Add a tool only when you're happy for agents to use it. URLs must be on this computer (127.0.0.1).",
+ "tools": {}
+}

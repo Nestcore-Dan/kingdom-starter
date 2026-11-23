@@ -1,0 +1,10 @@
+data/
+reports/
+helper/.run/
+helper/usage.jsonl
+helper/requests.json
+helper/conn_usage.json
+*.db
+.env
+.env.*
+__pycache__/

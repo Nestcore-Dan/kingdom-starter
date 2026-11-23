@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kingdom One</title>
+<style>
+  :root { --panel: rgba(18, 20, 28, 0.82); --ink: #f5efe2; --muted: #c9c1ae; --gold: #e8c46a; }
+  html, body { margin: 0; height: 100%; background: #12151c; overflow: hidden; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); }
+  canvas { display: block; width: 100vw; height: 100vh; }
+  .hud { position: fixed; pointer-events: none; user-select: none; }
+  #place { top: 16px; left: 16px; background: var(--panel); padding: 8px 14px; border-radius: 10px;
+           font-weight: 650; letter-spacing: .02em; border: 1px solid rgba(232, 196, 106, .35); }
+  #place small { display: block; font-weight: 500; color: var(--muted); font-size: 12px; margin-top: 2px; }
+  #hint { bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--panel); padding: 8px 16px;
+          border-radius: 999px; font-size: 14px; opacity: 0; transition: opacity .15s; white-space: nowrap; }
+  #hint.on { opacity: 1; }
+  #hint b { color: var(--gold); }
+  #toast { bottom: 70px; left: 50%; transform: translateX(-50%); background: var(--panel); padding: 12px 18px;
+           border-radius: 12px; font-size: 15px; max-width: min(560px, calc(100vw - 32px)); text-align: center;
+           opacity: 0; transition: opacity .25s; border: 1px solid rgba(232, 196, 106, .35); }
+  #toast.on { opacity: 1; }
+  #keys { bottom: 16px; right: 16px; font-size: 12px; color: var(--muted); background: var(--panel);
+          padding: 6px 10px; border-radius: 8px; }
+  #menu { top: 76px; left: 16px; display: flex; gap: 6px; pointer-events: auto; background: var(--panel); padding: 6px;
+          border-radius: 12px; border: 1px solid rgba(232, 196, 106, .35); }
+  #menu button { font: 600 13px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); background: rgba(255,255,255,.06);
+                 border: 1px solid rgba(232, 196, 106, .25); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+  #menu button:hover { background: rgba(232, 196, 106, .18); }
+  #menu button.main { background: #2b8a8a; border-color: #5fc0bd; }
+  #menu button.main.live { background: #b5523b; border-color: #e08a72; }
+  #menu kbd { font: inherit; opacity: .6; margin-left: 4px; }
+  @media (max-width: 640px) { #menu .opt { display: none; } }
+  #help { top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(18, 20, 28, .94);
+          padding: 22px 26px; border-radius: 14px; border: 1px solid rgba(232, 196, 106, .45);
+          min-width: 280px; display: none; }
+  #help.on { display: block; }
+  #help h2 { margin: 0 0 4px; font-size: 20px; color: var(--gold); }
+  #help p { margin: 0 0 14px; color: var(--muted); font-size: 13px; }
+  #help table { border-collapse: collapse; font-size: 14px; }
+  #help td { padding: 4px 0; }
+  #help td:first-child { padding-right: 18px; color: var(--gold); font-weight: 600; white-space: nowrap; }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="place" class="hud"></div>
+<div id="hint" class="hud"></div>
+<div id="toast" class="hud"></div>
+<div id="keys" class="hud">T talk · K to-do · C meeting · V walkable · H help · M map · N night · Q sound</div>
+<div id="menu" class="hud">
+  <button class="main" data-act="meeting" title="Bring everyone to the town hall (C)">Call meeting</button>
+  <button data-act="todo" title="Your to-do list: Vizier passes each task to the right director (K)">To-do</button>
+  <button data-act="settings" title="Settings → Personalisation: your world's name and your agents' names">Settings</button>
+  <button class="opt" data-act="help" title="Help (H)">Help</button>
+  <button class="opt" data-act="map" title="Map (M)">Map</button>
+  <button class="opt" data-act="night" title="Day and night (N)">Night</button>
+  <button class="opt" data-act="sound" title="Sound (Q)">Sound</button>
+</div>
+<div id="help" class="hud">
+  <h2>Kingdom One</h2>
+  <p>You are the Chief Human Officer, and you're in charge. Vizier, your chief of staff, lives in the town hall and walks with you. Six directors live in their houses, and their workers, in saffron vests, work in the workshops. Nobody has tasks yet.</p>
+  <table>
+    <tr><td>Arrows / WASD</td><td>Walk (hold Shift to run)</td></tr>
+    <tr><td>Drag yourself</td><td>Pick yourself up with the mouse and drop anywhere</td></tr>
+    <tr><td>Walk into a door</td><td>Go inside or back out</td></tr>
+    <tr><td>E / Space</td><td>Look at things, use doors, say hello</td></tr>
+    <tr><td>T</td><td>Talk to whoever you're next to (a chat box opens on the right)</td></tr>
+    <tr><td>M M</td><td>Double-tap M to talk to Vizier from anywhere and give orders</td></tr>
+    <tr><td>J</td><td>Show or hide the villager log: what villagers say to each other</td></tr>
+    <tr><td>K</td><td>Your to-do list: add a task, Vizier passes it on, the director does it. Hover a task to see what was done</td></tr>
+    <tr><td>L</td><td>Show or hide Vizier's chat log: your orders being passed on</td></tr>
+    <tr><td>Wheel, + and −</td><td>Zoom in and out (0 resets)</td></tr>
+    <tr><td>C</td><td>Call a council meeting in the town hall, or end it</td></tr>
+    <tr><td>M</td><td>Show or hide the map</td></tr>
+    <tr><td>N</td><td>Day and night: follow the clock, always day, always night</td></tr>
+    <tr><td>Q</td><td>Turn the quiet background sound off or on</td></tr>
+    <tr><td>V</td><td>Show where people can walk (green), can't (red) and doors (blue)</td></tr>
+    <tr><td>H</td><td>Show or hide this help</td></tr>
+  </table>
+</div>
+<!-- your world's name, agent names and first-launch setup (saved per instance by helper/serve.py) -->
+<script src="world.js"></script>
+<script src="village.js"></script>
+<!-- you, the Chief Human Officer: a 3D model built in code, rendered into walking frames (?sheet shows them, ?model shows the model) -->
+<script type="module" src="me3d.js"></script>
+<!-- the cast: every agent, built on the same frame (?cast shows them all, ?model=<key> turns one around) -->
+<script type="module" src="cast.js"></script>
+</body>
+</html>
