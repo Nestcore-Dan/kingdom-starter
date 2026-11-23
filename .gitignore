@@ -4,6 +4,7 @@ helper/.run/
 helper/usage.jsonl
 helper/requests.json
 helper/conn_usage.json
+agents/LESSONS.md
 *.db
 .env
 .env.*

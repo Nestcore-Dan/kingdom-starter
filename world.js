@@ -110,41 +110,119 @@
   }
   const btn = (label, onclick, go) => el('button', { class: go ? 'go' : '', onclick: (e) => { if (e.isTrusted) onclick(e); } }, label);
 
+  // The catalogue in setup and Settings → Connections: small tiles by category, each with a Connect button.
+  const CATALOG = [
+    ['Email & calendar', [['account', 'Gmail', 'Gm'], ['account', 'Google Calendar', 'Ca'], ['account', 'Outlook', 'Ou']]],
+    ['Files & notes', [['account', 'Google Drive', 'Dr'], ['account', 'Google Sheets', 'Sh'], ['account', 'Notion', 'No']]],
+    ['Money', [['account', 'Xero', 'Xe']]],
+    ['Team chat', [['account', 'Slack', 'Sl']]],
+    ['Social media (drafts only)', [['social', 'LinkedIn', 'Li'], ['social', 'X', 'X'], ['social', 'Instagram', 'In'], ['social', 'Facebook', 'Fb'], ['social', 'YouTube', 'Yt'], ['social', 'TikTok', 'Tt']]],
+    ['Knowledge & media (bolt-ons)', [['bolton', 'library', 'Kb'], ['bolton', 'ytdl', 'Dl'], ['bolton', 'ollama', 'Lm']]],
+    ['Projects & your own', [['repo', 'A repository', 'Gh'], ['local', 'A tool on this computer', 'Pc'], ['api', 'A custom API', 'Ap'], ['account', 'Other', '+']]],
+  ];
+  const BOLTON_INFO = {
+    library: { name: 'Kingdom Library', what: 'Your knowledge base: what agents look things up in, and where videos and documents you add end up.',
+      install: ['Install Docker Desktop (free for personal use) and start it.', 'Get the library: git clone https://github.com/your first business-Dan/kingdom-library', 'In that folder run: docker compose up -d', 'Come back and press Check again.'] },
+    ytdl: { name: 'YouTube downloader', what: 'Downloads videos and playlists, transcribes them and sends what they teach into the library.',
+      install: ['Install Docker Desktop and start it (an NVIDIA graphics card makes transcribing much faster, but it isn\'t required).', 'Get the downloader: git clone https://github.com/your first business-Dan/kingdom-youtube', 'In that folder run: docker compose up -d', 'Come back and press Check again.'] },
+    ollama: { name: 'Local model (Ollama)', what: 'A free model on your own computer for quick first drafts, so less of your Claude plan is used.',
+      install: ['Install Ollama from ollama.com (free).', 'Get a small model: ollama pull qwen3:4b', 'Come back and press Check again.'] },
+  };
+  // How to grow the library: shown on the library and downloader tiles once connected, and from Settings.
+  const INGEST = [
+    ['YouTube videos and playlists', [
+      'Open the YouTube downloader at http://localhost:8080 and paste a video or playlist link.',
+      'Tick Transcribe and Analyze (and Playlist for a whole playlist). Analyze is what files it in the library: it needs Ollama with a vision model (ollama pull qwen3-vl:8b-instruct). Transcribe alone only keeps the transcript.',
+      'Press Download. When it finishes, what the video teaches is filed in the library under What\'s new, with timestamps back to the video.',
+      'Or ask an agent here, for example "download and transcribe <link>": it asks first, and runs only when you click Approve on the to-do list.']],
+    ['Documents, notes and other knowledge bases', [
+      'Put a folder or .zip in the import folder inside your kingdom-library folder: Markdown, text, HTML, CSV, JSON or PDF. Obsidian vaults and Open Knowledge Format bundles work too.',
+      'In the library (http://localhost:8090) open Libraries, then Import a library, and give the path /import/<its name>. It arrives unreviewed, in its own section.',
+      'One item from a script: POST /api/v1/ingest (described at http://localhost:8090/docs).']],
+    ['What happens next', [
+      'With Ollama running, the library tidies new material: names, tags, principles and tips. Without it, everything is still searchable.',
+      'Your agents read the library when a task needs it and cite what they use. They never write to it: you decide what goes in.']],
+  ];
+  function ingestGuide() {
+    return el('div', { class: 'guide' }, el('b', {}, 'How to add knowledge'), ...INGEST.map(([h, items]) => el('div', {}, el('div', { class: 'gh' }, h),
+      el('ul', {}, ...items.map((x) => el('li', {}, ...(/^docker exec /.test(x) ? [cmd(x)] : [x])))))));
+  }
+  const boltons = { state: 'idle', items: {} };
+  function checkBoltons() {
+    boltons.state = 'checking'; editors.forEach((r) => r());
+    return fetch(`${BRAIN_URL}/bolton`).then((r) => r.json()).then((j) => { if (!j.boltons) throw new Error('old helper'); boltons.items = j.boltons; boltons.state = 'ok'; })
+      .catch(() => { boltons.state = 'off'; }).finally(() => editors.forEach((r) => r()));
+  }
+  // Claude itself: the AI helper needs Claude Code signed in on your subscription, and accounts need Claude's connectors.
+  const helper = { state: 'idle', plan: '' };
+  function checkHelper() {
+    return fetch(`${BRAIN_URL}/status`).then((r) => r.json()).then((j) => { helper.state = 'on'; helper.plan = j.plan || ''; })
+      .catch(() => { helper.state = 'off'; }).finally(() => editors.forEach((r) => r()));
+  }
+  const copyBtn = (text) => btn('Copy', (e) => { const b = e.target; (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(() => { b.textContent = 'Copied'; }).catch(() => { b.textContent = 'Select it'; }); });
+  const cmd = (text) => el('div', { class: 'cmd' }, el('code', {}, text), copyBtn(text));
+  function claudeCard() {
+    if (helper.state === 'on') return el('div', { class: 'cc ok' }, el('b', {}, '✓ Claude is ready.'), ` Agents think on your Claude ${helper.plan ? helper.plan.toUpperCase() + ' ' : ''}subscription. Accounts below connect through Claude's own connectors.`);
+    if (helper.state !== 'off') return el('div', { class: 'cc' }, 'Checking for Claude…');
+    return el('div', { class: 'cc warn' }, el('b', {}, 'Claude isn\'t connected yet.'),
+      el('p', {}, "Agents think with Claude Code on your own Claude subscription (Pro or Max), through the AI helper. Without it they answer from a script. You'll need:"),
+      el('ol', {}, el('li', {}, 'A Claude account with Pro or Max, and the Claude app: ', el('a', { href: 'https://claude.ai/download', target: '_blank', rel: 'noopener' }, 'download Claude Desktop'), ' (sign in there).'),
+        el('li', {}, 'Claude Code, in PowerShell:', cmd('irm https://claude.ai/install.ps1 | iex'), 'then run claude once and sign in with your Claude account (no API key).'),
+        el('li', {}, 'The AI helper, from this folder:', cmd('python helper\\brain.py'))),
+      el('div', { class: 'bar' }, el('a', { class: 'lnk', href: 'claude://', title: 'Opens Claude Desktop if it is installed' }, 'Open Claude Desktop'), btn('Check again', () => { checkHelper(); checkClaude(true); checkBoltons(); }, true)));
+  }
+
   function connEditor(list, onChange) {  // list is edited in place; onChange() after every change
     const node = el('div', {}), err = el('div', { class: 'err' });
-    const kind = el('select', { 'aria-label': 'Kind of connection' }, el('option', { value: '' }, 'Choose what to add…'),
-      ...Object.entries(KINDS).map(([v, k]) => el('option', { value: v }, k.label)));
+    const kind = el('select', { 'aria-label': 'Kind of connection' }, el('option', { value: '' }, ''), ...Object.entries(KINDS).map(([v, k]) => el('option', { value: v }, k.label)));
     const name = el('input', { maxlength: 40, placeholder: 'Name (optional)' });
     const env = el('input', { maxlength: 41, placeholder: 'Key variable name, if it needs one (optional)' });
     const auth = el('select', { 'aria-label': 'How the key is sent' }, el('option', { value: 'bearer' }, 'Authorization: Bearer <key>'),
       el('option', { value: 'header' }, 'X-API-Key: <key> header'), el('option', { value: 'query' }, '?api_key=<key> in the address'));
     const help = el('p', { class: 'role' });
     let detail = el('input');
-    const fields = el('div', {});
-    let choosing = null;  // the connection whose "who may use it" chooser is open
-    function shape() {
+    const fields = el('div', { class: 'form' });
+    let choosing = null, openBolton = null;
+    function shape(preset) {
       const k = KINDS[kind.value]; err.textContent = '';
       if (!k) { fields.replaceChildren(); help.textContent = ''; return; }
       detail = k.options ? el('select', { 'aria-label': k.field }, el('option', { value: '' }, `${k.field}…`), ...k.options.map((o) => el('option', { value: o }, o)))
         : el('input', { maxlength: 200, placeholder: k.ph, 'aria-label': k.field });
+      if (preset) detail.value = preset;
       help.textContent = k.help;
-      fields.replaceChildren(el('label', {}, k.field), detail, el('label', {}, 'Name'), name,
+      fields.replaceChildren(el('div', { class: 'fh' }, el('b', {}, k.label), btn('Cancel', () => { kind.value = ''; shape(); render(); })), help,
+        el('label', {}, k.field), detail, el('label', {}, 'Name'), name,
         ...(kind.value === 'api' ? [el('label', {}, 'Key variable'), env, el('label', {}, 'How the key is sent'), auth] : []),
         el('div', { class: 'bar' }, btn('Add', add, true)));
+      setTimeout(() => { try { detail.focus(); fields.scrollIntoView({ block: 'nearest' }); } catch (e) { /* */ } }, 0);
     }
-    kind.onchange = shape;
     const changed = () => { render(); onChange && onChange(); };
+    function push(c) {
+      c.name = c.name || (c.kind === 'repo' ? c.detail.split('/').slice(-2).join('/') : c.detail);
+      c.id = 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); c.added = new Date().toISOString();
+      c.on = false; c.agents = []; c.free = false; c.drafts = false;
+      list.push(c); return c;
+    }
     function add() {
       if (list.length >= MAX_CONN) { err.textContent = `That's the most for now (${MAX_CONN}).`; return; }
       const d = clean(detail.value, 200).replace(/\/$/, '');
       const c = { kind: kind.value, detail: d, name: clean(name.value, 40), env: kind.value === 'api' ? clean(env.value, 41) : '', auth: auth.value };
       const bad = checkConn(c); if (bad) { err.textContent = bad; return; }
       if (list.some((x) => x.kind === c.kind && x.detail === c.detail)) { err.textContent = "That's already on the list."; return; }
-      c.name = c.name || (c.kind === 'repo' ? c.detail.split('/').slice(-2).join('/') : c.detail);
-      c.id = 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); c.added = new Date().toISOString();
-      c.on = false; c.agents = []; c.free = false;
-      list.push(c); name.value = ''; env.value = ''; kind.value = ''; shape(); changed();
-      if (c.kind === 'account') checkClaude(true);
+      push(c); name.value = ''; env.value = ''; kind.value = ''; shape();
+      choosing = c.id; render();
+      const saved = Promise.resolve(onChange && onChange());
+      if (c.kind === 'account') saved.then(() => checkClaude(true), () => checkClaude(true));
+    }
+    function connectTile(k, d) {  // a tile's Connect: add it if new, then pick who may use it
+      err.textContent = '';
+      if (k === 'bolton') { openBolton = openBolton === d ? null : d; if (boltons.state === 'idle') checkBoltons(); render(); return; }
+      if (k === 'repo' || k === 'local' || k === 'api' || (k === 'account' && d === 'Other')) { kind.value = k; shape(k === 'account' ? 'Other' : ''); render(); return; }
+      let c = list.find((x) => x.kind === k && x.detail === d);
+      let saved = Promise.resolve();
+      if (!c) { if (list.length >= MAX_CONN) { err.textContent = `That's the most for now (${MAX_CONN}).`; render(); return; } c = push({ kind: k, detail: d, name: '', env: '', auth: 'bearer' }); saved = Promise.resolve(onChange && onChange()); }
+      choosing = c.id; render();
+      if (k === 'account') saved.then(() => checkClaude(true), () => checkClaude(true));
     }
     const who = (c) => ((c.agents || []).includes('*') ? 'all agents' : (c.agents || []).map((k) => agentName(k)).join(', '));
     function claudeLine(c) {  // the Claude side of an account: added? signed in? with buttons that do the next step
@@ -152,11 +230,12 @@
       const it = claude.items[c.id];
       const line = (text, ...b) => el('div', { class: 'cl' }, el('span', {}, text), ...b);
       if (claude.state === 'checking') return [line('Checking your Claude connectors…')];
-      if (claude.state === 'off') return [line("The AI helper isn't running, so Kingdom can't check Claude. Start it, then:", btn('Check again', () => checkClaude(true)))];
+      if (claude.state === 'off') return [line("The AI helper isn't running, so Kingdom can't check Claude. Start it (see the Claude card above), then:", btn('Check again', () => checkClaude(true)))];
       if (!it) return [line('Not checked with Claude yet.', btn('Check with Claude', () => checkClaude(true)))];
       if (it.status === 'connected') return [line(it.reads ? `✓ Connected in your Claude account (${it.reads} read-only tools).` : 'Connected in Claude, but it has no read-only tools agents may use.')];
-      if (it.status === 'missing') return [line(`Not added to your Claude account yet. Add ${c.detail === 'Other' ? c.name : c.detail} in Claude's connectors and sign in there, then come back:`,
-        btn('Add in Claude ↗', () => window.open(claude.page, '_blank', 'noopener')), btn('Check again', () => checkClaude(true)))];
+      if (it.status === 'missing') return [line(`Not in your Claude account yet. In Claude open Settings → Connectors, add ${c.detail === 'Other' ? c.name : c.detail} and sign in, then come back:`,
+        el('a', { class: 'lnk', href: claude.page, target: '_blank', rel: 'noopener' }, 'Add in Claude ↗'), el('a', { class: 'lnk', href: 'claude://', title: 'Opens Claude Desktop if it is installed' }, 'Open Claude Desktop'),
+        btn('Check again', () => checkClaude(true)))];
       return [line(`Added in Claude, but Claude Code still needs you to sign in to it (${it.status}).`,
         btn('Sign in…', () => {
           claude.note = 'Opening Claude Code…'; render();
@@ -171,21 +250,49 @@
         return [b, el('label', { class: 'ck' }, b, ' ' + label)];
       });
       const free = el('input', { type: 'checkbox' }); free.checked = !!c.free;
+      const mail = c.kind === 'account' && ['Gmail', 'Outlook'].includes(c.detail);
+      const drafts = el('input', { type: 'checkbox' }); drafts.checked = !!c.drafts;
       const msg = el('div', { class: 'err' });
-      return el('div', { class: 'ch' }, el('div', { class: 'role' }, 'Who may use it?'), el('div', { class: 'cks' }, ...boxes.map((x) => x[1])),
+      return el('div', { class: 'ch' }, el('div', { class: 'role' }, `Who may use ${c.name}?`), el('div', { class: 'cks' }, ...boxes.map((x) => x[1])),
         ...(c.kind === 'api' ? [el('label', { class: 'ck' }, free, ' This API is free, or on a plan I already pay for (no pay-per-use).')] : []),
-        el('div', { class: 'bar' }, btn('Cancel', () => { choosing = null; render(); }), btn('Turn on for these', () => {
+        ...(mail ? [el('label', { class: 'ck' }, drafts, ` They may save new drafts in my ${c.detail} drafts folder (never send, change or delete).`)] : []),
+        el('div', { class: 'bar' }, btn('Not now', () => { choosing = null; render(); }), btn('Turn on for these', () => {
           const picked = boxes.filter((x) => x[0].checked).map((x) => x[0].value);
           if (!picked.length) { msg.textContent = 'Pick at least one agent.'; return; }
           if (c.kind === 'api' && !free.checked) { msg.textContent = 'Kingdom One only uses free APIs or ones you already pay for.'; return; }
-          Object.assign(c, { on: true, agents: picked.includes('*') ? ['*'] : picked, free: c.kind === 'api' ? true : c.free });
+          Object.assign(c, { on: true, agents: picked.includes('*') ? ['*'] : picked, free: c.kind === 'api' ? true : c.free, drafts: mail && drafts.checked });
           choosing = null; changed();
         }, true)), msg);
+    }
+    function boltonPanel(k) {
+      const info = BOLTON_INFO[k], st = boltons.items[k];
+      const head = el('div', { class: 'fh' }, el('b', {}, info.name), btn('Close', () => { openBolton = null; render(); }));
+      if (boltons.state === 'off') return el('div', { class: 'ch' }, head, el('p', { class: 'role' }, "The AI helper isn't running, or needs restarting to use bolt-ons, so Kingdom can't look for it. Start or restart it (see the Claude card above), then press Check again."), el('div', { class: 'bar' }, btn('Check again', checkBoltons, true)));
+      if (!st) return el('div', { class: 'ch' }, head, el('p', { class: 'role' }, 'Looking for it on this computer…'));
+      if (st.connected) return el('div', { class: 'ch' }, head, el('p', { class: 'role' }, `✓ Connected. ${info.what}`), ...(k !== 'ollama' ? [ingestGuide()] : []));
+      if (st.running) return el('div', { class: 'ch' }, head, el('p', { class: 'role' }, `${info.what} It's running on this computer.`),
+        el('div', { class: 'bar' }, btn('Connect it', () => {
+          fetch(`${BRAIN_URL}/bolton/connect`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: k }) })
+            .then((r) => r.json()).then((j) => { if (j.boltons) boltons.items = j.boltons; else err.textContent = j.error || "Couldn't connect it."; })
+            .catch(() => { err.textContent = "The AI helper isn't running."; }).finally(render);
+        }, true)));
+      return el('div', { class: 'ch' }, head, el('p', { class: 'role' }, `${info.what} It isn't installed or running yet. To install it:`),
+        el('ol', { class: 'steps' }, ...info.install.map((x) => { const m = x.match(/^(.*?:\s)(git clone .+|docker compose up -d|ollama pull .+)$/); return el('li', {}, ...(m ? [m[1], cmd(m[2])] : [x])); })),
+        el('p', { class: 'role' }, 'Docker Desktop: docker.com/products/docker-desktop. Everything runs on this computer, free.'),
+        el('div', { class: 'bar' }, btn('Check again', checkBoltons, true)));
+    }
+    function tileState(k, d) {
+      if (k === 'bolton') { const st = boltons.items[d]; return st ? (st.connected ? ['Connected', 'on'] : st.running ? ['Ready to connect', 'mid'] : ['Not installed', '']) : ['', '']; }
+      const c = list.find((x) => x.kind === k && x.detail === d);
+      if (!c) return ['', ''];
+      if (c.on) return ['On', 'on'];
+      if (k === 'account') { const it = claude.items[c.id]; if (it && it.status === 'missing') return ['Add in Claude', 'mid']; }
+      return ['Added, off', 'mid'];
     }
     function render() {
       const rows = list.map((c) => {
         const k = KINDS[c.kind];
-        const state = c.on ? `On for ${who(c)}` : 'Off';
+        const state = c.on ? `On for ${who(c)}${c.drafts ? ' · may save drafts' : ''}` : 'Off';
         const row = el('div', { class: 'cn' + (c.on ? ' on' : '') },
           el('div', { class: 'cnt' }, el('b', {}, c.name), ` · ${k ? k.label : c.kind}`, el('br'),
             el('span', { class: 'role' }, c.detail + (c.env ? ` · key kept in ${c.env}` : '') + ` · ${state}`), ...claudeLine(c)),
@@ -193,13 +300,22 @@
             btn('Remove', () => { list.splice(list.indexOf(c), 1); if (choosing === c.id) choosing = null; changed(); })));
         return choosing === c.id ? [row, chooser(c)] : [row];
       }).flat();
+      const cats = CATALOG.map(([cat, items]) => el('div', { class: 'cat' }, el('div', { class: 'catn' }, cat),
+        el('div', { class: 'tiles' }, ...items.map(([k, d, mono]) => {
+          const label = k === 'bolton' ? BOLTON_INFO[d].name : d;
+          const [st, cls] = tileState(k, d);
+          return el('div', { class: 'tile ' + cls }, el('div', { class: 'mono', 'aria-hidden': 'true' }, mono), el('div', { class: 'tn' }, label),
+            el('div', { class: 'ts' }, st || '\u00a0'), btn(st === 'On' || st === 'Connected' ? 'Settings' : 'Connect', () => connectTile(k, d), !(st === 'On' || st === 'Connected')));
+        })), ...(cat.startsWith('Knowledge') && openBolton ? [boltonPanel(openBolton)] : [])));
       const here = localTools.length ? [el('p', { class: 'role' }, `Already working on this computer: ${localTools.join(', ')}.`)] : [];
-      node.replaceChildren(...here, ...(rows.length ? rows : [el('div', { class: 'role' }, 'Nothing added yet.')]),
-        ...(claude.note ? [el('p', { class: 'role cl' }, claude.note)] : []),
-        el('label', {}, 'Add a connection'), kind, help, fields, err);
+      node.replaceChildren(claudeCard(), ...(rows.length ? [el('label', {}, 'Your connections'), ...rows] : []),
+        ...(claude.note ? [el('p', { class: 'role cl' }, claude.note)] : []), ...(kind.value ? [fields] : []), err,
+        el('label', {}, 'Connect a tool'), ...cats, ...here);
     }
     editors.add(render);
     render();
+    if (helper.state === 'idle') checkHelper();
+    if (boltons.state === 'idle') checkBoltons();
     if (list.some((c) => c.kind === 'account') && claude.state === 'idle') checkClaude(false);
     return { node, render };
   }
@@ -224,6 +340,36 @@
   .wz .cks { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 10px; }
   .wz label.ck { display: flex; gap: 6px; align-items: center; margin: 3px 0; font-size: 12.5px; color: #f5efe2; }
   .wz label.ck input { width: auto; }
+  .wz .cc { background: rgba(95,192,189,.10); border: 1px solid rgba(95,192,189,.4); border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.45; margin-bottom: 10px; }
+  .wz .cc.warn { background: rgba(225,173,1,.10); border-color: rgba(225,173,1,.5); }
+  .wz .cc p { margin: 6px 0; color: #c9c1ae; } .wz .cc ol, .wz ol.steps { margin: 6px 0 4px; padding-left: 20px; display: grid; gap: 6px; font-size: 13px; color: #f5efe2; }
+  .wz .cmd { display: flex; gap: 6px; align-items: center; margin-top: 4px; } .wz .cmd code { flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; background: rgba(0,0,0,.35); border: 1px solid rgba(232,196,106,.25); border-radius: 6px; padding: 4px 8px; font: 12px ui-monospace, Consolas, monospace; color: #f5efe2; }
+  .wz .cmd button { padding: 3px 8px; font-size: 12px; }
+  .wz a.lnk { font: 600 12px system-ui, sans-serif; color: #f5efe2; background: rgba(255,255,255,.08); border: 1px solid rgba(232,196,106,.3); border-radius: 8px; padding: 3px 8px; text-decoration: none; }
+  .wz .cat { margin: 8px 0 4px; } .wz .catn { font: 600 11px system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: #e8c46a; margin-bottom: 6px; }
+  .wz .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+  .wz .tile { background: rgba(255,255,255,.05); border: 1px solid rgba(232,196,106,.22); border-radius: 10px; padding: 8px; display: grid; gap: 4px; justify-items: center; text-align: center; aspect-ratio: 1 / 1.05; align-content: center; }
+  .wz .tile.on { border-color: #5fc0bd; background: rgba(95,192,189,.10); } .wz .tile.mid { border-color: rgba(225,173,1,.6); }
+  .wz .mono { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; background: #2b8a8a; color: #fbf6ec; font: 700 13px system-ui, sans-serif; }
+  .wz .tile.on .mono { background: #3f7d5a; } .wz .tn { font: 600 12px/1.2 system-ui, sans-serif; } .wz .ts { font-size: 10.5px; color: #c9c1ae; min-height: 1.2em; }
+  .wz .tile button { padding: 3px 8px; font-size: 11.5px; }
+  .wz .fh { display: flex; justify-content: space-between; align-items: center; gap: 8px; } .wz .fh button { padding: 3px 8px; font-size: 12px; }
+  .coach { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(58px + env(safe-area-inset-bottom, 0px)); z-index: 55; width: min(560px, calc(100vw - 32px));
+    display: flex; gap: 12px; align-items: flex-start; background: rgba(18,20,28,.96); border: 1px solid rgba(232,196,106,.55); border-radius: 14px; padding: 12px 14px;
+    color: #f5efe2; font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; box-shadow: 0 8px 28px rgba(0,0,0,.45); }
+  .coach .cface { flex: none; width: 56px; height: 56px; border-radius: 50%; overflow: hidden; background: #2b8a8a; border: 2px solid #e8c46a; }
+  .coach .cface img { width: 100%; height: 100%; object-fit: cover; }
+  .coach .cbody { min-width: 0; flex: 1; display: grid; gap: 6px; } .coach .cname { font: 600 11px system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: #e8c46a; }
+  .coach .chint { font-size: 12.5px; color: #e1ad01; } .coach .cbar { display: flex; gap: 8px; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
+  .coach .cstep { margin-right: auto; font-size: 11.5px; color: #c9c1ae; }
+  .coach button { font: 600 12.5px system-ui, sans-serif; color: #f5efe2; background: rgba(255,255,255,.08); border: 1px solid rgba(232,196,106,.3); border-radius: 8px; padding: 5px 11px; cursor: pointer; }
+  .coach button.go { background: #2b8a8a; border-color: #5fc0bd; }
+  .coach-ring { outline: 3px solid #e1ad01 !important; outline-offset: 3px; animation: coachpulse 1.4s ease-in-out infinite; }
+  @keyframes coachpulse { 50% { outline-color: rgba(225,173,1,.35); } }
+  @media (prefers-reduced-motion: reduce) { .coach-ring { animation: none; } }
+  .wz .guide { background: rgba(255,255,255,.04); border: 1px solid rgba(232,196,106,.3); border-radius: 10px; padding: 10px 12px; margin: 8px 0; display: grid; gap: 8px; font-size: 13px; }
+  .wz .guide .gh { font-weight: 600; color: #e8c46a; } .wz .guide ul { margin: 4px 0 0; padding-left: 18px; display: grid; gap: 4px; color: #e9e2d2; }
+  .wz .form { background: rgba(255,255,255,.04); border: 1px solid rgba(232,196,106,.3); border-radius: 10px; padding: 10px 12px; margin: 8px 0; }
   .wz input { width: 100%; box-sizing: border-box; background: rgba(0,0,0,.35); border: 1px solid rgba(232,196,106,.4); border-radius: 8px; color: #f5efe2; padding: 7px 9px; font: 14px system-ui, sans-serif; }
   .wz .row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; align-items: end; }
   .wz .role { font-size: 11.5px; color: #c9c1ae; padding-bottom: 8px; }
@@ -265,7 +411,7 @@
     const ce = connEditor(draft.connections, () => keepDraft());
     const f = form(draft);
     const err = el('div', { class: 'err' });
-    function keepDraft() { Object.assign(draft, f.read(), { step }); save({ ...(settings || {}), setupDone: false, draft }).catch(() => {}); }
+    function keepDraft() { Object.assign(draft, f.read(), { step }); return save({ ...(settings || {}), setupDone: false, draft }).catch(() => {}); }
     const finish = (rec) => {
       err.textContent = 'Saving…';
       save({ setupDone: true, worldName: rec.worldName, ownerName: rec.ownerName, agents: rec.agents, connections: rec.connections || [], tourDone: false, draft: null })
@@ -309,6 +455,7 @@
       el('div', { class: 'bar' },
         el('button', { onclick: () => { if (confirm('Restore the default world and agent names? Only the display names change.')) done({ worldName: '', ownerName: '', agents: {} }, 'Defaults restored. Reloading…'); } }, 'Restore display defaults'),
         el('button', { onclick: () => { box.remove(); connectionsPanel(); } }, 'Connections…'),
+        el('button', { onclick: () => { box.remove(); tour(true); } }, 'Show me around'),
         el('button', { onclick: () => box.remove() }, 'Cancel'),
         el('button', { class: 'go', onclick: () => done(f.read(), 'Saved. Reloading your world…') }, 'Save')), err);
     for (const type of ['keydown', 'keyup']) box.addEventListener(type, (e) => e.stopPropagation());
@@ -319,25 +466,70 @@
     const box = el('div', { class: 'wz', role: 'dialog', 'aria-modal': 'true' }), card = el('div', { class: 'wz-card' }); box.append(card);
     const list = ((settings && settings.connections) || []).map((c) => ({ ...c }));
     const msg = el('div', { class: 'err' });
-    const ce = connEditor(list, () => { msg.textContent = 'Saving…'; save({ ...(settings || {}), connections: list }).then(() => { msg.textContent = 'Saved.'; }).catch((e) => { msg.textContent = `Couldn't save (${e.message}). Try again.`; }); });
-    card.append(el('h2', {}, 'Settings → Connections'), el('p', {}, 'Tools, projects and accounts your agents could work with.'), ce.node, el('p', { class: 'role' }, CONN_NOTE), msg,
-      el('div', { class: 'bar' }, el('button', { onclick: () => { box.remove(); personalisation(); } }, 'Personalisation…'), el('button', { class: 'go', onclick: () => box.remove() }, 'Done')));
+    const ce = connEditor(list, () => { msg.textContent = 'Saving…'; return save({ ...(settings || {}), connections: list }).then(() => { msg.textContent = 'Saved.'; }).catch((e) => { msg.textContent = `Couldn't save (${e.message}). Try again.`; }); });
+    const guideBox = el('div', {});
+    card.append(el('h2', {}, 'Settings → Connections'), el('p', {}, 'Tools, projects and accounts your agents could work with.'), ce.node, el('p', { class: 'role' }, CONN_NOTE), msg, guideBox,
+      el('div', { class: 'bar' }, el('button', { onclick: () => { if (guideBox.childElementCount) guideBox.replaceChildren(); else guideBox.replaceChildren(ingestGuide()); } }, 'How to add knowledge'),
+        el('button', { onclick: () => { box.remove(); personalisation(); } }, 'Personalisation…'), el('button', { class: 'go', onclick: () => box.remove() }, 'Done')));
     for (const type of ['keydown', 'keyup']) box.addEventListener(type, (e) => e.stopPropagation());
     document.body.append(box);
   }
 
-  function tour() {  // a short, dismissible look at what's here
-    if (!settings || settings.tourDone) return;
-    const box = el('div', { class: 'wz' }), card = el('div', { class: 'wz-card' }); box.append(card);
-    const n = (k) => agentName(k);
-    card.append(el('h2', {}, `Getting around ${worldName()}`),
-      el('p', {}, `The town hall: ${n('vizier')}, your chief of staff, takes your orders (press T beside them, or M M from anywhere).`),
-      el('p', {}, 'Your to-do list (K): add a task and the right director does it or hands it to a worker. Finished work waits for your OK.'),
-      el('p', {}, "The houses and workshops: each director and worker has their own. Walk in through the door. The private garden keeps personal life apart from work."),
-      el('p', {}, 'Agents only answer when the AI helper is running on your own Claude subscription (see README). With no helper they reply from a script, and nothing is ever done for real.'),
-      el('div', { class: 'bar' }, el('button', { class: 'go', onclick: () => { box.remove(); save({ ...settings, tourDone: true }).catch(() => {}); } }, 'Got it')));
-    for (const type of ['keydown', 'keyup']) box.addEventListener(type, (e) => e.stopPropagation());
-    document.body.append(box);
+  // The in-game assistant: the chief of staff shows you around, one step at a time. It doesn't block the game:
+  // most steps wait for you to try the thing (walk, open the map, talk, open the to-do list), and any step can be skipped.
+  function tour(force) {
+    if (!force && (!settings || settings.tourDone)) return;
+    if (document.querySelector('.coach')) return;
+    const chief = defaults.agents[0], cname = agentName(chief.key);
+    const MOVE = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD'];
+    const steps = [
+      { say: `Welcome to ${worldName()}! I'm ${cname}, your chief of staff. Let me show you around. You're the one in the ivory robe, and the town is yours.` },
+      { say: 'Walk with the arrow keys or W A S D. Hold Shift to run. Have a little walk now.', keys: MOVE, need: 8, hint: 'Walk a few steps' },
+      { say: 'Press M to see the whole town on the map. Press M again, a moment later, to put it away.', keys: ['KeyM'], hint: 'Press M' },
+      { say: `To talk to anyone, walk up to them and press T. I live in the town hall, the big building with the flag north of the square. From anywhere, double-tap M and I'll answer.`, keys: ['KeyT', 'Enter'], anywhere: true, hint: 'Press T beside someone, or double-tap M and say hello' },
+      { say: "Your to-do list: click To-do or press K. Type a task and I'll pass it to the right director, who does it or hands it to a worker and checks it. The mustard number counts what's waiting on you.", target: '[data-act="todo"]', keys: ['KeyK'], click: true, hint: 'Open the to-do list' },
+      { say: 'Call meeting brings everyone to the council table, where you can talk to the whole team at once (C).', target: '[data-act="meeting"]' },
+      { say: 'Settings is where you rename the world and the agents, and connect your tools: email, Xero, the Kingdom Library and more.', target: '[data-act="settings"]' },
+      { say: "That's the tour. Press H any time for help, and you can replay this from Settings. Nothing is ever sent, spent or posted without your click.", target: '[data-act="help"]', last: true },
+    ];
+    let n = 0, count = 0, ring = null, moving = false;
+    const box = el('div', { class: 'coach', role: 'dialog', 'aria-label': `${cname} shows you around` });
+    const face = el('div', { class: 'cface' });
+    const text = el('div', { class: 'ctext' }), hint = el('div', { class: 'chint' }), bar = el('div', { class: 'cbar' });
+    box.append(face, el('div', { class: 'cbody' }, el('div', { class: 'cname' }, `${cname} · showing you around`), text, hint, bar));
+    function portrait() {
+      const c = window.__castPortraits && window.__castPortraits[chief.key];
+      if (!c || face.firstChild) return;
+      try { face.append(el('img', { src: c.toDataURL ? c.toDataURL() : c.src, alt: '' })); } catch (e) { /* drawn later */ }
+    }
+    function end() {
+      box.remove(); if (ring) ring.classList.remove('coach-ring');
+      removeEventListener('keydown', onKey, true); document.removeEventListener('click', onClick, true);
+      if (settings && !settings.tourDone) save({ ...settings, tourDone: true }).catch(() => {});
+    }
+    const next = () => { moving = false; n++; count = 0; if (n >= steps.length) end(); else show(); };
+    const soon = () => { if (!moving) { moving = true; setTimeout(next, 700); } };  // once per step, however many keys follow
+    function show() {
+      const st = steps[n]; portrait();
+      if (ring) ring.classList.remove('coach-ring');
+      ring = st.target ? document.querySelector(st.target) : null; if (ring) ring.classList.add('coach-ring');
+      text.textContent = st.say;
+      hint.textContent = st.keys ? `Try it: ${st.hint}` : ''; hint.hidden = !st.keys;
+      bar.replaceChildren(el('span', { class: 'cstep' }, `${n + 1} of ${steps.length}`),
+        el('button', { onclick: end }, 'End tour'),
+        el('button', { class: 'go', onclick: () => { if (!moving) next(); } }, st.last ? 'Done' : st.keys ? 'Skip this' : 'Next'));
+    }
+    function onKey(e) {
+      const st = steps[n];
+      if (!st || !st.keys || e.repeat || (!st.anywhere && /^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || ''))) return;
+      if (!moving && st.keys.includes(e.code) && ++count >= (st.need || 1)) soon();
+    }
+    function onClick(e) {
+      const st = steps[n];
+      if (st && st.click && st.target && e.target.closest && e.target.closest(st.target)) soon();
+    }
+    addEventListener('keydown', onKey, true); document.addEventListener('click', onClick, true);
+    document.body.append(box); show();
   }
 
   // village.js calls start() once it knows its default names and whether this browser already has village data
@@ -350,10 +542,10 @@
     }
     build();
     if (!settings || !settings.setupDone) wizard(() => location.reload());
-    else setTimeout(tour, 1200);
+    else setTimeout(() => tour(false), 1500);
   }
   window.__world = { start, relabel, worldName, agentName, ownerName: () => (settings && clean(settings.ownerName, LIMIT.owner)) || '',
     names: () => Object.fromEntries((defaults ? [...defaults.agents.map((a) => a.key)] : []).map((k) => [k, agentName(k)])),
-    connections: () => ((settings && settings.connections) || []).slice(), settings: () => settings, open: personalisation, openConnections: connectionsPanel, saved: () => got.ok };
+    connections: () => ((settings && settings.connections) || []).slice(), settings: () => settings, open: personalisation, openConnections: connectionsPanel, tour: () => tour(true), saved: () => got.ok };
   const style = document.createElement('style'); style.textContent = css; document.head.append(style);
 })();

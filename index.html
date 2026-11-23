@@ -28,6 +28,10 @@
   #menu button { font: 600 13px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); background: rgba(255,255,255,.06);
                  border: 1px solid rgba(232, 196, 106, .25); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
   #menu button:hover { background: rgba(232, 196, 106, .18); }
+  #menu button[data-act="todo"] { position: relative; }
+  #menu .badge { position: absolute; top: -7px; right: -7px; min-width: 19px; height: 19px; padding: 0 5px; box-sizing: border-box; border-radius: 999px;
+    background: #e1ad01; color: #1b1406; font: 700 11px/19px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; text-align: center;
+    border: 1.5px solid #fbf6ec; box-shadow: 0 1px 3px rgba(0,0,0,.35); pointer-events: none; }
   #menu button.main { background: #2b8a8a; border-color: #5fc0bd; }
   #menu button.main.live { background: #b5523b; border-color: #e08a72; }
   #menu kbd { font: inherit; opacity: .6; margin-left: 4px; }

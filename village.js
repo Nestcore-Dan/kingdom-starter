@@ -3024,7 +3024,20 @@
   for (const t of todos) if (t.status === 'working') t.status = 'waiting';  // the page closed mid-task: try again
   // guide step 48: only the Chief approves finished work. Anything marked done before this rule, without the Chief's OK, goes back to waiting for it.
   for (const t of todos) if (t.status === 'done' && t.approvedBy !== 'you') Object.assign(t, { status: 'ready', pdf: null, pdfError: null });
-  const saveTodos = () => store(TODO_KEY, todos);
+  const saveTodos = () => { store(TODO_KEY, todos); updateTodoBadge(); };
+  // The mustard count on the To-do button: everything waiting on the Chief (finished work to OK, tasks that need you,
+  // ones that couldn't finish, and tool requests to approve). The tooltip also says how many are still in progress.
+  function updateTodoBadge() {
+    const btn = document.querySelector('#menu [data-act="todo"]'); if (!btn) return;
+    const reqs = (typeof toolReqs !== 'undefined' ? toolReqs : []).filter((r) => r.status === 'waiting').length;
+    const mine = todos.filter((t) => ['ready', 'needs', 'failed'].includes(t.status)).length + reqs;
+    const open = todos.filter((t) => ['waiting', 'working'].includes(t.status)).length;
+    let b = btn.querySelector('.badge');
+    if (!b) { b = document.createElement('span'); b.className = 'badge'; b.setAttribute('aria-live', 'polite'); btn.append(b); }
+    b.textContent = mine > 99 ? '99+' : String(mine); b.hidden = !mine;
+    btn.title = `Your to-do list (K): ${mine} waiting on you${open ? `, ${open} in progress` : ''}`;
+  }
+  setTimeout(updateTodoBadge, 0);
   const todoBox = mk('div', { ...panelStyle, left: '16px', top: '130px', bottom: '56px', width: 'min(340px, calc(100vw - 32px))' }); todoBox.className = 'hud';
   const todoHead = mk('div', { padding: '10px 12px', borderBottom: '1px solid rgba(232,196,106,.25)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' });
   const todoClose = mk('button', { background: 'none', border: '0', color: '#c9c1ae', cursor: 'pointer', fontSize: '16px' }, '×');
@@ -3141,7 +3154,7 @@
     if (!brainOn()) return;
     try {
       const j = await (await fetch(BRAIN + '/requests')).json();
-      toolReqs = Array.isArray(j.requests) ? j.requests : []; toolNames = j.tools || {};
+      toolReqs = Array.isArray(j.requests) ? j.requests : []; toolNames = j.tools || {}; updateTodoBadge();
       for (const r of toolReqs) if (r.status === 'waiting' && !seenReqs.has(r.id)) {
         seenReqs.add(r.id);
         toast(`${nameOf(r.agent)} asks to run ${toolNames[r.tool] || r.tool}: ${r.action}. It waits for your Approve on the to-do list (K).`, r.agent);
@@ -3267,7 +3280,7 @@
     if (status === 'done') status = 'ready';  // guide step 48: finished work waits for the Chief's OK
     const emailTask = /\b(e-?mail|reply|replies|message to|write to)\b/i.test(t.text);
     Object.assign(t, { status, report: plain(report), doneBy, checkedBy: checkedBy || null, doneAt: new Date().toISOString(), now: null, with: null,
-      emailDraft: status !== 'failed' && ((emailTask && EMAIL_DRAFT.test(plain(report))) || /^\s*\**POST DRAFT\b/im.test(plain(report))),  // email or social media drafts
+      emailDraft: status !== 'failed' && ((emailTask && EMAIL_DRAFT.test(plain(report))) || /^\s*\**POST DRAFT\b/im.test(plain(report)) || /Saved as a draft in (Gmail|Outlook)/i.test(plain(report))),  // email or social media drafts
       toolAsk: /^\s*TOOL OPTIONS\b/im.test(plain(report)) });  // a tool was missing: the agent compared options for the Chief
     saveTodos();
   }

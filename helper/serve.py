@@ -51,7 +51,8 @@ def conns(items):
         on = bool(c.get("on")) and bool(agents) and (k != "api" or free)  # an API is only used once the Chief says it's free or already paid for
         auth = c.get("auth") if c.get("auth") in ("bearer", "header", "query") else "bearer"
         out.append({"id": clean(c.get("id"), 24), "kind": k, "detail": d, "name": n or d, "env": env, "added": clean(c.get("added"), 40),
-                    "on": on, "agents": agents, "free": free, "auth": auth})
+                    "on": on, "agents": agents, "free": free, "auth": auth,
+                    "drafts": bool(c.get("drafts")) and k == "account" and d in ("Gmail", "Outlook")})
     return out
 
 
