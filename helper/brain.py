@@ -39,10 +39,10 @@ PORT = VILLAGE_PORT + 1
 ALLOWED_ORIGINS = {f"http://127.0.0.1:{VILLAGE_PORT}", f"http://localhost:{VILLAGE_PORT}"}
 HOSTS = {f"127.0.0.1:{PORT}", f"localhost:{PORT}"}  # guide step 49: refuse requests addressed to any other name (DNS rebinding)
 MAX_PER_HOUR = 60
-WORKERS = {"youtube", "media", "scout", "money", "studio", "inbox", "garden"}
+WORKERS = {"youtube", "media", "scout", "money", "inbox"}
 NAMES = {"vizier": "Vizier", "keeper": "Keeper", "librarian": "Librarian", "merchant": "Merchant", "scholar": "Scholar", "engineer": "Engineer", "steward": "Steward",
          "youtube": "Projectionist", "media": "Media sorter", "scout": "Hub scout", "money": "Money",
-         "studio": "Studio", "inbox": "Inbox", "garden": "Garden helper"}
+         "inbox": "Inbox"}
 RUN_DIR = HERE / ".run"          # an empty folder to run Claude Code in, so no project instructions are picked up
 SETTINGS = RUN_DIR / "settings.json"
 USAGE_LOG = HERE / "usage.jsonl"
@@ -80,7 +80,7 @@ def never(tool):
         return True
     return bool(NEVER_WORDS & set(re.split(r"[^a-z]+", tool.split("__")[-1].lower())))
 LESSONS = AGENTS / "LESSONS.md"   # the village's shared lessons board: what one department learned that helps the others
-PRIVATE = {"steward", "garden"}      # Personal Life: their lessons stay in their own notes, never on the board
+PRIVATE = {"steward"}      # Personal Life: their lessons stay in their own notes, never on the board
 LESSON = re.compile(r"^\s*\**LESSON\**:\s*(.+?)\s*$", re.M | re.I)
 LEARNED = re.compile(r"^\s*\**LEARNED\**:\s*(.+?)\s*$", re.M | re.I)
 
@@ -374,7 +374,7 @@ def check_subscription():
 
 
 # guide step 42: each director's workers, who they can hand tasks to
-TEAM = {"librarian": ["youtube", "media"], "scholar": ["scout"], "merchant": ["money"], "engineer": ["studio"], "keeper": ["inbox"], "steward": ["garden"]}
+TEAM = {"librarian": ["youtube", "media"], "scholar": ["scout"], "merchant": ["money"], "engineer": [], "keeper": ["inbox"], "steward": []}
 BOSS = {w: d for d, ws in TEAM.items() for w in ws}
 
 
@@ -507,8 +507,16 @@ def system_prompt(key, room, job=None):
 {board(key)}
 {task_rules(key, room)}
 """
-    where = ("You're at the council meeting in the town hall, chairing it for the Chief Human Officer. Everyone is at the table."
-             if room == "everyone" else "You're talking with the Chief Human Officer in the village chat.")
+    if room == "everyone" and key == "vizier":
+        where = ("You're at the council meeting in the town hall, chairing it for the Chief Human Officer. The directors are at the table "
+                 "and each speaks for their own area, so don't answer for them: keep yours short and leave their areas to them.")
+    elif room == "everyone":
+        where = ("You're at the council meeting in the town hall with the Chief Human Officer, Vizier (chief of staff) and the other directors. "
+                 "Speak for yourself and your own area, in a few sentences, as you would round a table. Don't answer for the others.")
+    elif room == "minutes":
+        where = "The council meeting has just ended and you're writing its minutes for the Chief Human Officer."
+    else:
+        where = "You're talking with the Chief Human Officer in the village chat."
     return f"""{me}
 
 ## Your notes so far
@@ -523,10 +531,10 @@ def system_prompt(key, room, job=None):
 """
 
 
-def transcript(key, history, hint):
+def transcript(key, history, hint, last=16):
     name = NAMES.get(key, key)
     lines = []
-    for m in history[-16:]:
+    for m in history[-last:]:
         who = "Chief" if m.get("from") == "you" else NAMES.get(m.get("from"), m.get("from"))
         lines.append(f"{who}: {str(m.get('text', ''))[:1500]}")
     if hint:
@@ -660,7 +668,11 @@ def reply(key, history, room, hint, job=None, retried=False, display=None):
         lines = [f"{'Chief' if m.get('from') == 'you' else name}: {str(m.get('text', ''))[:1500]}" for m in history[-16:]]
         ask = "The interview so far:\n" + "\n".join(lines) + f"\n\nReply now as {name}, with just your words."
     else:
-        ask = task_ask(key, room, job) if room in ("task", "review") else transcript(key, history, hint)
+        ask = task_ask(key, room, job) if room in ("task", "review") else transcript(key, history, hint, 30 if room == "everyone" else 16)
+    if room == "minutes":
+        lines = [f"{'Chief' if m.get('from') == 'you' else NAMES.get(m.get('from'), m.get('from'))}: {str(m.get('text', ''))[:1500]}" for m in history[-80:]]
+        ask = ("The meeting, word for word:\n" + "\n".join(lines) + "\n\nWrite the minutes in plain text, under 200 words, with three short parts: "
+               "Discussed (a few bullets), Decided (bullets, or 'Nothing decided'), and Follow-ups (who does what). Only what was actually said: never invent.")
     if access:  # step 48: nothing that sends, spends or publishes, whatever the lists say
         i, j = access.index("--allowedTools"), access.index("--disallowedTools")
         access = access[:i + 1] + [t for t in access[i + 1:j] if not never(t)] + access[j:]

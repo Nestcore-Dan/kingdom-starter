@@ -12,7 +12,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 PORT = int(os.environ.get("KINGDOM_ONE_PORT", "8765"))  # the brain helper listens on the next port up
 HOSTS = {f"127.0.0.1:{PORT}", f"localhost:{PORT}"}
-ALLOWED = re.compile(r"^/(?:|index\.html|[a-z0-9_-]+\.js|(?:art|vendor)/[A-Za-z0-9_./-]+|agents/hires\.json)$")
+ALLOWED = re.compile(r"^/(?:|index\.html|[a-z0-9_-]+\.js|(?:art|vendor)/[A-Za-z0-9_./-]+|logos/[a-z0-9]+\.svg|agents/hires\.json)$")
 ORIGINS = {f"http://{h}" for h in HOSTS}
 # This instance's personalisation (world.js): one versioned record, saved whole and atomically, so a repeated or
 # retried save never creates a second world. Kept in data/ next to the village, which is never committed.
@@ -56,6 +56,29 @@ def conns(items):
     return out
 
 
+LOOKS = {"tower", "cedar", "garden", "art-keeper", "art-librarian", "art-merchant", "art-engineer", "art-scholar"}
+COLOUR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
+PLOT_RE = re.compile(r"^p[0-9]{1,2}$")
+
+
+def buildings(items):
+    """Buildings the Chief put on empty plots (feedback round 2): a look, a name, who works there and which tools."""
+    out = []
+    for b in (items if isinstance(items, list) else [])[:12]:
+        if not isinstance(b, dict) or not PLOT_RE.match(str(b.get("plot", ""))) or b.get("look") not in LOOKS:
+            raise ValueError("bad building")
+        name = clean(b.get("name"), 40)
+        if not name:
+            raise ValueError("a building needs a name")
+        out.append({"id": clean(b.get("id"), 24), "plot": b["plot"], "look": b["look"],
+                    "colour": b.get("colour") if COLOUR_RE.match(str(b.get("colour", ""))) else "#1f6f8b",
+                    "name": name, "purpose": clean(b.get("purpose"), 80),
+                    "agents": [a for a in (b.get("agents") if isinstance(b.get("agents"), list) else []) if isinstance(a, str) and KEY.match(a)][:20],
+                    "tools": [clean(t, 24) for t in (b.get("tools") if isinstance(b.get("tools"), list) else []) if isinstance(t, str)][:20],
+                    "added": clean(b.get("added"), 40)})
+    return out
+
+
 def check(rec):
     """Only the known fields, as plain text within their limits."""
     if not isinstance(rec, dict):
@@ -66,7 +89,7 @@ def check(rec):
     out = {"version": 1, "setupDone": bool(rec.get("setupDone")), "worldName": clean(rec.get("worldName"), 40),
            "ownerName": clean(rec.get("ownerName"), 30), "tourDone": bool(rec.get("tourDone")), "migrated": bool(rec.get("migrated")),
            "agents": {k: clean(v, 24) for k, v in agents.items() if KEY.match(str(k)) and clean(v, 24)},
-           "connections": conns(rec.get("connections")), "updatedAt": clean(rec.get("updatedAt"), 40)}
+           "connections": conns(rec.get("connections")), "buildings": buildings(rec.get("buildings")), "updatedAt": clean(rec.get("updatedAt"), 40)}
     d = rec.get("draft")
     if isinstance(d, dict):
         out["draft"] = {"step": max(0, min(int(d.get("step") or 0), 5)), "connections": conns(d.get("connections")), "worldName": clean(d.get("worldName"), 40), "ownerName": clean(d.get("ownerName"), 30),

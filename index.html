@@ -17,7 +17,7 @@
           border-radius: 999px; font-size: 14px; opacity: 0; transition: opacity .15s; white-space: nowrap; }
   #hint.on { opacity: 1; }
   #hint b { color: var(--gold); }
-  #toast { bottom: 70px; left: 50%; transform: translateX(-50%); background: var(--panel); padding: 12px 18px;
+  #toast { bottom: 96px; left: 50%; transform: translateX(-50%); background: var(--panel); padding: 12px 18px;
            border-radius: 12px; font-size: 15px; max-width: min(560px, calc(100vw - 32px)); text-align: center;
            opacity: 0; transition: opacity .25s; border: 1px solid rgba(232, 196, 106, .35); }
   #toast.on { opacity: 1; }
@@ -36,6 +36,17 @@
   #menu button.main.live { background: #b5523b; border-color: #e08a72; }
   #menu kbd { font: inherit; opacity: .6; margin-left: 4px; }
   @media (max-width: 640px) { #menu .opt { display: none; } }
+  #hotbar { bottom: 14px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; pointer-events: auto; background: var(--panel); padding: 6px;
+            border-radius: 14px; border: 1px solid rgba(232, 196, 106, .45); box-shadow: 0 6px 20px rgba(0,0,0,.35); }
+  #hotbar button { position: relative; width: 62px; height: 58px; display: grid; justify-items: center; align-content: center; gap: 1px; cursor: pointer;
+                   background: linear-gradient(#2a2f3c, #1b1e28); border: 1px solid rgba(232, 196, 106, .35); border-radius: 10px; color: var(--ink); padding: 0; }
+  #hotbar button:hover { border-color: #e8c46a; background: linear-gradient(#343a4a, #222634); }
+  #hotbar button span { position: absolute; top: 2px; left: 5px; font: 700 10px system-ui, sans-serif; color: #e8c46a; }
+  #hotbar button b { font-size: 20px; line-height: 1; font-weight: 400; }
+  #hotbar button i { font: 600 9.5px/1.1 system-ui, sans-serif; font-style: normal; color: #c9c1ae; max-width: 58px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  #hotbar button.snd { width: 48px; margin-left: 6px; }
+  @media (max-width: 900px) { #keys { display: none; } }
+  @media (max-width: 480px) { #hotbar button { width: 50px; height: 50px; } #hotbar button i { display: none; } }
   #help { top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(18, 20, 28, .94);
           padding: 22px 26px; border-radius: 14px; border: 1px solid rgba(232, 196, 106, .45);
           min-width: 280px; display: none; }
@@ -52,7 +63,7 @@
 <div id="place" class="hud"></div>
 <div id="hint" class="hud"></div>
 <div id="toast" class="hud"></div>
-<div id="keys" class="hud">T talk · K to-do · C meeting · V walkable · H help · M map · N night · Q sound</div>
+<div id="keys" class="hud">Click or T talk · right-click walk · 1–4 quick actions · K to-do · H help · M big map</div>
 <div id="menu" class="hud">
   <button class="main" data-act="meeting" title="Bring everyone to the town hall (C)">Call meeting</button>
   <button data-act="todo" title="Your to-do list: Vizier passes each task to the right director (K)">To-do</button>
@@ -70,14 +81,18 @@
     <tr><td>Drag yourself</td><td>Pick yourself up with the mouse and drop anywhere</td></tr>
     <tr><td>Walk into a door</td><td>Go inside or back out</td></tr>
     <tr><td>E / Space</td><td>Look at things, use doors, say hello</td></tr>
-    <tr><td>T</td><td>Talk to whoever you're next to (a chat box opens on the right)</td></tr>
-    <tr><td>M M</td><td>Double-tap M to talk to Vizier from anywhere and give orders</td></tr>
+    <tr><td>T</td><td>Talk to whoever is in front of you, or Vizier when nobody is (a chat box opens on the right)</td></tr>
+    <tr><td>Right click</td><td>Walk to that spot</td></tr>
+    <tr><td>Gold ! · silver ! · gold ?</td><td>A quest to start · one you're on · one to hand in. Talk to that person</td></tr>
+    <tr><td>Gold +</td><td>An empty plot: press E beside it, or click it, to build there</td></tr>
+    <tr><td>Click someone</td><td>Talk to them (a chat box opens on the right)</td></tr>
+    <tr><td>1 to 4</td><td>Quick actions: 1 new task, 2 meeting, 3 back to the town square, 4 day and night</td></tr>
     <tr><td>J</td><td>Show or hide the villager log: what villagers say to each other</td></tr>
     <tr><td>K</td><td>Your to-do list: add a task, Vizier passes it on, the director does it. Hover a task to see what was done</td></tr>
     <tr><td>L</td><td>Show or hide Vizier's chat log: your orders being passed on</td></tr>
     <tr><td>Wheel, + and −</td><td>Zoom in and out (0 resets)</td></tr>
     <tr><td>C</td><td>Call a council meeting in the town hall, or end it</td></tr>
-    <tr><td>M</td><td>Show or hide the map</td></tr>
+    <tr><td>M</td><td>Make the map big, or small again</td></tr>
     <tr><td>N</td><td>Day and night: follow the clock, always day, always night</td></tr>
     <tr><td>Q</td><td>Turn the quiet background sound off or on</td></tr>
     <tr><td>V</td><td>Show where people can walk (green), can't (red) and doors (blue)</td></tr>

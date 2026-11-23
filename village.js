@@ -143,35 +143,30 @@
   const BIZ = ['#2b8a8a', '#d9643f', '#e8b04b'];   // Merchant's three businesses: each business, future ventures
   const RES = [
     // staff quarter, around the square
-    { key: 'keeper', name: 'Keeper', title: "Keeper's house", role: 'Operations Manager', q: 'staff', x: 23, y: 13, type: 'tower', accent: '#1f6f8b', wall: '#f3dfc0',
+    { key: 'keeper', name: 'Keeper', title: "Keeper's house", role: 'Director of Operations', q: 'staff', x: 23, y: 13, type: 'tower', accent: '#1f6f8b', wall: '#f3dfc0',
       job: 'Owns tasks, projects, the calendar, reminders, deadlines and follow-ups.', yard: ['sundial', 'crates'], room: ['pegboard', 'crates'] },
-    { key: 'librarian', name: 'Librarian', title: "Librarian's archive", role: 'Knowledge & Learning Manager (the Librarian)', q: 'staff', x: 49, y: 13, type: 'tower', flip: true, accent: '#3f7d5a', wall: '#f8eddc',
+    { key: 'librarian', name: 'Librarian', title: "Librarian's archive", role: 'Head Librarian', q: 'staff', x: 49, y: 13, type: 'tower', flip: true, accent: '#3f7d5a', wall: '#f8eddc',
       job: 'Keeps the knowledge, documentation, decisions, lessons learned and reusable skills.', yard: ['books', 'reading'], room: ['scrolls', 'reading'] },
-    { key: 'merchant', name: 'Merchant', title: "Merchant's merchant house", role: 'Business Manager', q: 'staff', x: 22, y: 38, type: 'cedar', accent: '#c98a2b', wall: '#fbf3e4',
+    { key: 'merchant', name: 'Merchant', title: "Merchant's merchant house", role: 'Business Director', q: 'staff', x: 22, y: 38, type: 'cedar', accent: '#c98a2b', wall: '#fbf3e4',
       job: 'Client communication, proposals, quotes and business development, with a separate workspace for each business.', yard: ['teaset', 'carpets'], room: ['ledgers', 'teaset'] },
-    { key: 'scholar', name: 'Scholar', title: "Scholar's observatory", role: 'Research & Strategy Analyst', q: 'staff', x: 30, y: 38, type: 'garden', flip: true, accent: '#237777', wall: '#efd3ae',
+    { key: 'scholar', name: 'Scholar', title: "Scholar's observatory", role: 'Head of Research', q: 'staff', x: 30, y: 38, type: 'garden', flip: true, accent: '#237777', wall: '#efd3ae',
       job: 'Researches ideas, compares options and challenges assumptions. Two paths leave the door: there is always an alternative.', yard: ['maptable', 'astrolabe'], room: ['maptable', 'astrolabe'] },
-    { key: 'engineer', name: 'Engineer', title: "Engineer's forge", role: 'Technology Lead', q: 'staff', x: 43, y: 38, type: 'cedar', flip: true, accent: '#b5523b', wall: '#f2d6b5',
+    { key: 'engineer', name: 'Engineer', title: "Engineer's forge", role: 'Chief Technology Officer', q: 'staff', x: 43, y: 38, type: 'cedar', flip: true, accent: '#b5523b', wall: '#f2d6b5',
       job: 'Infrastructure, cybersecurity, architecture, code, automation and the AI environment.', yard: ['forge', 'wheel'], room: ['workbench', 'rack'] },
     // workshop quarter, the project agents
-    { key: 'youtube', name: 'Projectionist', title: 'Projectionist, the video shop', role: 'The media centre: videos, transcripts and highlights', q: 'workshop', x: 5, y: 13, type: 'cedar', accent: '#d9643f', wall: '#fbf6ec',
+    { key: 'youtube', name: 'Projectionist', title: 'Projectionist, the video shop', role: 'Media Producer', q: 'workshop', x: 5, y: 13, type: 'cedar', accent: '#d9643f', wall: '#fbf6ec',
       job: 'The village media centre. Downloads and transcribes videos and finds their most replayed moments.', yard: ['reels', 'screen'], room: ['reels', 'screen'] },
-    { key: 'scout', name: 'Hub scout', title: "The Hub scout's lookout", role: 'Hugging Face and GitHub watcher', q: 'workshop', x: 13, y: 13, type: 'tower', flip: true, accent: '#2b8a8a', wall: '#f7ead3',
+    { key: 'scout', name: 'Hub scout', title: "The Hub scout's lookout", role: 'Tech Scout', q: 'workshop', x: 13, y: 13, type: 'tower', flip: true, accent: '#2b8a8a', wall: '#f7ead3',
       job: 'Watches Hugging Face and GitHub and sends word of anything relevant.', yard: ['dovecote', 'spyglass'], room: ['spyglass', 'books'] },
-    { key: 'media', name: 'Media sorter', title: "The Media sorter's darkroom", role: 'Photos and media', q: 'workshop', x: 5, y: 38, type: 'cedar', accent: '#a8473a', wall: '#f7ead3',
+    { key: 'media', name: 'Media sorter', title: "The Media sorter's darkroom", role: 'Photo Editor', q: 'workshop', x: 5, y: 38, type: 'cedar', accent: '#a8473a', wall: '#f7ead3',
       job: 'Sorts photos by time, classifies scenes and organises the media.', yard: ['darkroom', 'tripod'], room: ['prints', 'tripod'] },
-    { key: 'studio', name: 'Studio', title: 'The Studio workshop', role: 'Client software', q: 'workshop', x: 51, y: 38, type: 'tower', accent: '#1f6f8b', wall: '#ecc9a2',
-      job: "Builds external clients' software projects.", yard: ['drafting', 'crates'], room: ['drafting', 'crates'] },
-    { key: 'inbox', name: 'Inbox', title: 'The Inbox post house', role: 'Inbox and email', q: 'workshop', x: 60, y: 38, type: 'garden', accent: '#d9643f', wall: '#f3dfc0',
+    { key: 'inbox', name: 'Inbox', title: 'The Inbox post house', role: 'Director of Communications', q: 'workshop', x: 60, y: 38, type: 'garden', accent: '#d9643f', wall: '#f3dfc0',
       job: 'Reads, sorts and answers the inbox.', yard: ['postcart', 'dovecote'], room: ['letterboxes', 'postcart'] },
-    { key: 'money', name: 'Money', title: 'The Money counting house', role: 'Money and accounts', q: 'workshop', x: 68, y: 38, type: 'tower', flip: true, accent: '#c98a2b', wall: '#fbf3e4',
+    { key: 'money', name: 'Money', title: 'The Money counting house', role: 'Accountant', q: 'workshop', x: 68, y: 38, type: 'tower', flip: true, accent: '#c98a2b', wall: '#fbf3e4',
       job: 'Keeps track of money in and money out.', yard: ['scales', 'strongbox'], room: ['strongbox', 'scales'] },
     // the private garden
     { key: 'steward', name: 'Steward', title: "Steward's garden house", role: 'Personal Assistant', q: 'private', x: 64, y: 14, type: 'garden', accent: '#b5523b', wall: '#fbf6ec',
       job: 'Personal plans, appointments, travel, the household and life admin. Personal records stay in this garden, apart from business.', yard: [], room: ['trunk', 'herbs'] },
-    // guide step 28: Steward's worker, in a small potting shed inside the private garden so personal work never leaves it
-    { key: 'garden', name: 'Garden helper', title: "The garden helper's potting shed", role: 'Household and life admin', q: 'private', x: 72, y: 15, w: 5, h: 4, type: 'garden', accent: '#6f8f3a', wall: '#f7ead3',
-      job: 'Helps Steward with the household and life admin. Everything stays inside the private garden.', yard: [], room: ['herbs', 'trunk'] },
   ];
   const esc = (x) => String(x == null ? '' : x).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));  // guide step 49
   // guide step 46: people hired at the town hall (agents/hires.json, written by the brain helper on the user's yes).
@@ -183,24 +178,24 @@
     RES.push({ key: h.key, name: h.name, title: `${h.name}, at ${dir.title}`, role: h.role, q: dir.q, hire: true, home: h.boss, bossKey: h.boss, accent: dir.accent, wall: dir.wall, job: h.job, yard: [], room: [] });
   }
   window.__hires = HIRES;  // the cast (cast.js) draws them too
+  // Org chart (guide step 25): directors own an area and a house; workers are like interns, given every task
+  // by their director, who checks all their work. The workers' villas stay as their workshops (the user's
+  // choice), but only directors have a house of their own.
+  const DIRECTOR_OF = { youtube: 'librarian', media: 'librarian', scout: 'scholar', money: 'merchant', inbox: 'keeper' };
+  for (const r of RES) {
+    r.boss = DIRECTOR_OF[r.key] || r.bossKey || null;
+    r.rank = r.boss ? 'worker' : 'director';
+  }
   // Personalisation (world.js): the world's name and the agents' display names. The names written here are the
   // defaults; only the labels people see change. IDs, folders, roles, instructions and history never do.
   const W = window.__world || null;
   const relabel = (t) => (W ? W.relabel(t) : t);
   if (W) {
     const hasData = ['kingdom-one-todo', 'kingdom-one-chats', 'kingdom-one-log', 'kingdom-one-orders'].some((k) => { try { return !!localStorage.getItem(k); } catch (e) { return false; } });
-    W.start({ world: 'Kingdom One', agents: [{ key: 'vizier', name: 'Vizier', role: 'Chief of Staff' }, ...RES.map((r) => ({ key: r.key, name: r.name, role: r.role }))] }, hasData);
+    W.start({ world: 'Kingdom One', agents: [{ key: 'vizier', name: 'Vizier', role: 'Chief of Staff', what: 'Takes your orders and passes each one to the director who owns it, then follows up.', boss: null }, ...RES.map((r) => ({ key: r.key, name: r.name, role: r.role, what: (r.job || '').split(/(?<=\.)\s/)[0], boss: r.boss }))] }, hasData);
     const walk = (root) => { const it = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); for (let n; (n = it.nextNode());) n.nodeValue = relabel(n.nodeValue); };
     for (const id of ['help', 'keys', 'menu']) { const e = document.getElementById(id); if (e) { walk(e); e.querySelectorAll('[title]').forEach((b) => { b.title = relabel(b.title); }); } }
     document.title = W.worldName();
-  }
-  // Org chart (guide step 25): directors own an area and a house; workers are like interns, given every task
-  // by their director, who checks all their work. The workers' villas stay as their workshops (the user's
-  // choice), but only directors have a house of their own.
-  const DIRECTOR_OF = { youtube: 'librarian', media: 'librarian', scout: 'scholar', money: 'merchant', studio: 'engineer', inbox: 'keeper', garden: 'steward' };
-  for (const r of RES) {
-    r.boss = DIRECTOR_OF[r.key] || r.bossKey || null;
-    r.rank = r.boss ? 'worker' : 'director';
   }
   const bossOf = (r) => RES.find((x) => x.key === r.boss);
   const placeKind = (r) => (r.boss ? `workshop, for ${bossOf(r).name}'s team` : 'house');
@@ -262,6 +257,33 @@
       if (b.yard[1]) addProp(s, b.yard[1], b.x + 6, b.y + 5, b);
       return b;
     });
+    // Empty plots (feedback round 2): a fenced patch of ground with a + sign. Click it (or press E beside it)
+    // to put a building there; a built one is drawn like any villa, with its own room inside.
+    s.plots = [];
+    for (const p of PLOTS) {
+      const bd = BUILT.find((x) => x.plot === p.id), lk = LOOKS.find((l) => l.id === (bd && bd.look)) || LOOKS[0];
+      const dx = p.x + 3, front = p.y + PLOT_H;
+      if (p.y < 46) fill(s, dx, front, dx, 45, PATH);
+      else { fill(s, p.x - 1, front, dx, front, PATH); fill(s, p.x - 1, 48, p.x - 1, front, PATH); }
+      if (bd) {
+        const r = { key: 'b-' + bd.id, name: bd.name, title: bd.name, role: 'Project building', q: 'project', x: p.x, y: p.y, type: lk.type || 'cedar', art: lk.art, accent: bd.colour, wall: '#f7ead3',
+          job: bd.purpose || 'A building you added.', yard: [], room: ['files', 'books', 'drafting', 'reading', 'crates', 'teaset'] };
+        const b = addHouse(s, houses.length, r);
+        b.custom = bd; b.plot = p;
+        const door = s.doors[s.doors.length - 1]; door.label = `${bd.name} · ${bd.agents.length ? bd.agents.map(plotName).join(', ') + (bd.agents.length === 1 ? ' works here' : ' work here') : 'nobody works here yet'}`;
+        s.lights.push({ x: (b.door.x + 0.5) * T, y: (b.door.y + 0.4) * T, r: 72 });
+        addObj(s, { floor: true, sortY: 0, bx: b.door.x * T - 4, by: (b.door.y + 1) * T - 4, bw: T + 8, bh: T + 8, draw: (c) => drawDoorstep(c, b.door.x * T, (b.door.y + 1) * T, b.accent) });
+        const tools = bd.tools.map((id) => ((W && W.connections()) || []).find((c) => c.id === id)).filter(Boolean).map((c) => c.name);
+        addSign(s, b.door.x + 2, b.door.y + 1, b.accent, `${bd.name}. ${bd.purpose ? bd.purpose + ' ' : ''}${bd.agents.length ? 'Works here: ' + bd.agents.map(plotName).join(', ') + '.' : 'Nobody works here yet.'}${tools.length ? ' Tools: ' + tools.join(', ') + '.' : ''} Press E by the door to change it.`);
+        houses.push(b);
+      } else {
+        const plot = { ...p, w: PLOT_W, h: PLOT_H, doors: [{ x: dx, y: front - 1 }], front: [dx, front] };
+        for (let y = p.y; y < front; y++) for (let x = p.x; x < p.x + PLOT_W; x++) solidify(s, x, y);
+        addObj(s, { floor: true, sortY: 0, bx: p.x * T - 6, by: p.y * T - 6, bw: PLOT_W * T + 12, bh: PLOT_H * T + 12, draw: (c) => drawPlotGround(c, plot) });
+        addObj(s, { sortY: front * T - 1, bx: p.x * T, by: p.y * T - 40, bw: PLOT_W * T, bh: PLOT_H * T + 40, draw: (c, t) => drawPlotSign(c, plot, t) });
+        s.plots.push(plot);
+      }
+    }
     const steward = houses.find(b => b.key === 'steward');
     fill(s, 67, 22, 74, 22, PATH); fill(s, 68, 22, 68, 26, PATH);  // the garden path, out through the gate
     addProp(s, 'hammock', 64, 20, steward, 2);
@@ -296,7 +318,7 @@
       if (t === WALL) continue;
       if (!OPEN_GROUND.has(t) || s.solid[y * s.w + x]) mark(x, y, 1);
     }
-    for (const b of [...houses, hall]) {
+    for (const b of [...houses, hall, ...s.plots]) {
       for (let y = b.y; y < b.y + b.h; y++) for (let x = b.x; x < b.x + b.w; x++) mark(x, y, 1);
       for (const d of b.doors) mark(d.x, d.y + 1, 2);
     }
@@ -333,7 +355,7 @@
     const b = {
       kind: 'house', i, id: 'house-' + r.key, key: r.key, name: r.name, title: r.title, role: r.role, job: r.job,
       quarter: r.q, type: r.type, flip: !!r.flip, yard: r.yard, room: r.room, owner: null,
-      x, y, w: r.w || 7, h: r.h || 5, wall: r.wall, accent: r.accent,
+      x, y, w: r.w || 7, h: r.h || 5, wall: r.wall, accent: r.accent, art: r.art || null,
     };
     b.door = { x: x + Math.floor(b.w / 2), y: y + b.h - 1 };
     b.doors = [b.door];
@@ -411,7 +433,7 @@
     // north quarter yards
     for (const [k, x, y, w] of [['flowerbox', 10, 21, 2], ['fence', 19, 21, 3], ['barrels', 4, 21], ['flowerbox', 46, 17, 2]]) put(k, x, y, w || 1);
     // Steward's garden: a low fence along the oasis and a bush or two
-    put('fence', 64, 15, 3); put('fence', 72, 15, 3); put('bloom', 75, 19); put('bush', 63, 17);
+    put('fence', 64, 15, 3); put('fence', 72, 15, 2); put('bloom', 75, 19);  // both sides of Steward's house stay open, so you can walk round to the pool
     // more street lamps for night time: main street, south street, the gate road and the quarter paths
     for (const [x, y] of [[6, 26], [12, 29], [30, 26], [28, 29], [50, 26], [52, 29], [68, 29], [72, 26],
       [10, 48], [20, 45], [28, 48], [36, 48], [44, 48], [50, 45], [60, 48], [70, 45], [38, 43], [41, 43], [38, 38], [41, 38]]) {
@@ -569,11 +591,9 @@
     youtube: ['screen', 'reels', 'tripod', 'screen', 'reels', 'prints'],
     scout: ['spyglass', 'maptable', 'books', 'dovecote', 'reading', 'scrolls'],
     media: ['prints', 'tripod', 'darkroom', 'prints', 'crates', 'prints'],
-    studio: ['drafting', 'crates', 'workbench', 'drafting', 'books', 'crates'],
     inbox: ['letterboxes', 'postcart', 'files', 'dovecote', 'letterboxes', 'crates'],
     money: ['scales', 'strongbox', 'ledgers', 'strongbox', 'files', 'scales'],
     steward: ['trunk', 'herbs', 'reading', 'herbs', 'books', 'teaset'],
-    garden: ['herbs', 'trunk', 'files', 'herbs', 'reading', 'teaset'],
   };
   const HAS_FIREPLACE = new Set(['steward', 'librarian']);
   const deskMsg = (name, key) => (RES.find((r) => r.key === key) || {}).boss
@@ -644,16 +664,17 @@
     addFurn(s, 'rug', 9, 3, 8, 10, { floor: true, silk: true });
     HALL_SEATS.push({ key: 'you', x: 13 * T, y: 3 * T + 33, dir: 'down', sortY: 4 * T + 1 });
     addFurn(s, 'headchair', 12, 3, 2, 1, { msg: "Your chair, Chief Human Officer, at the head of the table. You run the council from here, and Vizier sits at your right hand." });
-    const seats = ['Vizier', ...RES.map(r => r.name)];
-    const table = addFurn(s, 'banquet', 12, 4, 2, Math.ceil(seats.length / 2), { msg: `The council table, with a seat for every agent in the village (${seats.length}). Everyone has moved in. The council hasn't met yet.` });
+    const council = RES.filter((r) => !DIRECTOR_OF[r.key] && !r.bossKey);  // directors only: workers don't come to council
+    const seats = ['Vizier', ...council.map(r => r.name)];
+    const table = addFurn(s, 'banquet', 12, 4, 2, Math.ceil(seats.length / 2), { msg: `The council table, with a seat for you, Vizier and each director (${seats.length}). Workers don't come to council: their director speaks for them.` });
     seats.forEach((name, k) => {  // Vizier first, at the director's right hand (west, since the head chair faces the door)
       const left = k % 2 === 0, row = 4 + Math.floor(k / 2);
       const msg = name === 'Vizier'
         ? "Vizier's seat, at your right hand. Vizier sits here when the council meets."
         : `${name}'s seat at the council table, empty until the council meets.`;
-      addFurn(s, 'sidechair', left ? 11 : 14, row, 1, 1, { side: left ? -1 : 1, msg, accent: k === 0 ? BRASS : (RES[k - 1] || {}).accent });
+      addFurn(s, 'sidechair', left ? 11 : 14, row, 1, 1, { side: left ? -1 : 1, msg, accent: k === 0 ? BRASS : (council[k - 1] || {}).accent });
       // where they sit: on the cushion, facing the table, legs under it
-      HALL_SEATS.push({ key: k === 0 ? 'vizier' : RES[k - 1].key, x: (left ? 11 : 14) * T + 16 + (left ? 10 : -10), y: row * T + 25, dir: left ? 'right' : 'left', sortY: (row + 1) * T + 1 });
+      HALL_SEATS.push({ key: k === 0 ? 'vizier' : council[k - 1].key, x: (left ? 11 : 14) * T + 16 + (left ? 10 : -10), y: row * T + 25, dir: left ? 'right' : 'left', sortY: (row + 1) * T + 1 });
     });
     table.sortY = (4 + Math.ceil(seats.length / 2)) * T + 16;  // drawn after everyone seated, so their legs go under it
     // sides
@@ -1080,6 +1101,70 @@
     circle(c, cx + 6, bottom - 16, 1.8);
     c.strokeStyle = OUTLINE; c.lineWidth = 1.2; horseshoePath(c, cx, bottom, 30, 44); c.stroke();
   }
+
+  // ---------- empty plots and the buildings put on them (feedback round 2) ----------
+  const PLOTS = [{ id: 'p1', x: 51, y: 38 }, { id: 'p2', x: 14, y: 49 }, { id: 'p3', x: 60, y: 49 }];
+  const PLOT_W = 7, PLOT_H = 5;
+  const BUILT = (window.__world && window.__world.buildings ? window.__world.buildings() : []).filter((b) => PLOTS.some((p) => p.id === b.plot));
+  // the looks you can pick: three drawn in code, and the five painted villas
+  const LOOKS = [
+    { id: 'cedar', label: 'Cedar-roof villa', type: 'cedar' }, { id: 'tower', label: 'Watchtower house', type: 'tower' }, { id: 'garden', label: 'Garden house', type: 'garden' },
+    { id: 'art-keeper', label: 'Painted riad', art: 'keeper' }, { id: 'art-librarian', label: 'Painted archive', art: 'librarian' }, { id: 'art-merchant', label: 'Painted merchant house', art: 'merchant' },
+    { id: 'art-engineer', label: 'Painted forge', art: 'engineer' }, { id: 'art-scholar', label: 'Painted observatory', art: 'scholar' },
+  ];
+  const plotName = (k) => (window.__world ? window.__world.agentName(k) : '') || (RES.find((r) => r.key === k) || {}).name || k;
+  const BUILD_COLOURS = ['#1f6f8b', '#3f7d5a', '#c98a2b', '#b5523b', '#2b8a8a', '#7a4fa0'];
+  function drawPlotGround(c, p) {
+    const X = p.x * T, Y = p.y * T, w = p.w * T, h = p.h * T;
+    c.fillStyle = 'rgba(176,132,82,.28)'; c.fillRect(X + 3, Y + 3, w - 6, h - 6);
+    c.fillStyle = 'rgba(120,84,48,.18)';
+    for (let k = 0; k < 14; k++) { const fx = X + 8 + ((k * 37) % (w - 16)), fy = Y + 8 + ((k * 53) % (h - 16)); c.fillRect(fx, fy, 3, 1.5); }
+    c.save(); c.setLineDash([5, 4]); c.strokeStyle = 'rgba(232,196,106,.9)'; c.lineWidth = 1.4; c.strokeRect(X + 3, Y + 3, w - 6, h - 6); c.restore();
+    for (const [sx, sy] of [[X + 3, Y + 3], [X + w - 3, Y + 3], [X + 3, Y + h - 3], [X + w - 3, Y + h - 3]]) { box(c, sx - 1.5, sy - 7, 3, 9, '#7a4b2a'); }
+  }
+  function drawPlotSign(c, p, t) {
+    const cx = (p.x + p.w / 2) * T, base = (p.y + p.h) * T - 8, bob = Math.sin(t * 2.2) * 1.5;
+    box(c, cx - 1.5, base - 26, 3, 26, '#7a4b2a');
+    c.fillStyle = 'rgba(0,0,0,.25)'; ellipse(c, cx, base, 8, 2.5);
+    const y = base - 34 + bob;
+    c.fillStyle = '#e8c46a'; c.strokeStyle = '#7a4b2a'; c.lineWidth = 1.5; c.beginPath(); c.arc(cx, y, 11, 0, Math.PI * 2); c.fill(); c.stroke();
+    c.fillStyle = '#fbf6ec'; c.fillRect(cx - 6, y - 1.8, 12, 3.6); c.fillRect(cx - 1.8, y - 6, 3.6, 12);
+    c.save(); c.font = '700 7px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    const tw = c.measureText('Build here').width; rbox(c, cx - tw / 2 - 4, base - 20, tw + 8, 10, 3, 'rgba(18,20,28,.8)');
+    c.fillStyle = '#f5efe2'; c.fillText('Build here', cx, base - 15); c.restore();
+  }
+  const previewCache = new Map();
+  function lookPreview(lk, colour) {
+    if (lk.art) return VILLA_ART[lk.art].src;
+    const id = lk.id + colour; if (previewCache.has(id)) return previewCache.get(id);
+    const cv = document.createElement('canvas'); cv.width = 220; cv.height = 180; const g = cv.getContext('2d');
+    const fake = { key: 'preview', type: lk.type, x: 3, y: 6, w: 7, h: 5, accent: colour, wall: '#f7ead3', flip: false, yard: [], room: [] };
+    fake.door = { x: 6, y: 10 }; fake.doors = [fake.door];
+    g.scale(220 / (13 * T), 220 / (13 * T)); g.translate(0, -1.6 * T);
+    try { drawVilla(g, fake, 0); } catch (e) { /* a preview never breaks the menu */ }
+    const url = cv.toDataURL(); previewCache.set(id, url); return url;
+  }
+  function openBuild(plotId) {
+    if (!W || !W.buildMenu) { toast('Building needs the settings server (start it with helper/serve.py).'); return; }
+    W.buildMenu({ plot: plotId, existing: BUILT.find((b) => b.plot === plotId) || null, colours: BUILD_COLOURS,
+      looks: LOOKS.map((l) => ({ id: l.id, label: l.label, src: (colour) => lookPreview(l, colour) })) });
+  }
+  const plotNear = () => {
+    if (state.scene.id !== 'town') return null;
+    const p = state.player;
+    for (const pl of scenes.town.plots) { const [fx, fy] = centre(pl.front); if (Math.hypot(fx - p.x, fy - p.y) < 40) return { id: pl.id, empty: true }; }
+    for (const b of scenes.town.houses) if (b.custom && Math.hypot((b.door.x + 0.5) * T - p.x, (b.door.y + 1.5) * T - p.y) < 30) return { id: b.plot.id, empty: false, name: b.custom.name };
+    return null;
+  };
+  // who was planted in which building: they drop by there now and then
+  const PLANTED = {};
+  for (const b of BUILT) for (const k of b.agents) (PLANTED[k] = PLANTED[k] || []).push(b);
+  function plantedGoal(d) {
+    const list = PLANTED[d.key]; if (!list || Math.random() > 0.3) return null;
+    const bd = list[Math.floor(Math.random() * list.length)], b = scenes.town.houses.find((h) => h.custom === bd); if (!b) return null;
+    if (!b.frontTiles) { b.frontTiles = []; for (let y = b.y + b.h; y <= b.y + b.h + 1; y++) for (let x = b.x - 1; x <= b.x + b.w; x++) if (walkTile(scenes.town, x, y)) b.frontTiles.push([x, y]); }
+    return b.frontTiles.length ? { scene: 'town', tile: b.frontTiles[Math.floor(Math.random() * b.frontTiles.length)], then: 'idle' } : null;
+  }
   // ---------- the art pass: generated sprites replace the drawn villas, one at a time ----------
   // Each sprite is cut out of its magenta background by tools/cutout.ps1. door: the door's centre and the
   // bottom of the front wall as fractions of the sprite; width: the sprite's width in tiles. A villa with
@@ -1093,7 +1178,7 @@
   };
   for (const a of Object.values(VILLA_ART)) { a.img = new Image(); a.img.onload = () => { a.ok = true; }; a.img.src = a.src; }
   function drawVilla(c, b, t) {
-    const art = VILLA_ART[b.key];
+    const art = VILLA_ART[b.art || b.key];
     if (art && art.ok) {
       const w = art.width * T, h = w * art.img.height / art.img.width;
       const left = (b.door.x + 0.5) * T - art.doorX * w, top = (b.y + b.h) * T - art.doorY * h;
@@ -2019,15 +2104,6 @@
         break;
       }
       case 'media': PROP.prints(c, spot.x - 16, spot.y - 28, t); break;
-      case 'studio': {  // a small wooden crane on the tower, lifting a crate
-        const cx = tower.tx + tower.tw / 2, y = tower.tFace - 4, dir = b.flip ? -1 : 1;
-        box(c, cx - 2, y - 44, 4, 44, '#8a5a32');
-        line(c, cx, y - 42, cx + dir * 46, y - 42, '#8a5a32', 3); line(c, cx, y - 30, cx + dir * 30, y - 42, '#7a4b2a', 1.5);
-        const sw = Math.sin(t * 1.3) * 3, rx = cx + dir * 40 + sw;
-        line(c, cx + dir * 40, y - 42, rx, y - 16, '#e6d3b3', 1);
-        crate(c, rx - 7, y - 16, 14, 11, BRASS);
-        break;
-      }
       case 'inbox': {  // pigeon lofts on the roof and a brass bell by the door
         PROP.dovecote(c, spot.x - 16, spot.y - 28, t);
         const bx = dx + 38, swing = Math.sin(t * 2) * 0.15;
@@ -2180,11 +2256,10 @@
     ['steward', ['personal', 'family', 'home', 'birthday', 'holiday', 'appointment', 'doctor', 'dentist', 'gym', 'my wife', 'my partner', 'kids']],
     ['inbox', ['email', 'e-mail', 'inbox', 'mail', 'reply', 'respond', 'message']],
     ['money', ['money', 'pay ', 'payment', 'invoice', 'budget', 'account', 'expense', 'bank', 'bill', 'tax', 'price', 'cost']],
-    ['studio', ['studio', 'client project', 'client software', 'quote for']],
     ['youtube', ['youtube', 'video', 'transcript', 'highlight', 'playlist']],
     ['scout', ['hugging face', 'huggingface', 'github', 'dataset', 'repo', 'release', 'new model']],
     ['media', ['photo', 'picture', 'image', 'album', 'camera']],
-    ['engineer', ['tech', 'code', 'bug', 'server', 'computer', 'deploy', 'app', 'website', 'docker', 'install', 'fix the']],
+    ['engineer', ['client software', 'client project', 'tech', 'code', 'bug', 'server', 'computer', 'deploy', 'app', 'website', 'docker', 'install', 'fix the']],
     ['merchant', ['business', 'client', 'sales', 'venture', 'customer', 'deal']],
     ['scholar', ['research', 'strategy', 'compare', 'market', 'analyse', 'analyze', 'analysis', 'options']],
     ['librarian', ['learn', 'knowledge', 'library', 'note', 'notes', 'document', 'kb', 'summarise', 'summarize']],
@@ -2199,12 +2274,14 @@
     for (const [key, words] of ROUTES) if (words.some((w) => t.includes(w))) return key;
     return 'vizier';
   }
-  const agentOf = (key) => RES.find((r) => r.key === key);
+  // Studio left and the garden helper's work went to Steward (feedback round 1): old saved tasks and chats follow them there
+  const MOVED = { studio: 'engineer', garden: 'steward' };
+  const agentOf = (key) => RES.find((r) => r.key === key) || RES.find((r) => r.key === MOVED[key]);
   function vizierReply(to) {
     if (to === 'hire') return "Vizier: I'll find the right person and bring them to the town hall. You interview them, and they're only hired if you say yes.";
     if (to === 'vizier') return "Vizier: That one's mine. I've written it down and I'll keep it with me.";
     const a = agentOf(to);
-    const priv = to === 'steward' || to === 'garden' ? ' Personal, so it stays private.' : '';
+    const priv = to === 'steward' ? ' Personal, so it stays private.' : '';
     if (a.boss) { const d = bossOf(a); return `Vizier: That's work for ${a.name}, on ${d.name}'s team. I've passed it to ${d.name}, who gives ${a.name} every task and checks the work.${priv}`; }
     return `Vizier: That's for ${a.name}, ${a.role}. I've passed it to ${a.name}.${priv}`;
   }
@@ -2267,7 +2344,7 @@
     saveOrders(); refreshDispatch();
     const reply = vizierReply(to);
     if (to !== 'vizier' && to !== 'hire') {  // Vizier takes out the phone to pass it on, to the director who owns it
-      const a = agentOf(to), callee = a.boss ? a.boss : a.key, personal = to === 'steward' || to === 'garden';
+      const a = agentOf(to), callee = a.boss ? a.boss : a.key, personal = to === 'steward';
       const line = personal ? 'Passing on a personal order. It stays private.'
         : a.boss ? `Passing on your order for ${a.name}, on ${agentOf(callee).name}'s team.` : 'Passing on your order.';
       vizier.phoneUntil = state.time + 4;
@@ -2356,14 +2433,10 @@
       lines: ["Media sorter: Librarian checks every print before it counts. No tasks yet.", "Media sorter: Morning shots on the left, evening on the right.", "Media sorter: Mind the darkroom door, it's always closing."] },
     scout: { personality: 'Watchful and excitable about new things.', quirk: 'Never puts the spyglass down, even indoors.',
       lines: ["Hub scout: Scholar sends me out. Nothing to watch yet.", "Hub scout: I can see the whole Hub from up here. Well, nearly.", "Hub scout: If something new turns up, Scholar hears first."] },
-    studio: { personality: 'Inventive and a little impatient to start building.', quirk: 'Sketches plans on anything flat.',
-      lines: ["Studio: Engineer checks everything I build. Nothing on the board yet.", "Studio: Give me a client and I'll give you a blueprint.", "Studio: The drafting table is ready. So am I."] },
     inbox: { personality: 'Brisk, polite and allergic to clutter.', quirk: 'Taps each letterbox as it passes, counting.',
       lines: ["Inbox: Keeper gives me my tasks. The post hasn't started yet.", "Inbox: Read, sort, answer. In that order.", "Inbox: Every letter gets a reply. Eventually."] },
     money: { personality: 'Careful, honest and a bit of a worrier.', quirk: 'Checks the strongbox lock every few minutes.',
       lines: ["Money: Merchant checks every number I count. Nothing to count yet.", "Money: Money in on the left scale, money out on the right.", "Money: The strongbox is locked. I checked. Twice."] },
-    garden: { personality: 'Quiet, gentle and very discreet.', quirk: 'Talks to the herbs, never about you.',
-      lines: ["Garden helper: Steward gives me my tasks. What's said in the garden stays here.", "Garden helper: The mint is doing well. No tasks yet.", "Garden helper: I keep the shed tidy for when Steward needs a hand."] },
   });
   for (const h of HIRES) if (!PERSONA[h.key]) PERSONA[h.key] = { personality: h.personality || 'New, keen and careful.', quirk: h.quirk || 'Still learning where everything is.',
     lines: [`${h.name}: ${h.bossName} gives me my tasks. Glad to be here!`, `${h.name}: Still learning where everything is.`, `${h.name}: Ready when ${h.bossName} is.`] };
@@ -2376,7 +2449,7 @@
       for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) if (walkTile(s, tx, ty)) out.push([tx, ty]);
       return out;
     };
-    const yard = r.key === 'steward' ? pts(town, 63, 69, 19, 22) : r.key === 'garden' ? pts(town, 70, 76, 19, 22) : pts(town, b.x - 1, b.x + b.w, b.y + b.h, b.y + b.h + 1);  // the strip in front of the house, not the street
+    const yard = r.key === 'steward' ? pts(town, 63, 69, 19, 22) : pts(town, b.x - 1, b.x + b.w, b.y + b.h, b.y + b.h + 1);  // the strip in front of the house, not the street
     const start = yard[Math.floor(hash(b.x, b.y, 3) * yard.length)] || [b.door.x, b.door.y + 1];
     const [x, y] = centre(start);
     return { key: r.key, name: r.name, b, yard, room: room.id, worker: !!r.boss, hire: !!r.hire, scene: 'town', x, y, dir: 'down', moving: false, anim: 0,
@@ -2434,7 +2507,7 @@
   const ROAM = [];  // town path tiles workers like to wander to
   function roamTiles(d) {
     if (!ROAM.length) { const s = scenes.town; for (let y = 0; y < s.h; y++) for (let x = 0; x < s.w; x++) if ((s.tiles[y * s.w + x] === PATH || s.tiles[y * s.w + x] === STONE) && walkTile(s, x, y)) ROAM.push([x, y]); }
-    return d.key === 'garden' ? ROAM : ROAM.filter(([x, y]) => !inGarden(x, y));
+    return d.key === 'steward' ? ROAM : ROAM.filter(([x, y]) => !inGarden(x, y));
   }
   // what each person wants to do next: returns { scene, tile, then } or null to stay put a while
   // guide step 37: someone you've called over comes to you, and stays until you send them back to work
@@ -2461,6 +2534,7 @@
       return desk.side ? { scene: d.room, tile: desk.side, then: 'sit' } : null;
     }
     if (d.scene !== 'town') return { scene: 'town', tile: d.yard[Math.floor(Math.random() * d.yard.length)], then: 'idle' };
+    const pg = plantedGoal(d); if (pg) return pg;  // a building they were planted in
     if (!d.worker || Math.random() < 0.25) {  // directors pace a little in their own yard; workers drop home now and then
       const [tx, ty] = tileOf(d.x, d.y), near = d.yard.filter(([x, y]) => Math.abs(x - tx) + Math.abs(y - ty) <= 4);
       const list = near.length > 1 ? near : d.yard;
@@ -2476,7 +2550,7 @@
     if (g.scene === d.scene) { to = g.tile; }
     else if (d.scene === 'town') { to = outsideDoorOf(g.scene); then = 'enter'; }
     else { to = insideDoorOf(d.scene); then = 'exit'; }
-    const tiles = findPath(s, here, to, { avoid, noGarden: d.key !== 'garden' && d.key !== 'steward' && d.mode !== 'summoned' });
+    const tiles = findPath(s, here, to, { avoid, noGarden: d.key !== 'steward' && d.mode !== 'summoned' });
     if (!tiles) return false;
     d.path = tiles; d.leg = then; return true;
   }
@@ -2603,6 +2677,7 @@
     const now = ch.lines.find(([a, b]) => state.time >= a && state.time < b);
     if (!now) return;
     const text = relabel(now[2]);
+    c.save(); c.textAlign = 'left'; c.textBaseline = 'alphabetic';  // the minimap leaves text centred, which pushed words out of the box
     c.font = '600 7px system-ui, sans-serif';
     const lines = []; let cur = '';
     for (const w of text.split(' ')) { if (c.measureText(cur + ' ' + w).width > 84 && cur) { lines.push(cur); cur = w; } else cur = cur ? cur + ' ' + w : w; }
@@ -2610,22 +2685,78 @@
     const w = Math.max(...lines.map((l) => c.measureText(l).width)) + 8, h = lines.length * 9 + 5, x = d.x - w / 2, y = d.y - 66 - h;
     c.fillStyle = 'rgba(255,252,244,.96)'; rbox(c, x, y, w, h, 3, 'rgba(255,252,244,.96)');
     c.strokeStyle = OUTLINE; c.lineWidth = 0.8; c.strokeRect(x, y, w, h);
+    c.fillStyle = 'rgba(255,252,244,.96)'; c.beginPath(); c.moveTo(d.x - 3, y + h - 0.4); c.lineTo(d.x + 3, y + h - 0.4); c.lineTo(d.x, y + h + 4); c.closePath(); c.fill();
+    c.strokeStyle = OUTLINE; c.beginPath(); c.moveTo(d.x - 3, y + h); c.lineTo(d.x, y + h + 4); c.lineTo(d.x + 3, y + h); c.stroke();
     c.fillStyle = OUTLINE; lines.forEach((l, i) => c.fillText(l, x + 4, y + 9 + i * 9));
+    c.restore();
   }
+  const drawChatLater = [];  // speech bubbles go on top of everyone, after the people and their markers
   const directorNear = () => directors().find((d) => d.scene === state.scene.id && Math.hypot(d.x - state.player.x, d.y - state.player.y) < 46) || null;
   function greet(d) {
+    if (showQuestCard(d.key)) return;
     d.talkUntil = state.time + 4;
     const met = (villageNotes[d.key] || []).filter((n) => n.date === today()).map((n) => agentOf(n.with).name);
     toast(d.lines[d.line % d.lines.length] + (met.length ? ` (Today I've talked with ${[...new Set(met)].join(', ')}.)` : ''), d.key);
     d.line++;
   }
+  // What each agent is doing, for the little marker over their head: busy (a turning ring), waiting on you (!),
+  // or free and waiting for work (…). Worked out at most twice a second.
+  let statusCache = { at: -1, map: {} };
+  const drawStatusLater = [];
+  function statusOf(key) {
+    const now = performance.now();
+    if (now - statusCache.at > 500) {
+      const map = {}, reqs = (typeof toolReqs !== 'undefined' ? toolReqs : []);
+      for (const t of todos) for (const k of new Set([t.by, t.with].filter(Boolean))) {
+        if (['ready', 'needs', 'failed'].includes(t.status)) map[k] = 'you';
+        else if (t.status === 'working' && map[k] !== 'you') map[k] = 'busy';
+      }
+      for (const r of reqs) if (r.status === 'waiting' && r.agent) map[r.agent] = 'you';
+      statusCache = { at: now, map };
+    }
+    const st = statusCache.map[key];
+    if (st) return st;
+    const d = directors().find((x) => x.key === key);
+    return d && d.working ? 'busy' : 'free';
+  }
+  function drawStatus(c, key, x, y) {
+    const st = statusOf(key), t = performance.now() / 1000;
+    c.save();
+    if (st === 'you') {
+      const bob = Math.sin(t * 4) * 1.2;
+      c.fillStyle = '#e1ad01'; c.strokeStyle = '#fbf6ec'; c.lineWidth = 1.2;
+      c.beginPath(); c.arc(x, y + bob, 6, 0, Math.PI * 2); c.fill(); c.stroke();
+      c.fillStyle = '#1b1406'; c.font = '700 9px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('!', x, y + bob + 0.5);
+    } else if (st === 'busy') {
+      c.fillStyle = 'rgba(43,138,138,.92)'; c.beginPath(); c.arc(x, y, 6, 0, Math.PI * 2); c.fill();
+      c.strokeStyle = '#fbf6ec'; c.lineWidth = 1.6; c.beginPath(); c.arc(x, y, 3.4, t * 5, t * 5 + Math.PI * 1.4); c.stroke();
+    } else {
+      c.globalAlpha = 0.75; c.fillStyle = 'rgba(18,20,28,.55)'; c.beginPath(); c.arc(x, y, 5.5, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#fbf6ec'; for (const dx of [-2.4, 0, 2.4]) { c.beginPath(); c.arc(x + dx, y, 0.9, 0, Math.PI * 2); c.fill(); }
+    }
+    c.restore();
+  }
+  window.__statusOf = statusOf;
+  const roleOf = (key) => (key === 'vizier' ? 'Chief of Staff' : (agentOf(key) || {}).role || '');
+  function drawPlate(c, key, x, y) {  // a name card over each head at the council table: name, and job title under it
+    const name = relabel(nameOf(key)), role = roleOf(key);
+    c.save(); c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.font = '700 8px system-ui, sans-serif'; const w1 = c.measureText(name).width;
+    c.font = '600 6px system-ui, sans-serif'; const w2 = c.measureText(role).width;
+    const w = Math.max(w1, w2) + 8, top = y - 22;
+    rbox(c, x - w / 2, top, w, 19, 4, 'rgba(18,20,28,.85)');
+    c.fillStyle = '#f5efe2'; c.font = '700 8px system-ui, sans-serif'; c.fillText(name, x, top + 6.5);
+    c.fillStyle = '#e8c46a'; c.font = '600 6px system-ui, sans-serif'; c.fillText(role, x, top + 14);
+    c.restore();
+  }
   function drawNPC(c, n, S) {
     if (!S) return;
+    if (S.footY) drawStatusLater.push([n.key, n.x, n.y - S.footY + 2]);
     if (n.seated && S.sitCol) { drawSeated(c, n, S); return; }
     const row = S.rows.indexOf(n.dir), col = n.moving ? walkFrame(n.anim) : 1;
     c.fillStyle = 'rgba(15,42,46,.25)'; ellipse(c, n.x + 2, n.y - 1, 10, 3.8);
     c.drawImage(S.canvas, col * S.fw * S.R, row * S.fh * S.R, S.fw * S.R, S.fh * S.R, n.x - S.footX, n.y - S.footY, S.fw, S.fh);
-    if (n.chat) drawChat(c, n);
+    if (n.chat) drawChatLater.push(n);
   }
 
   // ---------- the council meeting (guide step 29) ----------
@@ -2636,6 +2767,7 @@
   const seatOf = (key) => HALL_SEATS.find((x) => x.key === key);
   const sit = (n, seat) => Object.assign(n, { scene: 'hall-in', x: seat.x, y: seat.y, dir: seat.dir, seated: seat, moving: false, target: null, path: null, goal: null, chat: null, sitting: false, mode: null });
   function callMeeting() {
+    setTimeout(() => questEvent('meeting'), 0);
     if (state.fade || state.meeting) return;
     state.fade = { t: 0, phase: 'out', cb: () => {
       state.drag = null; keys.clear();
@@ -2643,16 +2775,17 @@
       sit(state.player, seatOf('you'));
       sit(vizier, seatOf('vizier')); trail.length = 0;
       for (const d of directors()) { const seat = seatOf(d.key); if (seat) sit(d, seat); d.nextSwitch = Infinity; d.talkUntil = 0; }
-      state.meeting = { started: state.time };
+      state.meeting = { started: state.time, at: new Date().toISOString(), tasks: [] };
       updatePlace(); updateMenu(); openMeetingChat();
-      toast(`The council is seated: all ${HALL_SEATS.length} of you. Nobody can talk yet, because no AI is switched on. Press C or walk away to end the meeting.`);
+      toast(`The council is seated: you, Vizier and ${HALL_SEATS.length - 2} directors. Talk to everyone, or put @ before a name to ask one of them. Press 2 or C to end the meeting.`);
     } };
   }
   function endMeeting() {
     if (state.fade || !state.meeting) return;
     state.fade = { t: 0, phase: 'out', cb: () => {
       keys.clear();
-      state.meeting = null; closeMeetingChat();
+      const ended = state.meeting; state.meeting = null; closeMeetingChat();
+      setTimeout(() => writeMinutes(ended), 0);
       state.scene = scenes.town;
       Object.assign(state.player, { x: 39.5 * T, y: 21.8 * T, dir: 'down', seated: null, moving: false });  // in front of the town hall
       Object.assign(vizier, { scene: 'town', x: 41.5 * T, y: 21.8 * T, dir: 'down', seated: null, moving: false }); trail.length = 0;
@@ -2662,7 +2795,7 @@
         Object.assign(d, { scene: 'town', x: spot[0], y: spot[1], dir: 'down', path: null, goal: null, wait: 1 + Math.random() * 2 });
       }
       updatePlace(); updateMenu();
-      toast('Meeting over. Everyone has gone back to their yards.');
+      toast('Meeting over. Everyone has gone back to their yards. The minutes are on screen.');
     } };
   }
   const toggleMeeting = () => (state.meeting ? endMeeting() : callMeeting());
@@ -2687,9 +2820,13 @@
     if (code) dispatchEvent(new KeyboardEvent('keydown', { code, key: code.slice(3).toLowerCase() }));
   });
 
-  // ---------- a very quiet background: soft wind, a trickle of water and the odd bird (all made in code) ----------
+  // ---------- a quiet ancient Egyptian ambience, all made in code (feedback round 2) ----------
+  // A low drone like a reed pipe held on one note, a harp or oud playing a few slow notes now and then in the
+  // Hijaz mode (D, E flat, F sharp, G, A, B flat, C), a breathy ney flute line, a soft frame drum from time to
+  // time, a dry desert breeze and the odd bird by day. Everything goes through a stone-hall echo.
   // Browsers only allow sound after a click or key press, so it starts on the first one. Q turns it off and on.
   const sound = { ctx: null, master: null, on: true, started: false };
+  const HIJAZ = [0, 1, 4, 5, 7, 8, 10, 12, 13, 16];  // semitones above D
   function startSound() {
     if (sound.started) return;
     const AC = window.AudioContext || window.webkitAudioContext;
@@ -2697,32 +2834,91 @@
     sound.started = true;
     const a = sound.ctx = new AC();
     sound.master = a.createGain(); sound.master.gain.value = sound.on ? 1 : 0; sound.master.connect(a.destination);
-    const noise = a.createBuffer(1, a.sampleRate * 4, a.sampleRate), d = noise.getChannelData(0);
-    for (let i = 0, last = 0; i < d.length; i++) { last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.5; }  // soft brown noise
-    const bed = (freq, q, gain, lfoRate) => {
-      const src = a.createBufferSource(); src.buffer = noise; src.loop = true;
-      const f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = q;
+    // the stone-hall echo: a convolver with a made-up, softly fading impulse
+    const len = a.sampleRate * 3.2, imp = a.createBuffer(2, len, a.sampleRate);
+    for (let ch = 0; ch < 2; ch++) { const d = imp.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2); }
+    const hall = a.createConvolver(); hall.buffer = imp;
+    const wet = a.createGain(); wet.gain.value = 0.55; hall.connect(wet); wet.connect(sound.master);
+    const dry = a.createGain(); dry.gain.value = 0.7; dry.connect(sound.master);
+    const out = (node, echo = 1) => { node.connect(dry); if (echo) { const e = a.createGain(); e.gain.value = echo; node.connect(e); e.connect(hall); } };
+    const D2 = 73.42, hz = (semi, oct = 0) => D2 * Math.pow(2, semi / 12 + oct);
+    // a dry desert breeze
+    const noise = a.createBuffer(1, a.sampleRate * 4, a.sampleRate), nd = noise.getChannelData(0);
+    for (let i = 0, last = 0; i < nd.length; i++) { last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02; nd[i] = last * 3.5; }
+    { const src = a.createBufferSource(); src.buffer = noise; src.loop = true;
+      const f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 520; f.Q.value = 0.5;
+      const g = a.createGain(); g.gain.value = 0.018; const lfo = a.createOscillator(), lg = a.createGain(); lfo.frequency.value = 0.05; lg.gain.value = 0.012;
+      lfo.connect(lg); lg.connect(g.gain); lfo.start(); src.connect(f); f.connect(g); out(g, 0.2); src.start(); }
+    // the drone: D and A, like a reed pipe, breathing slowly
+    for (const [f0, gain] of [[D2, 0.03], [D2 * 1.5, 0.014], [D2 * 2, 0.008]]) {
+      const o = a.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f0;
+      const lp = a.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 420; lp.Q.value = 0.7;
       const g = a.createGain(); g.gain.value = gain;
-      const lfo = a.createOscillator(), lg = a.createGain(); lfo.frequency.value = lfoRate; lg.gain.value = gain * 0.6;
-      lfo.connect(lg); lg.connect(g.gain); lfo.start();
-      src.connect(f); f.connect(g); g.connect(sound.master); src.start();
+      const lfo = a.createOscillator(), lg = a.createGain(); lfo.frequency.value = 0.08 + Math.random() * 0.05; lg.gain.value = gain * 0.45;
+      const vib = a.createOscillator(), vg = a.createGain(); vib.frequency.value = 4.6; vg.gain.value = f0 * 0.002;
+      lfo.connect(lg); lg.connect(g.gain); vib.connect(vg); vg.connect(o.frequency); lfo.start(); vib.start();
+      o.connect(lp); lp.connect(g); out(g, 0.6); o.start();
+    }
+    // a plucked string (harp by day, oud-like at night): a short bright tone that falls away
+    const pluck = (freq, t0, vol = 0.05) => {
+      const o = a.createOscillator(), o2 = a.createOscillator(), g = a.createGain(), lp = a.createBiquadFilter();
+      o.type = 'triangle'; o2.type = 'sawtooth'; o.frequency.value = freq; o2.frequency.value = freq * 1.003;
+      lp.type = 'lowpass'; lp.frequency.setValueAtTime(freq * 6, t0); lp.frequency.exponentialRampToValueAtTime(freq * 1.5, t0 + 0.8);
+      const g2 = a.createGain(); g2.gain.value = 0.25;
+      g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.9);
+      o.connect(lp); o2.connect(g2); g2.connect(lp); lp.connect(g); out(g, 1); o.start(t0); o2.start(t0); o.stop(t0 + 2); o2.stop(t0 + 2);
     };
-    bed(380, 0.6, 0.05, 0.07);   // wind, rising and falling slowly
-    bed(1800, 1.2, 0.012, 0.5);  // the fountain's trickle
+    const phrase = () => {
+      const now = a.currentTime + 0.05, n = 3 + Math.floor(Math.random() * 4);
+      let i = 2 + Math.floor(Math.random() * 5), t = now;
+      for (let k = 0; k < n; k++) {
+        pluck(hz(HIJAZ[i], 1), t, 0.035 + Math.random() * 0.02);
+        if (Math.random() < 0.25) pluck(hz(HIJAZ[i], 1) * 1.0, t + 0.11, 0.02);  // the quick double pluck of an oud
+        i = clamp(i + (Math.random() < 0.5 ? -1 : 1) * (1 + (Math.random() < 0.2)), 0, HIJAZ.length - 1);
+        t += [0.45, 0.6, 0.9, 1.2][Math.floor(Math.random() * 4)];
+      }
+      if (Math.random() < 0.6) pluck(hz(0, 1), t + 0.3, 0.03);  // and home to D
+      setTimeout(phrase, 7000 + Math.random() * 9000);
+    };
+    // the ney: a long breathy note, sliding gently into place
+    const ney = () => {
+      const t0 = a.currentTime + 0.05, dur = 3 + Math.random() * 2.5, f = hz(HIJAZ[3 + Math.floor(Math.random() * 5)], 2);
+      const o = a.createOscillator(), g = a.createGain(); o.type = 'sine';
+      o.frequency.setValueAtTime(f * 0.97, t0); o.frequency.exponentialRampToValueAtTime(f, t0 + 0.4);
+      const vib = a.createOscillator(), vg = a.createGain(); vib.frequency.value = 5.2; vg.gain.value = f * 0.006; vib.connect(vg); vg.connect(o.frequency);
+      const br = a.createBufferSource(); br.buffer = noise; const bf = a.createBiquadFilter(); bf.type = 'bandpass'; bf.frequency.value = f * 2; bf.Q.value = 3; const bg = a.createGain(); bg.gain.value = 0.35;
+      g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.022, t0 + 0.6); g.gain.setValueAtTime(0.022, t0 + dur - 1); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      o.connect(g); br.connect(bf); bf.connect(bg); bg.connect(g); out(g, 1.2);
+      o.start(t0); vib.start(t0); br.start(t0); o.stop(t0 + dur + 0.1); vib.stop(t0 + dur + 0.1); br.stop(t0 + dur + 0.1);
+      setTimeout(ney, 16000 + Math.random() * 18000);
+    };
+    // a frame drum, far off: dum, tek-tek, dum
+    const drum = () => {
+      const now = a.currentTime + 0.05;
+      const hit = (t, low) => {
+        const o = a.createOscillator(), g = a.createGain(); o.type = 'sine';
+        o.frequency.setValueAtTime(low ? 95 : 210, t); o.frequency.exponentialRampToValueAtTime(low ? 55 : 160, t + 0.18);
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(low ? 0.07 : 0.025, t + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + (low ? 0.45 : 0.15));
+        o.connect(g); out(g, 0.8); o.start(t); o.stop(t + 0.5);
+      };
+      const beat = 0.42;
+      for (let bar = 0; bar < 2; bar++) { const b0 = now + bar * beat * 4; hit(b0, 1); hit(b0 + beat, 0); hit(b0 + beat * 1.5, 0); hit(b0 + beat * 2, 1); hit(b0 + beat * 3, 0); }
+      setTimeout(drum, 24000 + Math.random() * 26000);
+    };
     const chirp = () => {
       if (nightLevel() < 0.5) {  // birds by day only
         const now = a.currentTime, notes = 2 + Math.floor(Math.random() * 3), base = 2600 + Math.random() * 1400;
         for (let k = 0; k < notes; k++) {
           const o = a.createOscillator(), g = a.createGain(), t0 = now + k * 0.13;
           o.type = 'sine'; o.frequency.setValueAtTime(base, t0); o.frequency.exponentialRampToValueAtTime(base * (1.25 + Math.random() * 0.3), t0 + 0.07);
-          g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.018, t0 + 0.015); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.09);
-          o.connect(g); g.connect(sound.master); o.start(t0); o.stop(t0 + 0.1);
+          g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.01, t0 + 0.015); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.09);
+          o.connect(g); out(g, 0.3); o.start(t0); o.stop(t0 + 0.1);
         }
       }
-      setTimeout(chirp, 5000 + Math.random() * 11000);
+      setTimeout(chirp, 9000 + Math.random() * 16000);
     };
-    setTimeout(chirp, 3000);
-    if (sound.on) toast('Sound on, very quietly: wind, water and the odd bird. Press Q to turn it off.');
+    setTimeout(phrase, 1500); setTimeout(ney, 9000); setTimeout(drum, 14000); setTimeout(chirp, 5000);
+    if (sound.on) toast('Sound on, quietly: a reed drone, a harp, a ney flute and a far-off drum. Press Q to turn it off.');
   }
   function toggleSound() {
     sound.on = !sound.on;
@@ -2741,7 +2937,7 @@
     if (KEYMAP[e.code]) { keys.add(KEYMAP[e.code]); e.preventDefault(); }
     else if (e.code === 'KeyE' || e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); if (!e.repeat) interact(); }
     else if (e.code === 'KeyH') ui.help.classList.toggle('on');
-    else if (e.code === 'KeyM') state.showMap = !state.showMap;
+    else if (e.code === 'KeyM') { state.mapBig = !state.mapBig; dispatchEvent(new CustomEvent('kingdom:map', { detail: state.mapBig })); if (state.mapBig) questEvent('map'); }
     else if (e.code === 'KeyN' && !e.repeat) {
       const order = ['clock', 'day', 'night'];
       state.timeMode = order[(order.indexOf(state.timeMode) + 1) % 3];
@@ -2783,7 +2979,7 @@
     return null;
   }
   // ---------- talk to anyone (guide step 36) ----------
-  // T next to someone opens a chat box on the right. Double-tap M from anywhere opens Vizier's. Whatever you
+  // T next to someone (or clicking them) opens a chat box on the right. 1 on the hotbar opens Vizier's from anywhere. Whatever you
   // ask Vizier to do is passed to the right director, and that conversation shows in the chat log on the left
   // (L, or the button, opens and closes it). Esc closes a box.
   // No AI is switched on yet (subscription only, and only once the user says yes), so replies are scripted from
@@ -2843,11 +3039,12 @@
     row.append(mk('span', null, `${nameOf(who)} is thinking…`)); parent.append(row); parent.scrollTop = parent.scrollHeight;
     return row;
   }
-  function bubble(parent, who, text, mine) {
+  function bubble(parent, who, text, mine, withRole) {
     const row = mk('div', { display: 'flex', gap: '8px', alignItems: 'flex-start', flexDirection: mine ? 'row-reverse' : 'row' });
     const img = faceImg(who, 28); if (img) row.append(img);
     const b = mk('div', { background: mine ? '#2b5f63' : 'rgba(255,255,255,.07)', borderRadius: '10px', padding: '6px 9px', maxWidth: '80%' });
-    b.append(mk('div', { fontSize: '11px', color: '#e8c46a', fontWeight: '650' }, nameOf(who)), mk('div', null, text));
+    const role = withRole && who !== 'you' ? (who === 'vizier' ? 'Chief of Staff' : (agentOf(who) || {}).role) : '';
+    b.append(mk('div', { fontSize: '11px', color: '#e8c46a', fontWeight: '650' }, nameOf(who) + (role ? ` · ${role}` : '')), mk('div', null, text));
     row.append(b); parent.append(row); parent.scrollTop = parent.scrollHeight;
   }
   function renderChat() {
@@ -2862,7 +3059,12 @@
     (chats[key] || []).forEach((m) => bubble(chatBody, m.from, m.text, m.from === 'you'));
     if (!(chats[key] || []).length) bubble(chatBody, key, ((PERSONA[key] && PERSONA[key].lines[0]) || 'Hello, Chief. What can I do for you?').replace(/^[^:]+: /, ''), false);
   }
-  function openChat(key) {
+  let zTop = 20;
+  const front = (el) => { el.style.zIndex = String(++zTop); };
+  function openChat(key, skipQuest) {
+    if (!skipQuest && !state.meeting && showQuestCard(key)) return;  // a gold or silver ! or a gold ?: the quest card first
+    dispatchEvent(new CustomEvent('kingdom:chat', { detail: key }));
+    front(chatBox);
     chatWith = key; renderChat(); chatBox.style.display = 'flex'; keys.clear(); hideHover && hideHover();
     setTimeout(() => chatInput.focus(), 0);
     if (key === 'vizier') openLog();
@@ -2873,14 +3075,14 @@
     if (!chatLog.length) logBody.append(mk('div', { color: '#c9c1ae' }, 'When you give Vizier an order, you\'ll see her pass it to the right director here.'));
     chatLog.slice(-40).forEach((m) => bubble(logBody, m.from, m.text, m.from === 'vizier'));
   }
-  function openLog() { renderLog(); logBox.style.display = 'flex'; }
+  function openLog() { renderLog(); logBox.style.display = 'flex'; front(logBox); }
   function closeLog() { logBox.style.display = 'none'; }
   logClose.onclick = closeLog;
   const say = (key, from, text) => { (chats[key] = chats[key] || []).push({ from, text, at: new Date().toISOString() }); chats[key] = chats[key].slice(-60); store(CHAT_KEY, chats); };
   const logSay = (from, text) => { chatLog.push({ from, text, at: new Date().toISOString() }); chatLog.splice(0, Math.max(0, chatLog.length - 100)); store(LOG_KEY, chatLog); };
   const GREETING = /^\s*(hi|hello|hey|salaam|salam|good (morning|afternoon|evening)|how are you)\b/i;
   // names people go by, for "get Keeper", "Scholar, come here" and the like
-  const ALIAS = (() => { const m = new Map(); for (const r of RES) { m.set(r.name.toLowerCase(), r.key); m.set(r.key, r.key); m.set(r.name.toLowerCase().split(' ')[0], r.key); } m.set('vizier', 'vizier'); m.set('scout', 'scout'); m.set('helper', 'garden'); return m; })();
+  const ALIAS = (() => { const m = new Map(); for (const r of RES) { m.set(r.name.toLowerCase(), r.key); m.set(r.key, r.key); m.set(r.name.toLowerCase().split(' ')[0], r.key); } m.set('vizier', 'vizier'); m.set('scout', 'scout'); return m; })();
   function whoIn(text) {  // the first person named in the text
     const t = ' ' + text.toLowerCase().replace(/[^a-z ]/g, ' ') + ' ';
     let best = null, at = Infinity;
@@ -2920,7 +3122,7 @@
     const r = placeOrder(text);
     let hint = r.to === 'vizier' ? 'The village recorded this as an order for Vizier herself to keep.' : r.to === 'hire' ? 'The village noted this as a hiring request, for later.' : '';
     if (r.to !== 'vizier' && r.to !== 'hire') {
-      const a = agentOf(r.to), d = a.boss ? bossOf(a) : a, personal = r.to === 'steward' || r.to === 'garden';
+      const a = agentOf(r.to), d = a.boss ? bossOf(a) : a, personal = r.to === 'steward';
       logSay('vizier', `To ${d.name}: ${personal ? 'a personal order from the Chief (kept private).' : `"${text}"${a.boss ? ` This one is for ${a.name}, on your team.` : ''}`}`);
       logSay(d.key, a.boss ? `Got it, Vizier. I'll decide whether ${a.name} can take it, and check the work.` : "Got it, Vizier. I'll report back when it's done.");
       renderLog();
@@ -2946,6 +3148,7 @@
     const text = chatInput.value.trim(), key = chatWith; if (!text || !key) return;
     chatInput.value = '';
     say(key, 'you', text); bubble(chatBody, 'you', text, true);
+    if (key === 'librarian') questEvent('ask-librarian');
     let reply = commandReply(key, text);
     if (!reply) {
       if (brainOn()) {
@@ -2970,17 +3173,12 @@
     if (e.key === 'Enter') { e.preventDefault(); sendChat(); }
     if (e.key === 'Escape') closeChat();
   });
-  let lastM = 0;
   addEventListener('keydown', (e) => {
     if (isTyping() || e.repeat) return;
     if (e.code === 'KeyT') {
       e.preventDefault();
       if (chatWith) { closeChat(); return; }
-      const near = nearVizier() ? 'vizier' : (directorNear() || {}).key;
-      if (near) openChat(near); else toast('Walk up to someone and press T to talk. Double-tap M to talk to Vizier from anywhere.');
-    } else if (e.code === 'KeyM') {
-      const now = performance.now();  // the two taps toggle the map twice, so it ends up as it was
-      if (now - lastM < 400) { openChat('vizier'); lastM = 0; } else lastM = now;
+      openChat(talkTarget());  // whoever is in front of you, or Vizier from anywhere
     } else if (e.code === 'KeyL') { logBox.style.display === 'flex' ? closeLog() : openLog(); }
     else if (e.code === 'Escape') { if (chatWith) closeChat(); else closeLog(); }
   });
@@ -3137,7 +3335,8 @@
     const r = opts.to ? { to: opts.to, reply: null } : placeOrder(text);  // Vizier records it and phones the director who owns it
     const by = ownerOf(r.to), t = { id: Date.now().toString(36), text, to: r.to, by, status: 'waiting', at: new Date().toISOString(), from: opts.from || null, direct: !!opts.direct };
     todos.push(t); saveTodos();
-    const personal = r.to === 'steward' || r.to === 'garden';
+    if (!opts.from) questEvent('task');  // one you added yourself
+    const personal = r.to === 'steward';
     if (by !== 'vizier' && !opts.logged) { logSay('vizier', `To ${nameOf(by)}: ${personal ? 'a personal task from the Chief (kept private).' : `a task from the Chief's list: "${text}"`}`); logSay(by, "On it. I'll report back when it's done."); renderLog(); }
     if (r.reply) toast(r.reply, 'vizier');
     else toast(`On your to-do list (K): "${text.length > 70 ? text.slice(0, 67) + '...' : text}"${opts.from ? `, agreed with ${opts.from}` : ''}. ${nameOf(by)} will do it and report back.`, by);
@@ -3343,7 +3542,12 @@
     todoBusy = false; await makeReport(t); runTodos();
   }
   setInterval(() => { runTodos(); if (!todoBusy) nextReport(); if (todoBox.style.display === 'flex') todoNote.textContent = brainOn() ? LIVE_NOTE : IDLE_NOTE; }, 5000);
-  function openTodos() { closeLog(); talkBox.style.display = 'none'; renderTodos(); todoBox.style.display = 'flex'; keys.clear(); setTimeout(() => todoInput.focus(), 0); }
+  function openTodos() {
+    closeLog(); talkBox.style.display = 'none'; renderTodos();
+    const beside = mBox.style.display === 'flex' && innerWidth > mBox.offsetLeft + mBox.offsetWidth + 360;  // next to the meeting, not under it
+    todoBox.style.left = beside ? mBox.offsetLeft + mBox.offsetWidth + 12 + 'px' : '16px';
+    todoBox.style.display = 'flex'; front(todoBox); keys.clear(); setTimeout(() => todoInput.focus(), 0);
+  }
   function closeTodos() { todoBox.style.display = 'none'; todoTip.style.display = 'none'; todoInput.blur(); }
   window.__todo = () => (todoBox.style.display === 'flex' ? closeTodos() : openTodos());
   todoClose.onclick = closeTodos;
@@ -3531,24 +3735,28 @@
   mForm.append(mInput, mSend); mRight.append(mNote, mMsgs, mForm); mMain.append(mList, mRight); mBox.append(mHead, mMain);
   document.body.appendChild(mBox);
   let mTarget = 'everyone';
-  const attendees = () => ['vizier', ...RES.map((r) => r.key)];
+  const attendees = () => HALL_SEATS.filter((x) => x.key !== 'you').map((x) => x.key);
   function renderMeeting() {
     mList.replaceChildren();
     for (const key of ['everyone', ...attendees()]) {
       const row = mk('button', { display: 'flex', alignItems: 'center', gap: '8px', background: key === mTarget ? 'rgba(43,138,138,.45)' : 'transparent', border: '0', borderRadius: '8px', padding: '4px 6px', cursor: 'pointer', color: '#f5efe2', textAlign: 'left', font: `${Math.round(mSize * 0.36)}px system-ui` });
       if (key === 'everyone') row.append(mk('div', { width: mSize + 'px', height: mSize + 'px', borderRadius: '50%', background: '#2b8a8a', display: 'grid', placeItems: 'center', fontSize: Math.round(mSize * 0.42) + 'px', flex: 'none' }, '★'));
       else { const img = faceImg(key, mSize); if (img) row.append(img); }
-      row.append(mk('span', { whiteSpace: 'nowrap' }, key === 'everyone' ? 'Everyone' : nameOf(key)));
+      const lab = mk('span', { display: 'grid', lineHeight: '1.2' }); lab.append(mk('span', { whiteSpace: 'nowrap' }, key === 'everyone' ? 'Everyone' : nameOf(key)));
+      if (key !== 'everyone') lab.append(mk('span', { fontSize: Math.max(10, Math.round(mSize * 0.28)) + 'px', color: '#c9c1ae', whiteSpace: 'nowrap' }, roleOf(key)));
+      row.append(lab);
+      if (key !== 'everyone') row.title = `Click to talk to ${relabel(nameOf(key))} only. In "Everyone", type @${relabel(nameOf(key)).split(' ')[0]} to ask them in front of the room.`;
       row.onclick = () => { mTarget = key; renderMeeting(); mInput.focus(); };
       mList.append(row);
     }
     mTitle.textContent = mTarget === 'everyone' ? 'Council meeting · everyone' : `Council meeting · ${nameOf(mTarget)}`;
     mNote.textContent = brainLabel();
-    mInput.placeholder = mTarget === 'everyone' ? 'Talk to the whole room' : `Talk to ${nameOf(mTarget)} only`;
+    mInput.placeholder = mTarget === 'everyone' ? 'Talk to the room, or @name to ask one person' : `Talk to ${nameOf(mTarget)} only`;
     mMsgs.replaceChildren();
-    (chats[mTarget === 'everyone' ? 'everyone' : mTarget] || []).forEach((m) => bubble(mMsgs, m.from, m.text, m.from === 'you'));
+    (chats[mTarget === 'everyone' ? 'everyone' : mTarget] || []).forEach((m) => bubble(mMsgs, m.from, m.text, m.from === 'you', true));
   }
-  function openMeetingChat() { mTarget = 'everyone'; renderMeeting(); mBox.style.display = 'flex'; closeLog(); }
+  function openMeetingChat() { mTarget = 'everyone'; renderMeeting(); mBox.style.display = 'flex'; closeLog(); front(mBox); }
+  for (const b of [mBox, todoBox, chatBox, logBox, talkBox]) b.addEventListener('pointerdown', () => front(b), true);
   function closeMeetingChat() { mBox.style.display = 'none'; mInput.blur(); }
   function everyoneReplies(text) {  // the room answers: Vizier takes anything to be done, and the owner speaks up
     if (GREETING.test(text) && text.length < 40) return [['vizier', 'Good to have everyone here, Chief.'], ...['keeper', 'librarian', 'merchant'].map((k) => [k, PERSONA[k].lines[0].replace(/^[^:]+: /, '')])];
@@ -3559,24 +3767,109 @@
     }
     return out;
   }
+  // @name in the room: who's being asked directly. Matches their display name, default name or key.
+  function mentionsIn(text) {
+    const names = (W && W.names && W.names()) || {}, out = [];
+    for (const m of text.matchAll(/@([\p{L}\p{N}_-]+)/gu)) {
+      const w = m[1].toLowerCase();
+      const key = attendees().find((k) => k === w || nameOf(k).toLowerCase().split(' ')[0] === w || (names[k] || '').toLowerCase().split(' ')[0] === w);
+      if (key && !out.includes(key)) out.push(key);
+    }
+    return out;
+  }
+  const ALL_OF_YOU = /\b(everyone|every one of you|all of you|each of you|round the table|around the table)\b/i;
+  // Who answers in the room: the people you @named; everyone at the table if you ask all of you; otherwise the
+  // director whose area it is (Vizier takes anything that's nobody's in particular). Each speaks for themselves.
+  function whoAnswers(text) {
+    const named = mentionsIn(text);
+    if (named.length) return named.slice(0, 4);
+    if (ALL_OF_YOU.test(text) && !(GREETING.test(text) && text.length < 40)) return attendees().slice(0, 7);
+    const to = routeOrder(text), a = to !== 'vizier' && to !== 'hire' ? agentOf(to) : null;
+    const owner = a ? (a.boss || a.key) : 'vizier';
+    return [attendees().includes(owner) ? owner : 'vizier'];
+  }
   async function sendMeeting() {
     const text = mInput.value.trim(); if (!text) return;
     mInput.value = '';
     const room = mTarget === 'everyone' ? 'everyone' : mTarget;
-    say(room, 'you', text); bubble(mMsgs, 'you', text, true);
-    let replies;
+    say(room, 'you', text); bubble(mMsgs, 'you', text, true, true);
+    const show = (who, line) => { say(room, who, line); if ((mTarget === 'everyone' ? 'everyone' : mTarget) === room) bubble(mMsgs, who, line, false, true); };
     const live = async (who, hist, opts) => { const w = thinking(mMsgs, who); try { return await window.kingdomBrain(who, hist, opts); } catch (e) { return `(The helper couldn't answer: ${e.message})`; } finally { w.remove(); } };
-    if (room === 'everyone') {
-      const routed = brainOn() && isOrder(text) ? routeAndLog(text) : null;
-      replies = brainOn() ? [['vizier', await live('vizier', chats.everyone, { room: 'everyone', hint: routed ? routed.hint : '' })]] : everyoneReplies(text);
-      if (routed) addTodo(text, { to: routed.r.to, from: 'Vizier, at the meeting', logged: true });
-    } else {
+    if (room !== 'everyone') {
       const cmd = commandReply(room, text);
-      replies = [[room, cmd || (brainOn() ? await live(room, chats[room], {}) : scriptedReply(room, text))]];
-      if (!cmd && brainOn()) taskFromChat(room, text, replies[0][1]);
+      const line = cmd || (brainOn() ? await live(room, chats[room], {}) : scriptedReply(room, text));
+      show(room, line);
+      if (!cmd && brainOn()) taskFromChat(room, text, line);
+      return;
     }
-    for (const [who, line] of replies) { say(room, who, line); if ((mTarget === 'everyone' ? 'everyone' : mTarget) === room) bubble(mMsgs, who, line, false); }
+    const named = mentionsIn(text), who = whoAnswers(text);
+    const routed = (brainOn() || named.length) && isOrder(text) ? routeAndLog(text) : null;  // scripted room replies record their own order
+    if (routed) {
+      const t = addTodo(text, { to: routed.r.to, from: 'the council meeting', logged: true });
+      if (t && state.meeting) state.meeting.tasks.push(t.id);
+    }
+    if (!brainOn()) {
+      if (named.length) for (const k of who) show(k, scriptedReply(k, text));
+      else for (const [k, line] of everyoneReplies(text)) show(k, line);
+    } else {
+      for (const k of who) {
+        const asked = named.includes(k);
+        const hint = [asked ? `The Chief addressed you directly (@${nameOf(k)}) in front of the council. Answer them yourself.` : who.length > 1 ? 'The Chief asked everyone at the table: give your own short answer for your area.' : 'This is in your area, so you answer it for the council.',
+          routed ? routed.hint : ''].filter(Boolean).join(' ');
+        const line = await live(k, chats.everyone, { room: 'everyone', hint });
+        show(k, line);
+        if (asked) { say(k, 'you', `(At the council meeting) ${text}`); say(k, k, line); }  // they keep it in your private chat with them too
+      }
+    }
+    if (routed && !who.includes('vizier')) show('vizier', "Noted for the minutes. It's on your to-do list.");
   }
+  // ---------- meeting minutes (phase 3) ----------
+  // When a meeting ends: who was there, what was said, and the tasks that came out of it (already on the to-do
+  // list). With the AI helper on, Vizier writes the summary; without it, the minutes list what was said. Kept here.
+  const MIN_KEY = 'kingdom-one-minutes';
+  let minutes = (() => { try { return JSON.parse(localStorage.getItem(MIN_KEY)) || []; } catch (e) { return []; } })();
+  const saveMinutes = () => { try { localStorage.setItem(MIN_KEY, JSON.stringify(minutes.slice(-20))); } catch (e) { /* full or blocked */ } };
+  const minBox = mk('div', { ...panelStyle, left: '50%', top: '50%', transform: 'translate(-50%, -50%)', width: 'min(520px, calc(100vw - 32px))', maxHeight: 'calc(100vh - 120px)' }); minBox.className = 'hud';
+  document.body.appendChild(minBox);
+  function showMinutes(m) {
+    const head = mk('div', { padding: '10px 12px', borderBottom: '1px solid rgba(232,196,106,.25)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' });
+    const x = mk('button', { background: 'none', border: '0', color: '#c9c1ae', cursor: 'pointer', fontSize: '16px' }, '\u00d7'); x.onclick = () => { minBox.style.display = 'none'; };
+    head.append(mk('div', { fontWeight: '650', color: '#e8c46a' }, `Meeting minutes \u00b7 ${when(m.at)}`), x);
+    const body = mk('div', { overflowY: 'auto', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '12px' });
+    const sec = (t) => mk('div', { font: '600 11px system-ui', letterSpacing: '.08em', textTransform: 'uppercase', color: '#e8c46a' }, t);
+    const faces = mk('div', { display: 'flex', flexWrap: 'wrap', gap: '6px' });
+    for (const k of m.attendees) { const c = mk('div', { display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,.06)', borderRadius: '999px', padding: '2px 8px 2px 2px', fontSize: '12px' }); const img = faceImg(k, 22); if (img) c.append(img); c.append(mk('span', null, nameOf(k))); faces.append(c); }
+    body.append(sec('Who was there'), faces);
+    const tasks = todos.filter((t) => m.tasks.includes(t.id));
+    body.append(sec(`Tasks from this meeting (${tasks.length})`));
+    if (!tasks.length) body.append(mk('div', { color: '#c9c1ae', fontSize: '13px' }, 'None. Anything you ask for in a meeting goes on your to-do list.'));
+    for (const t of tasks) {
+      const r = mk('div', { display: 'flex', gap: '8px', alignItems: 'center', background: 'rgba(0,0,0,.2)', borderRadius: '8px', padding: '6px 8px', fontSize: '13px' });
+      const img = faceImg(t.by, 24); if (img) r.append(img);
+      const st = STATUS[t.status] || ['', '#c9c1ae'];
+      r.append(mk('div', { flex: '1' }, t.text), mk('span', { fontSize: '11px', color: st[1] }, `${nameOf(t.by)} \u00b7 ${st[0]}`)); body.append(r);
+    }
+    body.append(sec(m.summary || m.writing ? 'Summary' : 'What was said'));
+    if (m.summary) body.append(mk('div', { whiteSpace: 'pre-wrap', fontSize: '13px', lineHeight: '1.5' }, m.summary));
+    else if (m.writing) body.append(mk('div', { color: '#c9c1ae', fontSize: '13px' }, 'Vizier is writing the summary\u2026'));
+    else for (const l of m.lines) { const r = mk('div', { fontSize: '13px', lineHeight: '1.4' }); r.append(mk('b', { color: '#e8c46a' }, nameOf(l.from) + ': '), mk('span', null, l.text)); body.append(r); }
+    minBox.replaceChildren(head, body); minBox.style.display = 'flex'; front(minBox);
+  }
+  async function writeMinutes(meet) {
+    if (!meet) return;
+    const lines = (chats.everyone || []).filter((x) => x.at >= meet.at).map((x) => ({ from: x.from, text: x.text }));
+    if (!lines.length && !meet.tasks.length) return;
+    const m = { at: meet.at, attendees: attendees(), tasks: meet.tasks.slice(), lines, summary: '', writing: brainOn() && lines.length > 1 };
+    minutes.push(m); saveMinutes(); showMinutes(m);
+    if (!m.writing) return;
+    try { m.summary = await window.kingdomBrain('vizier', lines.slice(-80), { room: 'minutes' }); } catch (e) { m.summary = ''; }
+    m.writing = false; saveMinutes(); if (minBox.style.display === 'flex') showMinutes(m);
+  }
+  const pastBtn = mk('button', { background: 'rgba(255,255,255,.06)', border: '1px solid rgba(232,196,106,.25)', color: '#f5efe2', borderRadius: '6px', cursor: 'pointer', padding: '2px 7px', font: '600 12px system-ui' }, 'Minutes');
+  pastBtn.title = 'Minutes of the last meeting';
+  pastBtn.onclick = () => { const m = minutes[minutes.length - 1]; if (m) showMinutes(m); else toast('No minutes yet: they are written when a meeting ends.'); };
+  mHead.insertBefore(pastBtn, mHead.children[1]);
+  window.__showMinutes = () => { const m = minutes[minutes.length - 1]; if (m) showMinutes(m); return !!m; };
   mSend.onclick = sendMeeting;
   mInput.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Enter') { e.preventDefault(); sendMeeting(); } if (e.key === 'Escape') mInput.blur(); });
 
@@ -3632,11 +3925,32 @@
     const cam = camera(state.scene), r = canvas.getBoundingClientRect();
     return [cam.x + ((e.clientX - r.left) * dpr) / cam.k, cam.y + ((e.clientY - r.top) * dpr) / cam.k];
   }
+  const plotAt = (wx, wy) => (state.scene.id === 'town' ? scenes.town.plots.find((p) => wx >= p.x * T && wx <= (p.x + p.w) * T && wy >= p.y * T - 40 && wy <= (p.y + p.h) * T) : null);
   const onPlayer = (wx, wy) => { const p = state.player; return Math.abs(wx - p.x) < 14 && wy > p.y - 44 && wy < p.y + 4; };
+  // Right click (feedback round 1): walk to that spot, on the paths, with a small marker where you're going.
+  // The browser's own right-click menu is switched off over the game.
+  canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+  function walkTo(wx, wy) {
+    const s = state.scene, p = state.player, from = feetTile(p);
+    let to = null, best = 1e9;
+    const tx0 = Math.floor(wx / T), ty0 = Math.floor(wy / T);
+    for (let r = 0; r <= 3 && !to; r++) for (let ty = ty0 - r; ty <= ty0 + r; ty++) for (let tx = tx0 - r; tx <= tx0 + r; tx++) {
+      if (!inside(s, tx, ty) || !walkTile(s, tx, ty)) continue;
+      const d = Math.hypot(tx - tx0, ty - ty0); if (d < best) { best = d; to = [tx, ty]; }
+    }
+    const path = to && findPath(s, from, to);
+    if (!path) { toast("You can't get there from here."); return; }
+    state.walkTo = { scene: s.id, path, mark: centre(to), at: state.time };
+  }
   canvas.addEventListener('pointerdown', (e) => {
+    if (e.button === 2 && !state.fade && !state.meeting && !state.drag && !state.player.seated) { e.preventDefault(); const [wx, wy] = toWorld(e); walkTo(wx, wy); return; }
     if (state.fade || e.button !== 0 || state.meeting) return;
     const [wx, wy] = toWorld(e);
-    if (!onPlayer(wx, wy)) return;
+    if (!onPlayer(wx, wy)) {
+      const who = personAt(wx, wy); if (who) { e.preventDefault(); openChat(who); return; }
+      const pl = plotAt(wx, wy); if (pl) { e.preventDefault(); openBuild(pl.id); }
+      return;
+    }
     const p = state.player;
     state.drag = { ox: p.x - wx, oy: p.y - wy, from: [p.x, p.y] };
     p.moving = false; canvas.setPointerCapture(e.pointerId); canvas.style.cursor = 'grabbing';
@@ -3648,7 +3962,7 @@
       p.x = clamp(wx + state.drag.ox, 8, s.w * T - 8); p.y = clamp(wy + state.drag.oy, 12, s.h * T - 4);
       return;
     }
-    canvas.style.cursor = onPlayer(wx, wy) ? 'grab' : personAt(wx, wy) ? 'help' : '';
+    canvas.style.cursor = onPlayer(wx, wy) ? 'grab' : personAt(wx, wy) || plotAt(wx, wy) ? 'pointer' : '';
   });
   const drop = () => {
     if (!state.drag) return;
@@ -3698,6 +4012,7 @@
   }
   function interact() {
     if (state.fade) return;
+    const pn = plotNear(); if (pn) { openBuild(pn.id); return; }  // before Vizier, who is always beside you
     if (nearVizier()) { openChat('vizier'); return; }
     const dn = directorNear();
     if (dn) { greet(dn); return; }
@@ -3725,7 +4040,7 @@
   }
   function updatePlace() {
     const s = state.scene;
-    if (state.meeting) ui.place.innerHTML = `Council meeting<small>Town Hall · ${HALL_SEATS.length} at the table · C or a walk key ends it</small>`;
+    if (state.meeting) ui.place.innerHTML = `Council meeting<small>Town Hall · you, Vizier and the directors · 3, C or a walk key ends it</small>`;
     else if (s.id === 'town') ui.place.innerHTML = `Kingdom One<small>The medina · Vizier, ${RES.filter((r) => !r.boss).length} directors and ${RES.filter((r) => r.boss).length} workers live and work here</small>`;
     else if (s.id === 'hall-in') ui.place.innerHTML = 'Town Hall<small>Vizier, Chief of Staff · lives here</small>';
     else {
@@ -3748,7 +4063,9 @@
         if (dist < best) { best = dist; near = d; }
       }
       const dn = directorNear();
-      if (nearVizier()) text = '<b>Vizier, Chief of Staff</b> · press T to talk or give an order';
+      const pn = plotNear();
+      if (pn) text = pn.empty ? '<b>An empty plot</b> · press E or click the + to build here' : `<b>${esc(pn.name)}</b> · press E to change it, or walk in`;
+      else if (nearVizier()) text = '<b>Vizier, Chief of Staff</b> · press T to talk or give an order';
       else if (dn) text = `<b>${esc(dn.name)}</b> · E to say hello · T to talk`;
       else if (near && best < 46) text = `<b>${esc(near.label)}</b> · walk through the door or press E`;
       else {
@@ -3770,6 +4087,16 @@
     if (!state.fade && !ui.help.classList.contains('on')) {
       if (keys.has('up')) dy -= 1; if (keys.has('down')) dy += 1;
       if (keys.has('left')) dx -= 1; if (keys.has('right')) dx += 1;
+    }
+    if (dx || dy || state.drag || state.fade || (state.walkTo && state.walkTo.scene !== state.scene.id)) state.walkTo = null;  // the keys take over
+    else if (state.walkTo && !p.seated) {  // following a right-click route, one tile at a time
+      const w = state.walkTo, next = w.path[0];
+      if (!next) state.walkTo = null;
+      else {
+        const [nx, ny] = centre(next), ex = nx - p.x, ey = ny - p.y, dist = Math.hypot(ex, ey);
+        if (dist < 2) w.path.shift();
+        else { dx = ex / dist; dy = ey / dist; }
+      }
     }
     if ((dx || dy) && state.meeting && !state.fade) endMeeting();
     else if ((dx || dy) && !state.drag && !p.seated) {
@@ -3965,12 +4292,26 @@
     if (vizier.scene === s.id) list.push({ sortY: sortOf(vizier), draw: () => drawVizier(ctx) });
     for (const d of directors()) if (d.scene === s.id) list.push({ sortY: sortOf(d), draw: () => drawNPC(ctx, d, window.__castSheets && window.__castSheets[d.key]) });
     list.sort((a, b) => a.sortY - b.sortY);
+    drawStatusLater.length = 0; drawChatLater.length = 0;
+    if (state.walkTo && state.walkTo.scene === s.id) {  // where a right click is taking you
+      const [mx, my] = state.walkTo.mark, pulse = 1 + Math.sin(t * 6) * 0.12;
+      ctx.save(); ctx.strokeStyle = '#e8c46a'; ctx.lineWidth = 1.6; ctx.globalAlpha = 0.9;
+      ctx.beginPath(); ctx.ellipse(mx, my - 2, 7 * pulse, 3.4 * pulse, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(mx, my - 2, 2.4, 1.2, 0, 0, Math.PI * 2); ctx.fillStyle = '#e8c46a'; ctx.fill(); ctx.restore();
+    }
     for (const o of list) o.draw(ctx, t);
+    if (state.meeting && s.id === 'hall-in') { drawStatusLater.push(['vizier', vizier.x, vizier.y - 56]); for (const [k, x, y] of drawStatusLater) if (seatOf(k)) drawPlate(ctx, k, x, y); }
+    else {
+      for (const [k, x, y] of drawStatusLater) drawStatus(ctx, k, x, y);
+      if (vizier.scene === s.id) drawStatusLater.push(['vizier', vizier.x, vizier.y - 54]);
+      for (const [k, x, y] of drawStatusLater) { const m = questMark(k); if (m) drawQuestMark(ctx, m, x, y - 12, t); }
+    }
     if (s.outdoor) drawLeaves(cam, t);
     if (state.walkView) drawWalkable(s, cam); else drawNight(s, cam, t);
+    if (drawChatLater.length) { ctx.save(); ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1; ctx.setTransform(cam.k, 0, 0, cam.k, -cam.x * cam.k, -cam.y * cam.k); for (const n of drawChatLater) drawChat(ctx, n); ctx.restore(); }
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    if (s.outdoor && state.showMap) drawMinimap(cam);
+    if (s.outdoor && state.showMap) drawMinimap(cam); else mapBtns.style.display = "none";
     if (state.fade) {
       const a = state.fade.phase === 'out' ? state.fade.t : 1 - state.fade.t;
       ctx.fillStyle = `rgba(15,42,46,${clamp(a, 0, 1)})`;
@@ -4019,28 +4360,261 @@
     g.fillStyle = '#3aa0a0'; g.beginPath(); g.arc(40 * S, 29 * S, 2 * S - 1, 0, Math.PI * 2); g.fill();
     return c;
   }
+  const MAP_SYMBOL = { vizier: '\u{1F3DB}', keeper: '\u{1F4CB}', librarian: '\u{1F4DA}', merchant: '\u{1F4BC}', scholar: '\u{1F52D}', engineer: '\u{1F6E0}', youtube: '\u{1F3AC}',
+    scout: '\u{1F9ED}', media: '\u{1F4F7}', inbox: '\u{2709}', money: '\u{1F4B0}', steward: '\u{1F33F}' };
+  // The minimap (feedback round 1): small, it's a round map centred on you, half zoomed in by default, with
+  // + and - buttons; M makes it big, the whole town. Every building has a badge (a white tile with its colour
+  // round it), and you're a big blue pin.
+  const MAP_ZOOMS = [1, 1.5, 2, 2.5, 3, 4];
+  let mapZoom = 3;  // index into MAP_ZOOMS: 2.5, half way in
+  const mapBtns = mk('div', { position: 'fixed', display: 'none', gap: '4px', zIndex: 6, pointerEvents: 'auto' });
+  mapBtns.className = 'hud mapzoom';
+  for (const [label, step, tip] of [['+', 1, 'Zoom the map in'], ['−', -1, 'Zoom the map out']]) {
+    const bt = mk('button', { width: '26px', height: '26px', borderRadius: '50%', border: '2px solid #e8c46a', background: 'rgba(15,42,46,.92)', color: '#fbf6ec', font: '700 16px system-ui', lineHeight: '1', cursor: 'pointer', padding: '0' }, label);
+    bt.title = tip; bt.setAttribute('aria-label', tip);
+    bt.onclick = () => { bt.blur(); mapZoom = clamp(mapZoom + step, 0, MAP_ZOOMS.length - 1); };
+    mapBtns.append(bt);
+  }
+  document.body.appendChild(mapBtns);
+  function mapBadge(cx, cy, size, sym, accent) {
+    const h = size / 2, rr = size * 0.28;
+    const shape = (ox, oy) => { ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(cx - h + ox, cy - h + oy, size, size, rr); else ctx.rect(cx - h + ox, cy - h + oy, size, size); };
+    ctx.fillStyle = 'rgba(0,0,0,.35)'; shape(1, 2); ctx.fill();
+    ctx.fillStyle = '#fbf6ec'; shape(0, 0); ctx.fill();
+    ctx.strokeStyle = accent || TERRA; ctx.lineWidth = Math.max(1.5, size * 0.11); ctx.stroke();
+    ctx.font = `${Math.round(size * 0.62)}px "Segoe UI Emoji", "Apple Color Emoji", system-ui, sans-serif`; ctx.fillStyle = '#1b1406';
+    ctx.fillText(sym, cx, cy + size * 0.04);
+  }
   function drawMinimap(cam) {
-    const S = 3, mw = minimap.width, mh = minimap.height;
-    if (innerWidth < 520) return;
+    const S = 3, mw = minimap.width, mh = minimap.height, s = scenes.town;
+    const big = !!state.mapBig;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const x = innerWidth - mw - 16, y = 16;
-    rbox(ctx, x - 6, y - 6, mw + 12, mh + 12, 10, 'rgba(15,42,46,.86)');
-    ctx.drawImage(minimap, x, y);
-    ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 1;
-    ctx.strokeRect(x + (cam.x / T) * S, y + (cam.y / T) * S, (cam.w / T) * S, (cam.h / T) * S);
-    ctx.fillStyle = TERRA;
-    circle(ctx, x + (state.player.x / T) * S, y + (state.player.y / T) * S, 3);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    let k, x, y, w, h, D = 0, ccx = 0, ccy = 0;
+    if (big) {
+      k = Math.max(1, Math.min(2.4, (innerWidth - 48) / mw, (innerHeight - 140) / mh));
+      w = mw * k; h = mh * k; x = (innerWidth - w) / 2; y = Math.max(16, (innerHeight - h) / 2 - 20);
+      state.mapRect = { x: x - 6, y: y - 6, w: w + 12, h: h + 12 };
+      ctx.fillStyle = 'rgba(10,12,18,.45)'; ctx.fillRect(0, 0, innerWidth, innerHeight);
+      rbox(ctx, x - 6, y - 6, w + 12, h + 12, 10, 'rgba(15,42,46,.9)');
+      ctx.imageSmoothingEnabled = false; ctx.drawImage(minimap, x, y, w, h); ctx.imageSmoothingEnabled = true;
+      mapBtns.style.display = 'none';
+    } else {
+      D = innerWidth < 520 ? 140 : innerWidth < 900 ? 170 : 210;
+      ccx = innerWidth - D / 2 - 18; ccy = D / 2 + 18;
+      k = (D / Math.max(mw, mh)) * MAP_ZOOMS[mapZoom];
+      w = mw * k; h = mh * k;
+      // centred on you, but kept over the town where it can be
+      const inTown = state.scene.id === 'town';
+      const pxm = (inTown ? state.player.x : cam.x + cam.w / 2) / T * S * k, pym = (inTown ? state.player.y : cam.y + cam.h / 2) / T * S * k;
+      x = w > D ? clamp(ccx - pxm, ccx + D / 2 - w, ccx - D / 2) : ccx - w / 2;
+      y = h > D ? clamp(ccy - pym, ccy + D / 2 - h, ccy - D / 2) : ccy - h / 2;
+      state.mapRect = { x: ccx - D / 2 - 6, y: ccy - D / 2 - 6, w: D + 12, h: D + 12 };
+      ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.arc(ccx + 2, ccy + 3, D / 2 + 6, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(15,42,46,.95)'; ctx.beginPath(); ctx.arc(ccx, ccy, D / 2 + 6, 0, Math.PI * 2); ctx.fill();
+      ctx.save(); ctx.beginPath(); ctx.arc(ccx, ccy, D / 2, 0, Math.PI * 2); ctx.clip();
+      ctx.fillStyle = '#e9d6b0'; ctx.fillRect(ccx - D / 2, ccy - D / 2, D, D);
+      ctx.imageSmoothingEnabled = false; ctx.drawImage(minimap, x, y, w, h); ctx.imageSmoothingEnabled = true;
+      Object.assign(mapBtns.style, { display: 'flex', left: `${ccx + D / 2 - 50}px`, top: `${ccy + D / 2 - 14}px` });
+    }
+    const px = (tx) => x + tx * S * k, py = (ty) => y + ty * S * k;
+    if (big) { ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 1; ctx.strokeRect(px(cam.x / T), py(cam.y / T), (cam.w / T) * S * k, (cam.h / T) * S * k); }
+    // a badge on every building, and its owner's name on the big map
+    const bs = big ? Math.round(clamp(12 * k, 20, 30)) : Math.round(clamp(9 * k, 16, 26));
+    for (const b of [...s.houses, { ...s.hall, key: 'vizier', name: relabel('Vizier'), accent: LAGOON }]) {
+      const cx = px(b.x + b.w / 2), cy = py(b.y + b.h / 2), sym = MAP_SYMBOL[b.key];
+      if (!big && Math.hypot(cx - ccx, cy - ccy) > D / 2 + bs) continue;
+      if (sym || b.custom) mapBadge(cx, cy - (big ? 6 : 0), bs, sym || '\u{1F3E2}', b.accent);
+      const qm = questMark(b.key); if (qm) drawQuestMark(ctx, qm, cx + bs * 0.5, cy - (big ? 6 : 0) - bs * 0.2, state.time);
+      if (big && k >= 1.6) {
+        ctx.font = '600 11px system-ui, sans-serif'; const label = relabel(b.name || ''), tw = ctx.measureText(label).width;
+        rbox(ctx, cx - tw / 2 - 4, cy + bs / 2, tw + 8, 15, 4, 'rgba(18,20,28,.85)');
+        ctx.fillStyle = '#f5efe2'; ctx.fillText(label, cx, cy + bs / 2 + 8);
+      }
+    }
+    for (const p of s.plots) {  // empty plots: a gold + you can build on
+      const cx = px(p.x + p.w / 2), cy = py(p.y + p.h / 2);
+      if (!big && Math.hypot(cx - ccx, cy - ccy) > D / 2 + bs) continue;
+      const r0 = bs * 0.42; ctx.fillStyle = '#e8c46a'; ctx.strokeStyle = '#7a4b2a'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(cx, cy, r0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#fbf6ec'; ctx.fillRect(cx - r0 * 0.55, cy - r0 * 0.16, r0 * 1.1, r0 * 0.32); ctx.fillRect(cx - r0 * 0.16, cy - r0 * 0.55, r0 * 0.32, r0 * 1.1);
+    }
+    // you: a big blue pin with "Me", pointing the way you face
+    if (state.scene.id === 'town' || big) {
+      const mx = px(state.player.x / T), my = py(state.player.y / T), r = big ? 9 : 7, ME = '#2f8cff';
+      const ang = { up: -Math.PI / 2, down: Math.PI / 2, left: Math.PI, right: 0 }[state.player.dir] || 0;
+      ctx.fillStyle = 'rgba(47,140,255,.25)'; ctx.beginPath(); ctx.arc(mx, my, r * 2.1, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = ME; ctx.strokeStyle = '#fbf6ec'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(mx, my, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#fbf6ec'; ctx.beginPath();
+      ctx.moveTo(mx + Math.cos(ang) * r * 0.75, my + Math.sin(ang) * r * 0.75);
+      ctx.lineTo(mx + Math.cos(ang + 2.4) * r * 0.55, my + Math.sin(ang + 2.4) * r * 0.55);
+      ctx.lineTo(mx + Math.cos(ang - 2.4) * r * 0.55, my + Math.sin(ang - 2.4) * r * 0.55); ctx.closePath(); ctx.fill();
+      ctx.font = `700 ${big ? 12 : 10}px system-ui, sans-serif`; const mt = ctx.measureText('Me').width;
+      rbox(ctx, mx - mt / 2 - 4, my - r - (big ? 19 : 17), mt + 8, big ? 15 : 13, 4, ME);
+      ctx.fillStyle = '#fbf6ec'; ctx.fillText('Me', mx, my - r - (big ? 11.5 : 10.5));
+    }
+    if (!big) {
+      ctx.restore();
+      ctx.strokeStyle = '#e8c46a'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(ccx, ccy, D / 2 + 1, 0, Math.PI * 2); ctx.stroke();
+    }
+    if (big) { ctx.font = '12px system-ui, sans-serif'; ctx.fillStyle = '#f5efe2'; ctx.fillText('Press M to make the map small again', x + w / 2, y + h + 18); }
     ctx.setTransform(1, 0, 0, 1, 0, 0);
   }
+  window.__mapRect = () => state.mapRect || null;
+
+
+  // ---------- quests: meet each director and try one thing with them (feedback round 2) ----------
+  // A gold ! (over their head and on the map) means they have a quest for you; a silver ! means you're on it;
+  // a gold ? means it's done, so go back and hand it in. Each one is a short, real thing the town can do.
+  // Kept in this browser (like the to-do list). Vizier's quest opens once you've met all six directors.
+  const QUEST_KEY = 'kingdom-one-quests';
+  const QUESTS = [
+    { key: 'keeper', title: 'Your first task', pic: '\u{1F4DD}', ask: 'I run the to-do list. Give me a task, any task: press 1 (or click New task), type it and press Add.', how: 'Press 1, type a task, press Add', event: 'task',
+      done: 'That is how every job starts. You add it, Vizier passes it to whoever owns it, and it comes back for your OK.' },
+    { key: 'librarian', title: 'Ask the library', pic: '\u{1F4DA}', ask: 'I look after everything we know. Ask me a question in the chat, about anything at all.', how: 'Talk to Librarian and send a question', event: 'ask-librarian',
+      done: 'Ask any of us like that. With the AI helper on, I look things up in your library and say where each answer came from.' },
+    { key: 'merchant', title: 'Call the council', pic: '\u{1F3DB}', ask: 'Big decisions are made around the table. Call a meeting: press 2.', how: 'Press 2 to call a meeting', event: 'meeting',
+      done: 'In a meeting, talk to everyone, or put @ before a name to ask one person. When it ends, Vizier writes the minutes.' },
+    { key: 'scholar', title: 'See the whole town', pic: '\u{1F5FA}', ask: 'Good research starts with the big picture. Press M to open the big map.', how: 'Press M', event: 'map',
+      done: 'Gold + marks are empty plots you can build on. Press M to make the map small again, and use + and − to zoom.' },
+    { key: 'engineer', title: 'Check your tools', pic: '\u{1F9F0}', ask: 'I keep our tools safe. Open Settings, then Connections, and see what we could connect.', how: 'Click Settings, then Connections', event: 'connections',
+      done: 'Nothing is used until you turn it on, agents only read, and any change waits for your Approve.' },
+    { key: 'steward', title: 'Visit the private garden', pic: '\u{1F33F}', ask: 'Personal matters stay in my garden, apart from work. Come in through the garden gate.', how: "Walk through the gate into Steward's garden", event: 'garden',
+      done: 'Anything personal you give me stays in here. Outside the garden, the others only ever see counts.' },
+    { key: 'vizier', title: 'Build something new', pic: '\u{1F3D7}', ask: "You've met the directors. Now put up a building: find an empty plot with a gold + and press E beside it.", how: 'Find a gold + plot and build on it', event: 'build', after: 6,
+      done: 'Your town grows as your work does. People you put in a building drop by there to work.' },
+  ];
+  let quests = {};
+  try { quests = JSON.parse(localStorage.getItem(QUEST_KEY) || '{}') || {}; } catch (e) { quests = {}; }
+  const saveQuests = () => { store(QUEST_KEY, quests); renderQuestTracker(); };
+  const questOf = (key) => QUESTS.find((q) => q.key === key);
+  const questsDone = () => QUESTS.filter((q) => quests[q.key] === 'done').length;
+  function questState(key) {  // 'available', 'active', 'ready', 'done' or null
+    const q = questOf(key); if (!q) return null;
+    const st = quests[key] || 'available';
+    if (st === 'available' && q.after && QUESTS.filter((x) => x.key !== key && quests[x.key] === 'done').length < q.after) return null;
+    return st;
+  }
+  const questMark = (key) => ({ available: 'gold!', active: 'silver!', ready: 'gold?' })[questState(key)] || null;
+  function questEvent(ev) {
+    for (const q of QUESTS) if (q.event === ev && questState(q.key) === 'active') {
+      quests[q.key] = 'ready'; saveQuests();
+      toast(`Quest done: ${q.title}. Go back to ${relabel(nameOf(q.key))} to hand it in (look for the gold ?).`, q.key);
+    }
+  }
+  function drawQuestMark(c, mark, x, y, t) {
+    const bob = Math.sin(t * 3 + x * 0.05) * 1.6, ch = mark.endsWith('?') ? '?' : '!', fill = mark.startsWith('gold') ? '#f6ca33' : '#cfd4dc';
+    c.save(); c.textAlign = 'center'; c.textBaseline = 'alphabetic'; c.font = '900 17px Georgia, "Times New Roman", serif';
+    if (mark.startsWith('gold')) { c.shadowColor = 'rgba(255,214,90,.8)'; c.shadowBlur = 6; }
+    c.lineWidth = 3; c.strokeStyle = '#2a1c08'; c.strokeText(ch, x, y + bob);
+    c.fillStyle = fill; c.fillText(ch, x, y + bob); c.restore();
+  }
+  // the quest card: who, what, a picture, and two buttons
+  const questCard = mk('div', { position: 'fixed', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', width: 'min(380px, calc(100vw - 32px))', background: 'rgba(18,20,28,.97)',
+    border: '2px solid #e8c46a', borderRadius: '14px', padding: '16px 18px', zIndex: 30, display: 'none', color: '#f5efe2', font: '14px system-ui, sans-serif', boxShadow: '0 12px 40px rgba(0,0,0,.5)', pointerEvents: 'auto' });
+  questCard.className = 'hud'; questCard.setAttribute('role', 'dialog');
+  document.body.appendChild(questCard);
+  function closeQuestCard() { questCard.style.display = 'none'; }
+  function showQuestCard(key) {
+    const q = questOf(key), st = questState(key); if (!q || !st || st === 'done') return false;
+    const face = (window.__castPortraits && window.__castPortraits[key]) || null;
+    const head = mk('div', { display: 'flex', gap: '12px', alignItems: 'center' });
+    if (face && face.toDataURL) { const im = mk('img', { width: '56px', height: '56px', borderRadius: '50%', border: '2px solid #e8c46a', background: '#2b2f3a' }); im.src = face.toDataURL(); head.append(im); }
+    const who = mk('div', {});
+    who.append(mk('div', { color: '#e8c46a', font: '700 11px system-ui', letterSpacing: '.08em' }, st === 'ready' ? 'QUEST COMPLETE' : st === 'active' ? 'QUEST IN PROGRESS' : 'NEW QUEST'),
+      mk('div', { font: '700 18px system-ui' }, `${q.pic} ${q.title}`), mk('div', { color: '#c9c1ae', fontSize: '12px' }, `${relabel(nameOf(key))} · ${roleOf(key)}`));
+    head.append(who);
+    const body = mk('p', { margin: '12px 0', lineHeight: '1.45' }, relabel(st === 'ready' ? q.done : q.ask));
+    const how = mk('div', { background: 'rgba(232,196,106,.12)', borderRadius: '8px', padding: '8px 10px', fontSize: '13px' }, st === 'ready' ? `⭐ ${questsDone() + 1} of ${QUESTS.length} quests done` : `➡ ${relabel(q.how)}`);
+    const bar = mk('div', { display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '14px', flexWrap: 'wrap' });
+    const b = (label, go, fn) => { const x = mk('button', { padding: '7px 14px', borderRadius: '8px', border: go ? '0' : '1px solid rgba(232,196,106,.5)', background: go ? '#e8c46a' : 'transparent', color: go ? '#1b1406' : '#f5efe2', font: '600 13px system-ui', cursor: 'pointer' }, label); x.onclick = (e) => { if (e.isTrusted) fn(); }; return x; };
+    if (st === 'available') bar.append(b('Just chat', false, () => { closeQuestCard(); openChat(key, true); }), b('Not now', false, closeQuestCard), b('Accept', true, () => { quests[key] = 'active'; saveQuests(); closeQuestCard(); toast(`Quest accepted: ${q.title}. ${relabel(q.how)}.`, key); }));
+    else if (st === 'active') bar.append(b('Just chat', false, () => { closeQuestCard(); openChat(key, true); }), b('Got it', true, closeQuestCard));
+    else bar.append(b('Hand it in', true, () => {
+      quests[key] = 'done'; saveQuests(); closeQuestCard();
+      const n = questsDone(), next = QUESTS.find((x) => questState(x.key) === 'available');
+      toast(n === QUESTS.length ? 'Every quest done. You know your way around the whole town now.' : `Quest handed in (${n} of ${QUESTS.length}).${next ? ` ${relabel(nameOf(next.key))} has one for you too: look for the gold !.` : ''}`, key);
+    }));
+    questCard.replaceChildren(head, body, how, bar);
+    questCard.style.display = 'block'; keys.clear();
+    return true;
+  }
+  questCard.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeQuestCard(); e.stopPropagation(); });
+  // a small tracker under the menu: what you're on, and what's ready to hand in
+  const questTracker = mk('div', { position: 'fixed', left: '16px', top: '124px', background: 'rgba(18,20,28,.82)', border: '1px solid rgba(232,196,106,.4)', borderRadius: '10px',
+    padding: '8px 10px', color: '#f5efe2', font: '12px system-ui, sans-serif', zIndex: 5, maxWidth: '240px', pointerEvents: 'none' });
+  questTracker.className = 'hud';
+  document.body.appendChild(questTracker);
+  function renderQuestTracker() {
+    const rows = QUESTS.filter((q) => ['active', 'ready'].includes(questState(q.key)));
+    const done = questsDone();
+    if (done === QUESTS.length) { questTracker.style.display = 'none'; return; }
+    questTracker.style.display = 'block';
+    questTracker.replaceChildren(mk('div', { color: '#e8c46a', fontWeight: '700', marginBottom: rows.length ? '4px' : '0' }, `Quests ${done}/${QUESTS.length}${rows.length ? '' : ' · look for a gold ! to start one'}`),
+      ...rows.map((q) => { const ready = questState(q.key) === 'ready';
+        const row = mk('div', { display: 'flex', gap: '6px', alignItems: 'baseline', margin: '2px 0' });
+        row.append(mk('b', { color: ready ? '#f6ca33' : '#cfd4dc', font: '900 13px Georgia, serif', width: '10px' }, ready ? '?' : '!'),
+          mk('span', {}, ready ? `Hand in to ${relabel(nameOf(q.key))}: ${q.title}` : `${q.title}: ${relabel(q.how)}`));
+        return row; }));
+  }
+  renderQuestTracker();
+  // the things that complete a quest
+  setInterval(() => {
+    if (questState('engineer') === 'active' && [...document.querySelectorAll('.wz h2')].some((h) => /Connections/.test(h.textContent))) questEvent('connections');
+    if (questState('steward') === 'active' && state.scene.id === 'town') { const [tx, ty] = feetTile(state.player); if (inGarden(tx, ty)) questEvent('garden'); }
+    if (questState('vizier') === 'active' && BUILT.length) questEvent('build');
+  }, 500);
+  window.__quests = { state: questState, event: questEvent, reset: () => { quests = {}; saveQuests(); }, all: () => ({ ...quests }), set: (k, st) => { quests[k] = st; saveQuests(); } };
+
+  // ---------- the hotbar: T, then 1 to 4, like an RPG's spell bar ----------
+  // T talks to whoever is in front of you (feedback round 1), and to Vizier when nobody is.
+  const talkTarget = () => (directorNear() || {}).key || 'vizier';
+  const HOTBAR = [['T', '\u{1F4AC}', () => `Talk to ${relabel(nameOf(talkTarget()))}`, 'chief'], ['1', '\u{1F4DD}', () => 'New task', 'task'], ['2', '\u{1F3DB}', () => (state.meeting ? 'End meeting' : 'Meeting'), 'meeting'],
+    ['3', '\u26F2', () => 'Town square', 'square'], ['4', '\u{1F319}', () => 'Day / night', 'night']];
+  let hotTalk = 'vizier';
+  setInterval(() => { const k = talkTarget(); if (k !== hotTalk) { hotTalk = k; renderHotbar(); } }, 250);  // the label follows who you're next to
+  const hotbar = mk('div', {}); hotbar.id = 'hotbar'; hotbar.className = 'hud'; hotbar.setAttribute('role', 'toolbar'); hotbar.setAttribute('aria-label', 'Quick actions');
+  function hotAction(act) {
+    startSound();
+    if (act === 'chief') { const k = talkTarget(); if (chatWith === k) closeChat(); else openChat(k); }
+    else if (act === 'task') { openTodos(); }
+    else if (act === 'meeting') toggleMeeting();
+    else if (act === 'square') {
+      if (state.meeting || state.fade) { toast('End the meeting first (2 or C).'); return; }
+      state.fade = { t: 0, phase: 'out', cb: () => {
+        state.scene = scenes.town; const spot = landNear(scenes.town, 40 * T, 33 * T) || [40 * T, 33 * T];
+        Object.assign(state.player, { x: spot[0], y: spot[1], dir: 'down' }); placeVizierBehind(); updatePlace();
+      } };
+    } else if (act === 'night') dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyN', key: 'n' }));
+    else if (act === 'sound') { toggleSound(); }
+    renderHotbar();
+  }
+  function renderHotbar() {
+    hotbar.replaceChildren(...HOTBAR.map(([n, icon, label, act]) => {
+      const b = mk('button', {}); b.dataset.hot = act; b.title = `${label()} (${n})`;
+      b.append(mk('span', {}, n), mk('b', {}, icon), mk('i', {}, label()));
+      b.onclick = (e) => { b.blur(); if (e.isTrusted) hotAction(act); };
+      return b;
+    }), (() => { const b = mk('button', {}); b.className = 'snd'; b.dataset.hot = 'sound'; b.title = 'Sound on or off (Q)'; b.append(mk('span', {}, 'Q'), mk('b', {}, sound.on ? '\u{1F50A}' : '\u{1F507}'), mk('i', {}, 'Sound'));
+      b.onclick = (e) => { b.blur(); if (e.isTrusted) { startSound(); toggleSound(); renderHotbar(); } }; return b; })());
+  }
+  renderHotbar(); document.body.appendChild(hotbar);
+  addEventListener('keydown', (e) => {
+    if (isTyping() || e.repeat || document.querySelector('.wz')) return;
+    const i = ['Digit1', 'Digit2', 'Digit3', 'Digit4'].indexOf(e.code);
+    if (i >= 0) { e.preventDefault(); hotAction(HOTBAR[i + 1][3]); }
+    if (e.code === 'KeyQ' || e.code === 'KeyC' || e.code === 'KeyN') setTimeout(renderHotbar, 0);
+  });
 
   // ---------- go ----------
   updatePlace();
-  toast('Welcome to Kingdom One. Vizier, your chief of staff, has moved into the town hall and walks with you: press T beside anyone to talk, or double-tap M to reach Vizier from anywhere. Press H for help.');
+  toast('Welcome to Kingdom One. Vizier, your chief of staff, has moved into the town hall and walks with you: click anyone or press T to talk to whoever is in front of you (Vizier when nobody is), and right-click to walk somewhere. Press H for help.');
   if (DEBUG) {
     window.__v = {
       state, scenes,
       go(id, tx, ty, dir = 'down') { state.scene = scenes[id]; Object.assign(state.player, { x: (tx + 0.5) * T, y: (ty + 0.8) * T, dir }); placeVizierBehind(); updatePlace(); },
-      vizier, orders: () => orders, routeOrder, update: (dt) => update(dt), draw: () => draw(performance.now() / 1000), directors, canLand: (id, x, y) => canLand(scenes[id], x, y), callMeeting, endMeeting, seats: HALL_SEATS, summon, backToWork, commandReply, setWorking, notes: () => villageNotes, chat: (a, b) => { const f = (k) => directors().find((d) => d.key === k); startChat(f(a), f(b)); }, findPath: (id, a, b) => findPath(scenes[id], a, b), walkStats: (id) => walkStats(scenes[id]), sendOrder: (text) => { orderText.value = text; sendOrder(); }, callCard: () => callCard, openChat, todos: () => todos, candidate: () => candidate, hireCandidate, declineCandidate,
+      vizier, plotNear: () => plotNear(), openBuild, orders: () => orders, routeOrder, update: (dt) => update(dt), draw: () => draw(performance.now() / 1000), directors, canLand: (id, x, y) => canLand(scenes[id], x, y), callMeeting, endMeeting, seats: HALL_SEATS, summon, backToWork, commandReply, setWorking, notes: () => villageNotes, chat: (a, b) => { const f = (k) => directors().find((d) => d.key === k); startChat(f(a), f(b)); }, findPath: (id, a, b) => findPath(scenes[id], a, b), walkStats: (id) => walkStats(scenes[id]), sendOrder: (text) => { orderText.value = text; sendOrder(); }, callCard: () => callCard, openChat, todos: () => todos, candidate: () => candidate, hireCandidate, declineCandidate,
     };
   }
   let last = performance.now();
