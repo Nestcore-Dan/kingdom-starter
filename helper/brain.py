@@ -29,6 +29,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import report  # guide step 43: task reports as PDFs
 import hiring  # guide step 46: candidates, interviews and hires
 import charter  # the chain of command: each agent's charter and library shelves
+import heads  # feedback round 3: a head for each building the Chief puts up
 
 HERE = pathlib.Path(__file__).resolve().parent
 VILLAGE = HERE.parent
@@ -353,6 +354,39 @@ REPORT_LOCK = threading.Lock()
 RECENT = []                      # times of recent replies, for the hourly limit
 
 
+def usage_summary():
+    """Replies and tokens today, this week and each of the last 7 days, by agent and by model, plus this hour against
+    the helper's own hourly cap. Read from usage.jsonl, which holds counts only."""
+    today = time.strftime("%Y-%m-%d")
+    days = [time.strftime("%Y-%m-%d", time.localtime(time.time() - 86400 * k)) for k in range(6, -1, -1)]
+    blank = lambda: {"replies": 0, "tokens": 0, "output": 0}
+    per_day = {d: blank() for d in days}
+    week, day, agents, models = blank(), blank(), {}, {}
+    try:
+        lines = USAGE_LOG.read_text(encoding="utf-8").splitlines()[-5000:] if USAGE_LOG.exists() else []
+    except OSError:
+        lines = []
+    for ln in lines:
+        try:
+            r = json.loads(ln)
+        except ValueError:
+            continue
+        d = str(r.get("at", ""))[:10]
+        if d not in per_day:
+            continue
+        tok = sum(int(r.get(k) or 0) for k in ("input", "cache_read", "cache_write", "output"))
+        for bucket in [per_day[d], week] + ([day] if d == today else []):
+            bucket["replies"] += 1; bucket["tokens"] += tok; bucket["output"] += int(r.get("output") or 0)
+        a = agents.setdefault(str(r.get("agent", "?"))[:20], {"today": 0, "week": 0})
+        a["week"] += 1; a["today"] += 1 if d == today else 0
+        m = str(r.get("model", "?")).replace("claude-", "")[:30]
+        models[m] = models.get(m, 0) + 1
+    now = time.time()
+    hour = sum(1 for t in RECENT if now - t < 3600)
+    return {"today": day, "week": week, "days": [{"date": d, **per_day[d]} for d in days], "agents": agents, "models": models,
+            "hour": hour, "perHour": MAX_PER_HOUR, "plan": PLAN}
+
+
 def clean_env():
     """Everything except ANTHROPIC_* settings, so Claude Code can only use the subscription sign-in."""
     return {k: v for k, v in os.environ.items() if not k.upper().startswith("ANTHROPIC_")}
@@ -379,10 +413,18 @@ BOSS = {w: d for d, ws in TEAM.items() for w in ws}
 
 
 def refresh_team():
-    """Adds everyone hired at the town hall (agents/hires.json) to the names, workers and teams."""
+    """Adds everyone hired at the town hall (agents/hires.json) to the names, workers and teams, and the head of each
+    building the Chief put up (their folders are kept in step with the Chief's settings)."""
+    try:
+        rec = json.loads(CONN_FILE.read_text(encoding="utf-8")) if CONN_FILE.exists() else {}
+        for h in heads.sync(rec, NAMES):
+            NAMES[h["key"]] = h["name"]; TEAM.setdefault(h["key"], [])  # a head is director level: Opus, like the directors
+    except (OSError, ValueError):
+        pass
+    heads_now = hiring.active_heads()
     for h in hiring.load_hires():
         k, b = str(h.get("key", "")), str(h.get("boss", ""))
-        if not hiring.KEY.match(k) or b not in hiring.DIRECTORS:
+        if not hiring.KEY.match(k) or (b not in hiring.DIRECTORS and b not in heads_now) or h.get("released"):
             continue
         NAMES[k] = str(h.get("name", k)); WORKERS.add(k); BOSS[k] = b
         if k not in TEAM.setdefault(b, []):
@@ -743,6 +785,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_response(200); self.send_header("Content-Type", "application/pdf")
             self.send_header("Content-Disposition", f'inline; filename="{name}"'); self.send_header("Content-Length", str(len(body)))
             self.end_headers(); self.wfile.write(body); return
+        if self.path == "/usage":  # the usage tracker (feedback round 3): counts from usage.jsonl, never any message text
+            return self._send(200, usage_summary())
         if self.path == "/requests":  # the Chief's existing tools: requests waiting for the Chief, and recent ones
             reqs = json.loads(REQUESTS.read_text(encoding="utf-8")) if REQUESTS.exists() else []
             names = {k: t["name"] for k, t in tool_registry().items()}
@@ -835,6 +879,19 @@ class Handler(BaseHTTPRequestHandler):
                     h = hiring.hire(data.get("candidate") or {}, {n.lower() for n in NAMES.values()})
                 refresh_team()
                 return self._send(200, {"ok": True, "hire": h})
+            except Exception as e:
+                return self._send(400, {"error": str(e)[:300]})
+        if self.path == "/release":  # feedback round 3: let a project worker go, only when the Chief clicks to
+            try:
+                data = json.loads(self.rfile.read(min(int(self.headers.get("Content-Length", 0)), 10_000)))
+                with REPORT_LOCK:
+                    h = hiring.release(str(data.get("key", "")))
+                WORKERS.discard(h["key"]); NAMES.pop(h["key"], None)
+                for ws in TEAM.values():
+                    if h["key"] in ws:
+                        ws.remove(h["key"])
+                refresh_team()
+                return self._send(200, {"ok": True, "released": h["key"]})
             except Exception as e:
                 return self._send(400, {"error": str(e)[:300]})
         if self.path != "/chat":

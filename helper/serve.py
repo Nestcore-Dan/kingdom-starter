@@ -61,6 +61,20 @@ COLOUR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 PLOT_RE = re.compile(r"^p[0-9]{1,2}$")
 
 
+HEAD_KEY = re.compile(r"^head-[a-z0-9]{1,14}$")
+HEAD_NAME = re.compile(r"^[A-Z][a-z]+(?:[ '-][A-Z][a-z]+)?$")
+
+
+def head(h):
+    """A building's head: a key and one clean name, or none."""
+    if not isinstance(h, dict):
+        return None
+    key, name = str(h.get("key", "")), clean(h.get("name"), 20)
+    if not HEAD_KEY.match(key) or not HEAD_NAME.match(name):
+        raise ValueError("a head needs one simple name")
+    return {"key": key, "name": name}
+
+
 def buildings(items):
     """Buildings the Chief put on empty plots (feedback round 2): a look, a name, who works there and which tools."""
     out = []
@@ -75,7 +89,7 @@ def buildings(items):
                     "name": name, "purpose": clean(b.get("purpose"), 80),
                     "agents": [a for a in (b.get("agents") if isinstance(b.get("agents"), list) else []) if isinstance(a, str) and KEY.match(a)][:20],
                     "tools": [clean(t, 24) for t in (b.get("tools") if isinstance(b.get("tools"), list) else []) if isinstance(t, str)][:20],
-                    "added": clean(b.get("added"), 40)})
+                    "added": clean(b.get("added"), 40), "head": head(b.get("head"))})
     return out
 
 

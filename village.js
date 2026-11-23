@@ -171,11 +171,22 @@
   const esc = (x) => String(x == null ? '' : x).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));  // guide step 49
   // guide step 46: people hired at the town hall (agents/hires.json, written by the brain helper on the user's yes).
   // They work at their director's house, so they don't get a villa of their own.
+  // Project heads (feedback round 3): the head of each building you put up lives and works there, and is the one you
+  // talk to about it. Director level: they sit at the council table, and borrow the directors' expertise.
+  const HEADS = [];
+  for (const bd of (window.__world && window.__world.buildings ? window.__world.buildings() : [])) {
+    const hd = bd.head; if (!hd || !/^head-[a-z0-9]{1,14}$/.test(hd.key || '') || RES.some((r) => r.key === hd.key)) continue;
+    const h = { key: hd.key, name: hd.name, building: bd.name, colour: bd.colour || '#1f6f8b', purpose: bd.purpose || '' };
+    HEADS.push(h);
+    RES.push({ key: h.key, name: h.name, title: bd.name, role: `Head of ${bd.name}`, q: 'project', head: true, home: 'b-' + bd.id, accent: h.colour, wall: '#f7ead3',
+      job: h.purpose ? `Runs ${bd.name}: ${h.purpose}` : `Runs ${bd.name}, and is your one point of contact for it.`, yard: [], room: [] });
+  }
+  window.__heads = HEADS;  // drawn by cast.js, like everyone else
   const HIRES = (() => { try { const x = new XMLHttpRequest(); x.open('GET', 'agents/hires.json?' + Date.now(), false); x.send(); const j = x.status === 200 ? JSON.parse(x.responseText) : []; return Array.isArray(j) ? j : []; } catch (e) { return []; } })();
   for (const h of HIRES) {
-    const dir = RES.find((r) => r.key === h.boss); if (!dir || RES.some((r) => r.key === h.key)) continue;
+    const dir = RES.find((r) => r.key === h.boss); if (!dir || h.released || RES.some((r) => r.key === h.key)) continue;
     h.bossName = dir.name;
-    RES.push({ key: h.key, name: h.name, title: `${h.name}, at ${dir.title}`, role: h.role, q: dir.q, hire: true, home: h.boss, bossKey: h.boss, accent: dir.accent, wall: dir.wall, job: h.job, yard: [], room: [] });
+    RES.push({ key: h.key, name: h.name, title: `${h.name}, at ${dir.title}`, role: h.role, q: dir.q, hire: true, home: dir.head ? dir.home : h.boss, bossKey: h.boss, project: !!dir.head, accent: dir.accent, wall: dir.wall, job: h.job, yard: [], room: [] });
   }
   window.__hires = HIRES;  // the cast (cast.js) draws them too
   // Org chart (guide step 25): directors own an area and a house; workers are like interns, given every task
@@ -239,7 +250,7 @@
     // outside the medina wall: the desert edge of the map, where nobody goes (guide step 31)
     for (let y = 0; y < s.h; y++) for (let x = 0; x < s.w; x++) if (x < 2 || y < 2 || x > s.w - 3 || y > s.h - 3) s.solid[y * s.w + x] = 1;
     // villas, one per resident
-    const houses = RES.filter((r) => !r.hire).map((r, i) => {
+    const houses = RES.filter((r) => !r.hire && !r.head).map((r, i) => {
       const b = addHouse(s, i, r);
       const dx = b.door.x, dy = b.door.y, road = b.y < 27 ? 26 : 45;
       if (r.q === 'private') fill(s, dx, dy + 1, dx, 22, PATH);  // to the garden path, below
@@ -624,6 +635,19 @@
     addFurn(s, 'divan', m(14, 3), 1, 3, 1);
     addFurn(s, 'table', m(14, 2), 3, 2, 1);
     addFurn(s, 'chair', m(16), 3, 1, 1);
+    // the office (feedback round 3): a workstation for each person who works here besides the owner, with a
+    // pouf to sit on, in a row across the middle of the room. They come in and sit at it during office time.
+    const headKey = b.custom && b.custom.head && b.custom.head.key;
+    const crew = b.custom ? [...b.custom.agents.filter((k) => RES.some((r) => r.key === k)), ...RES.filter((r) => headKey && r.boss === headKey).map((r) => r.key)] : RES.filter((r) => r.boss === b.key).map((r) => r.key);
+    s.workstations = [];
+    [[6, 7], [9, 7], [12, 7]].slice(0, crew.length).forEach(([x, y], k) => {
+      const owner = crew[k], ws = { owner, tile: [m(x, 2) + (b.flip ? 1 : 0), y + 1], seat: null };
+      const name = (RES.find((r) => r.key === owner) || {}).name || owner;
+      addFurn(s, 'workstation', m(x, 2), y, 2, 1, { lit: () => directors().some((d) => d.key === owner && d.sitting && d.scene === s.id), msg: `${name}'s workstation: a screen, a keyboard and a glass of mint tea.` });
+      addFurn(s, 'pouf', ws.tile[0], y + 1, 1, 1, { floor: true, msg: `${name}'s seat at the workstation.` });
+      ws.seat = { x: (ws.tile[0] + 0.5) * T, y: (y + 1) * T + 26, dir: 'up', sortY: (y + 2) * T - 1 };
+      s.workstations.push(ws);
+    });
     // the job
     const jobs = ROOM_JOBS[b.key] || b.room;
     const BIZ_NAMES = ['your first business', 'your second business', 'future ventures'];
@@ -1156,6 +1180,23 @@
     for (const b of scenes.town.houses) if (b.custom && Math.hypot((b.door.x + 0.5) * T - p.x, (b.door.y + 1.5) * T - p.y) < 30) return { id: b.plot.id, empty: false, name: b.custom.name };
     return null;
   };
+  // Office time (feedback round 3): now and then people go inside and work at a desk for half a minute or so.
+  // Workers use their workstation in their director's office, directors their own desk, and anyone planted in a
+  // building you added uses their workstation there.
+  function officeGoal(d) {
+    if (Math.random() > (d.worker ? 0.3 : 0.18)) return null;  // most of the day they're still out and about
+    const spots = [];
+    for (const id of Object.keys(scenes)) { const room = scenes[id]; for (const ws of room.workstations || []) if (ws.owner === d.key) spots.push({ room: id, ws }); }
+    const until = 18 + Math.random() * 27;
+    if (spots.length && (d.worker || Math.random() < 0.5)) {
+      const { room, ws } = spots[Math.floor(Math.random() * spots.length)];
+      if (directors().some((o) => o !== d && o.seated === ws.seat)) return null;
+      return { scene: room, tile: ws.tile, then: 'sit', seat: ws.seat, until };
+    }
+    if (d.worker) return null;
+    const desk = deskOf(d);
+    return desk.side ? { scene: d.room, tile: desk.side, then: 'sit', until } : null;
+  }
   // who was planted in which building: they drop by there now and then
   const PLANTED = {};
   for (const b of BUILT) for (const k of b.agents) (PLANTED[k] = PLANTED[k] || []).push(b);
@@ -1403,6 +1444,28 @@
 
   // ---------- furniture ----------
   const FURN = {
+    workstation(c, X, Y, W, H, pal, t, o) {  // a cedar desk with a screen, a keyboard and a glass of mint tea (feedback round 3)
+      c.fillStyle = SHADOW; c.fillRect(X + 4, Y + H - 1, W - 4, 5);
+      box(c, X + 3, Y + 8, W - 6, H - 8, '#6d3b1f'); box(c, X + 5, Y + 14, W - 10, H - 16, '#8a5a32');
+      box(c, X + 1, Y + 2, W - 2, 8, '#9a6238'); box(c, X + 1, Y + 2, W - 2, 2, '#c88a52');
+      const sx = X + W / 2 - 15, sy = Y - 18, on = o && o.opts.lit && o.opts.lit();
+      box(c, X + W / 2 - 2, Y - 2, 4, 5, '#2a2a33'); box(c, X + W / 2 - 7, Y + 2, 14, 2, '#2a2a33');           // stand
+      rbox(c, sx, sy, 30, 19, 2, '#23242c');                                                                     // bezel
+      c.fillStyle = on ? '#3aa7a1' : '#2f3d44'; c.fillRect(sx + 2, sy + 2, 26, 14);                             // screen
+      if (on) { c.fillStyle = 'rgba(255,255,255,.55)'; for (let k = 0; k < 4; k++) c.fillRect(sx + 4, sy + 4 + k * 3, 8 + ((k * 7 + Math.floor(t * 2)) % 14), 1.2); }
+      box(c, X + W / 2 - 10, Y + 4, 20, 4, '#e9e1cf'); box(c, X + W / 2 - 9, Y + 5, 18, 1, '#bdb39c');            // keyboard
+      c.fillStyle = 'rgba(190,230,200,.85)'; c.fillRect(X + W - 12, Y - 3, 5, 7); c.fillStyle = BRASS; c.fillRect(X + W - 12, Y - 4, 5, 1.5);  // tea
+      box(c, X + 8, Y - 2, 7, 4, '#fdf8ec');                                                                     // papers
+      outlineRect(c, X + 1, Y + 2, W - 2, H - 2, 1.1);
+      if (on) { const g = c.createRadialGradient(sx + 15, sy + 9, 1, sx + 15, sy + 9, 26); g.addColorStop(0, 'rgba(90,200,190,.22)'); g.addColorStop(1, 'rgba(90,200,190,0)'); c.fillStyle = g; c.fillRect(sx - 12, sy - 16, 54, 50); }
+    },
+    pouf(c, X, Y, W, H, pal) {  // a round leather pouf to sit on at a workstation
+      const cx = X + W / 2, cy = Y + H / 2 + 4;
+      c.fillStyle = SHADOW; ellipse(c, cx + 2, cy + 6, 11, 4);
+      c.fillStyle = shade(pal.accent, -0.15); ellipse(c, cx, cy + 2, 11, 7);
+      c.fillStyle = pal.accent; ellipse(c, cx, cy - 1, 11, 6);
+      c.strokeStyle = BRASS; c.lineWidth = 1; c.beginPath(); c.ellipse(cx, cy - 1, 6, 3, 0, 0, Math.PI * 2); c.stroke();
+    },
     rug(c, X, Y, W, H, pal, t, o) {  // kilim; silk ones get a sheen and a brass border
       rbox(c, X + 4, Y + 4, W - 8, H - 8, 2, pal.rug);
       if (o && o.opts.silk) {
@@ -2169,9 +2232,79 @@
     const row = S.rows.indexOf(n.dir);
     c.drawImage(S.canvas, S.sitCol * S.fw * S.R, row * S.fh * S.R, S.fw * S.R, S.fh * S.R, n.x - S.footX, n.y - S.footY, S.fw, S.fh);
   }
+  // Running outdoors (feedback round 2): you ride a camel, with a striped saddle blanket and a little dust.
+  const riding = (p) => p === state.player && p.moving && keys.has('run') && state.scene.outdoor && !state.drag && !p.seated;
+  function drawCamel(c, x, y, dir, anim) {
+    const FUR = '#c99a5e', DARK = '#a77a45', LIGHT = '#e0bb85', HOOF = '#5a3d22';
+    const g = Math.sin(anim * 0.11), g2 = Math.sin(anim * 0.11 + Math.PI);
+    c.fillStyle = 'rgba(15,42,46,.25)'; ellipse(c, x, y - 1, dir === 'left' || dir === 'right' ? 24 : 14, 5);
+    c.lineCap = 'round';
+    const leg = (lx, ly, swing, col) => { c.strokeStyle = col; c.lineWidth = 3.4; c.beginPath(); c.moveTo(lx, ly); c.quadraticCurveTo(lx + swing * 2, ly + 10, lx + swing * 4, y - 2); c.stroke(); c.fillStyle = HOOF; c.fillRect(lx + swing * 4 - 2, y - 3, 4, 2.5); };
+    if (dir === 'left' || dir === 'right') {
+      const f = dir === 'left' ? -1 : 1, by = y - 30;
+      leg(x - 13 * f, by + 6, g2 * f, DARK); leg(x + 11 * f, by + 6, g * f, DARK);   // far legs
+      c.fillStyle = FUR; c.strokeStyle = OUTLINE; c.lineWidth = 1;
+      c.beginPath(); c.ellipse(x, by, 21, 10, 0, 0, Math.PI * 2); c.fill(); c.stroke();             // body
+      c.beginPath(); c.ellipse(x - 3 * f, by - 8, 9, 7, 0, Math.PI, 0); c.fill(); c.stroke();        // hump
+      c.fillStyle = DARK; c.beginPath(); c.ellipse(x, by + 5, 17, 4, 0, 0, Math.PI); c.fill();       // belly shade
+      // neck and head, reaching forward
+      c.strokeStyle = FUR; c.lineWidth = 7; c.beginPath(); c.moveTo(x + 17 * f, by - 2); c.quadraticCurveTo(x + 27 * f, by - 4, x + 27 * f, by - 17 + g * 0.8); c.stroke();
+      c.fillStyle = FUR; c.strokeStyle = OUTLINE; c.lineWidth = 1;
+      c.beginPath(); c.ellipse(x + 31 * f, by - 19 + g * 0.8, 7, 4.2, 0, 0, Math.PI * 2); c.fill(); c.stroke();
+      c.fillStyle = OUTLINE; c.fillRect(x + 31 * f, by - 21 + g * 0.8, 1.6, 1.6);                     // eye
+      c.fillStyle = DARK; c.fillRect(x + 26 * f - 1, by - 24 + g * 0.8, 2.5, 3);                       // ear
+      c.strokeStyle = DARK; c.lineWidth = 1.6; c.beginPath(); c.moveTo(x - 20 * f, by - 1); c.quadraticCurveTo(x - 25 * f, by + 4, x - 23 * f, by + 10); c.stroke();  // tail
+      leg(x - 11 * f, by + 7, g * f, FUR); leg(x + 13 * f, by + 7, g2 * f, FUR);                      // near legs
+      // the saddle blanket, red and teal with a fringe
+      c.fillStyle = TERRA; c.fillRect(x - 10, by - 10, 20, 11); c.fillStyle = LAGOON; c.fillRect(x - 10, by - 6, 20, 3);
+      c.fillStyle = BRASS; for (let k = 0; k < 6; k++) c.fillRect(x - 9 + k * 3.6, by + 1, 1.4, 3);
+      return by - 8;  // where the rider sits
+    }
+    // facing towards you or away: a narrower camel
+    const by = y - 30, front = dir === 'down';
+    leg(x - 6, by + 6, g * 0.4, DARK); leg(x + 6, by + 6, g2 * 0.4, DARK);
+    c.fillStyle = FUR; c.strokeStyle = OUTLINE; c.lineWidth = 1;
+    c.beginPath(); c.ellipse(x, by, 11, 12, 0, 0, Math.PI * 2); c.fill(); c.stroke();
+    c.fillStyle = TERRA; c.fillRect(x - 11, by - 8, 22, 10); c.fillStyle = LAGOON; c.fillRect(x - 11, by - 4, 22, 3);
+    c.fillStyle = BRASS; for (let k = 0; k < 6; k++) c.fillRect(x - 10 + k * 4, by + 2, 1.4, 3);
+    leg(x - 5, by + 9, g2 * 0.4, FUR); leg(x + 5, by + 9, g * 0.4, FUR);
+    if (!front) { c.strokeStyle = DARK; c.lineWidth = 1.6; c.beginPath(); c.moveTo(x, by + 4); c.lineTo(x, by + 14); c.stroke(); }
+    return by - 6;
+  }
+  function drawCamelHead(c, x, y, anim) {  // facing you, the head and neck go in front of the rider
+    const FUR = '#c99a5e', DARK = '#a77a45', g = Math.sin(anim * 0.11) * 0.8, by = y - 30;
+    c.strokeStyle = FUR; c.lineWidth = 7; c.lineCap = 'round'; c.beginPath(); c.moveTo(x, by + 2); c.lineTo(x, by + 12 + g); c.stroke();
+    c.fillStyle = FUR; c.strokeStyle = OUTLINE; c.lineWidth = 1; c.beginPath(); c.ellipse(x, by + 15 + g, 5.5, 6.5, 0, 0, Math.PI * 2); c.fill(); c.stroke();
+    c.fillStyle = OUTLINE; c.fillRect(x - 3, by + 12 + g, 1.5, 1.5); c.fillRect(x + 1.5, by + 12 + g, 1.5, 1.5);
+    c.fillStyle = DARK; c.fillRect(x - 6, by + 8 + g, 2, 3); c.fillRect(x + 4, by + 8 + g, 2, 3);
+  }
+  function bodyTop(S) {  // where the character starts in its sprite frame (the frames have room above the head)
+    if (S._top != null) return S._top;
+    try {
+      const w = S.fw * S.R, h = S.fh * S.R, d = S.canvas.getContext('2d').getImageData(w, S.rows.indexOf('down') * h, w, h).data;
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3] > 20) return (S._top = Math.floor(y / S.R));
+    } catch (e) { /* fall through */ }
+    return (S._top = Math.round(S.footY * 0.4));
+  }
+  const dust = [];
+  function drawDust(c, p) {
+    if (riding(p) && Math.random() < 0.5) dust.push({ x: p.x + (Math.random() - 0.5) * 20, y: p.y - 2, t: state.time });
+    for (let i = dust.length - 1; i >= 0; i--) {
+      const d = dust[i], age = state.time - d.t; if (age > 0.6) { dust.splice(i, 1); continue; }
+      c.fillStyle = `rgba(214,184,140,${0.45 * (1 - age / 0.6)})`; c.beginPath(); c.arc(d.x, d.y - age * 8, 2 + age * 8, 0, Math.PI * 2); c.fill();
+    }
+  }
   function drawPlayer(c, p) {
     // the Chief Human Officer, rendered from the 3D model in me3d.js (falls back to the drawn walker below)
     const S = window.__meSheet;
+    drawDust(c, p);
+    if (S && riding(p)) {  // on the camel: the rider from the waist up, sitting on the saddle
+      const seatY = drawCamel(c, p.x, p.y, p.dir, p.anim);
+      const row = S.rows.indexOf(p.dir), top = bodyTop(S), cut = (S.footY - top) * 0.6;  // head to hips
+      c.drawImage(S.canvas, 1 * S.fw * S.R, (row * S.fh + top) * S.R, S.fw * S.R, cut * S.R, p.x - S.footX, seatY + 6 - cut, S.fw, cut);
+      if (p.dir === 'down') drawCamelHead(c, p.x, p.y, p.anim);
+      return;
+    }
     if (S && p.seated && S.sitCol) { drawSeated(c, p, S); return; }
     if (S) {
       const row = S.rows.indexOf(p.dir), seq = [0, 1, 2, 1];
@@ -2265,6 +2398,7 @@
     ['librarian', ['learn', 'knowledge', 'library', 'note', 'notes', 'document', 'kb', 'summarise', 'summarize']],
     ['keeper', ['task', 'schedule', 'deadline', 'operations', 'follow up', 'follow-up', 'remind', 'organise', 'organize', 'plan']],
   ];
+  for (const h of HEADS) ROUTES.splice(1, 0, [h.key, [h.building.toLowerCase(), h.name.toLowerCase()]]);  // a building's work goes to its head (hiring still goes to Vizier first)
   const HIRE_ASK = /\b(hire|hiring|recruit|new (agent|worker|person|hire)|take on (a|an|another|someone))\b|\b(find|get|bring)\b[^.]{0,40}\b(a|an|another|some)\s+(helper|hand|assistant|worker|intern|candidate)\b/i;
   function routeOrder(text) {
     if (HIRE_ASK.test(text)) return 'hire';  // guide step 46: Vizier finds a candidate
@@ -2438,12 +2572,14 @@
     money: { personality: 'Careful, honest and a bit of a worrier.', quirk: 'Checks the strongbox lock every few minutes.',
       lines: ["Money: Merchant checks every number I count. Nothing to count yet.", "Money: Money in on the left scale, money out on the right.", "Money: The strongbox is locked. I checked. Twice."] },
   });
+  for (const h of HEADS) if (!PERSONA[h.key]) PERSONA[h.key] = { personality: 'Calm, organised and protective of their building.', quirk: `Knows every desk in ${h.building} and who sits at it.`,
+    lines: [`${h.name}: Welcome to ${h.building}. Anything for ${h.building} comes through me.`, `${h.name}: When we need Engineer or Merchant, I ask them. You just tell me what you want.`, `${h.name}: Nothing goes ahead here without your Approve.`] };
   for (const h of HIRES) if (!PERSONA[h.key]) PERSONA[h.key] = { personality: h.personality || 'New, keen and careful.', quirk: h.quirk || 'Still learning where everything is.',
     lines: [`${h.name}: ${h.bossName} gives me my tasks. Glad to be here!`, `${h.name}: Still learning where everything is.`, `${h.name}: Ready when ${h.bossName} is.`] };
   let DIRECTORS = null;  // everyone who lives or works in the village, built on first use, once the map helpers below exist
   const directors = () => DIRECTORS || (DIRECTORS = buildDirectors());
   const buildDirectors = () => RES.map((r) => {
-    const b = scenes.town.houses.find((h) => h.key === (r.hire ? r.home : r.key)), room = scenes[b.id + '-in'], town = scenes.town;
+    const b = scenes.town.houses.find((h) => h.key === (r.hire || r.head ? r.home : r.key)), room = scenes[b.id + '-in'], town = scenes.town;
     const pts = (s, tx0, tx1, ty0, ty1) => {
       const out = [];
       for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) if (walkTile(s, tx, ty)) out.push([tx, ty]);
@@ -2534,6 +2670,7 @@
       return desk.side ? { scene: d.room, tile: desk.side, then: 'sit' } : null;
     }
     if (d.scene !== 'town') return { scene: 'town', tile: d.yard[Math.floor(Math.random() * d.yard.length)], then: 'idle' };
+    const og = officeGoal(d); if (og) return og;  // office time: sit at their desk or workstation for a while
     const pg = plantedGoal(d); if (pg) return pg;  // a building they were planted in
     if (!d.worker || Math.random() < 0.25) {  // directors pace a little in their own yard; workers drop home now and then
       const [tx, ty] = tileOf(d.x, d.y), near = d.yard.filter(([x, y]) => Math.abs(x - tx) + Math.abs(y - ty) <= 4);
@@ -2602,6 +2739,9 @@
   function updateDirectors(dt) {
     const p = state.player;
     for (const d of directors()) {
+      if (d.seated && d.sitUntil && !d.working && state.time >= d.sitUntil) {  // office time is over: stand up beside the seat
+        const [sx, sy] = centre(d.standAt || tileOf(d.x, d.y)); Object.assign(d, { x: sx, y: sy, seated: null, sitting: false, sitUntil: 0, wait: 1 });
+      }
       if (d.seated) { d.moving = false; continue; }  // at the council table or at their desk
       if (d.chat) {  // stopped for a chat
         d.moving = false; faceTo(d, d.chat.with.x, d.chat.with.y);
@@ -2610,7 +2750,7 @@
       }
       // you walked up, or you're talking to them: stop and turn to you, in case you want to talk
       // (not when they're off to work, or you've just sent them back to it)
-      const busy = d.working || (d.mode === 'inside' && d.scene !== d.room);
+      const busy = d.working || d.studio || (d.mode === 'inside' && d.scene !== d.room);  // on their way to a studio meeting too
       if (state.scene.id === d.scene && (state.time < d.talkUntil || (!busy && Math.hypot(p.x - d.x, p.y - d.y) < 60))) { d.moving = false; faceTo(d, p.x, p.y); continue; }
       if (d.working && d.sitting) continue;
       // called over: if you've moved on, they follow
@@ -2628,7 +2768,7 @@
       if (!d.path.length) {  // reached the end of this stretch
         if (d.leg === 'enter') { const [x, y] = centre(insideDoorOf(d.goal.scene)); Object.assign(d, { scene: d.goal.scene, x, y, dir: 'up', path: null }); continue; }
         if (d.leg === 'exit') { const [x, y] = centre(outsideDoorOf(d.scene)); Object.assign(d, { scene: 'town', x, y, dir: 'down', path: null }); continue; }
-        if (d.goal.then === 'sit') { const seat = deskOf(d).seat; Object.assign(d, { x: seat.x, y: seat.y, dir: seat.dir, seated: seat, sitting: true }); }
+        if (d.goal.then === 'sit') { const seat = d.goal.seat || deskOf(d).seat; Object.assign(d, { x: seat.x, y: seat.y, dir: seat.dir, seated: seat, sitting: true, sitUntil: d.goal.until ? state.time + d.goal.until : 0, standAt: d.goal.tile }); }
         d.goal = null; d.path = null; d.moving = false;
         d.wait = d.worker ? 2 + Math.random() * 5 : 3 + Math.random() * 6;
         continue;
@@ -2668,6 +2808,7 @@
   // someone starts or stops working (nobody has tasks yet: this is for when they do, and for testing)
   function setWorking(key, on) {
     const d = directors().find((x) => x.key === key); if (!d) return;
+    if (d.sitting && d.sitUntil) { const [sx, sy] = centre(d.standAt || tileOf(d.x, d.y)); Object.assign(d, { x: sx, y: sy, seated: null, sitting: false, sitUntil: 0 }); }  // up from office time first
     d.working = !!on; d.goal = null; d.path = null; d.wait = 0;
     if (on) d.mode = null;
     if (!on && d.sitting) { const side = deskOf(d).side; if (side) { const [x, y] = centre(side); Object.assign(d, { x, y, seated: null, sitting: false }); } }
@@ -2821,11 +2962,13 @@
   });
 
   // ---------- a quiet ancient Egyptian ambience, all made in code (feedback round 2) ----------
-  // A low drone like a reed pipe held on one note, a harp or oud playing a few slow notes now and then in the
+  // A harp or oud playing a few slow notes now and then in the
   // Hijaz mode (D, E flat, F sharp, G, A, B flat, C), a breathy ney flute line, a soft frame drum from time to
   // time, a dry desert breeze and the odd bird by day. Everything goes through a stone-hall echo.
   // Browsers only allow sound after a click or key press, so it starts on the first one. Q turns it off and on.
-  const sound = { ctx: null, master: null, on: true, started: false };
+  // It starts off (the user's choice, feedback round 3) and remembers what you last chose. The steady drone was removed.
+  const SOUND_KEY = 'kingdom-one-sound';
+  const sound = { ctx: null, master: null, on: (() => { try { return localStorage.getItem(SOUND_KEY) === 'on'; } catch (e) { return false; } })(), started: false };
   const HIJAZ = [0, 1, 4, 5, 7, 8, 10, 12, 13, 16];  // semitones above D
   function startSound() {
     if (sound.started) return;
@@ -2849,16 +2992,6 @@
       const f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 520; f.Q.value = 0.5;
       const g = a.createGain(); g.gain.value = 0.018; const lfo = a.createOscillator(), lg = a.createGain(); lfo.frequency.value = 0.05; lg.gain.value = 0.012;
       lfo.connect(lg); lg.connect(g.gain); lfo.start(); src.connect(f); f.connect(g); out(g, 0.2); src.start(); }
-    // the drone: D and A, like a reed pipe, breathing slowly
-    for (const [f0, gain] of [[D2, 0.03], [D2 * 1.5, 0.014], [D2 * 2, 0.008]]) {
-      const o = a.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f0;
-      const lp = a.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 420; lp.Q.value = 0.7;
-      const g = a.createGain(); g.gain.value = gain;
-      const lfo = a.createOscillator(), lg = a.createGain(); lfo.frequency.value = 0.08 + Math.random() * 0.05; lg.gain.value = gain * 0.45;
-      const vib = a.createOscillator(), vg = a.createGain(); vib.frequency.value = 4.6; vg.gain.value = f0 * 0.002;
-      lfo.connect(lg); lg.connect(g.gain); vib.connect(vg); vg.connect(o.frequency); lfo.start(); vib.start();
-      o.connect(lp); lp.connect(g); out(g, 0.6); o.start();
-    }
     // a plucked string (harp by day, oud-like at night): a short bright tone that falls away
     const pluck = (freq, t0, vol = 0.05) => {
       const o = a.createOscillator(), o2 = a.createOscillator(), g = a.createGain(), lp = a.createBiquadFilter();
@@ -2918,10 +3051,11 @@
       setTimeout(chirp, 9000 + Math.random() * 16000);
     };
     setTimeout(phrase, 1500); setTimeout(ney, 9000); setTimeout(drum, 14000); setTimeout(chirp, 5000);
-    if (sound.on) toast('Sound on, quietly: a reed drone, a harp, a ney flute and a far-off drum. Press Q to turn it off.');
+    if (sound.on) toast('Sound on, quietly: a harp, a ney flute and a far-off drum. Press Q to turn it off.');
   }
   function toggleSound() {
     sound.on = !sound.on;
+    try { localStorage.setItem(SOUND_KEY, sound.on ? 'on' : 'off'); } catch (e) { /* this visit only */ }
     if (sound.master) sound.master.gain.setTargetAtTime(sound.on ? 1 : 0, sound.ctx.currentTime, 0.2);
     toast(sound.on ? 'Sound on, very quietly. Press Q to turn it off.' : 'Sound off. Press Q to turn it back on.');
   }
@@ -3663,7 +3797,7 @@
     }
     hireYes.disabled = false;
     const dir = agentOf(c.boss);
-    RES.push({ key: c.key, name: c.name, title: `${c.name}, at ${dir.title}`, role: c.role, q: dir.q, hire: true, home: c.boss, bossKey: c.boss, boss: c.boss, rank: 'worker', accent: dir.accent, wall: dir.wall, job: c.job, yard: [], room: [] });
+    RES.push({ key: c.key, name: c.name, title: `${c.name}, at ${dir.title}`, role: c.role, q: dir.q, hire: true, home: dir.head ? dir.home : c.boss, bossKey: c.boss, boss: c.boss, rank: 'worker', project: !!dir.head, accent: dir.accent, wall: dir.wall, job: c.job, yard: [], room: [] });
     HIRES.push({ ...h, bossName: dir.name });
     PERSONA[c.key] = personaOfHire({ ...h, bossName: dir.name });
     const d = npcOf(c.key), dd = npcOf(c.boss);
@@ -4490,8 +4624,13 @@
   const saveQuests = () => { store(QUEST_KEY, quests); renderQuestTracker(); };
   const questOf = (key) => QUESTS.find((q) => q.key === key);
   const questsDone = () => QUESTS.filter((q) => quests[q.key] === 'done').length;
+  // quests open only after onboarding: setup, then the guide (feedback round 3)
+  function questsOpen() {
+    if (!W || !W.saved || !W.saved()) return true;  // no settings server: no onboarding either
+    const st = W.settings(); return !!(st && st.setupDone && st.tourDone);
+  }
   function questState(key) {  // 'available', 'active', 'ready', 'done' or null
-    const q = questOf(key); if (!q) return null;
+    const q = questOf(key); if (!q || !questsOpen()) return null;
     const st = quests[key] || 'available';
     if (st === 'available' && q.after && QUESTS.filter((x) => x.key !== key && quests[x.key] === 'done').length < q.after) return null;
     return st;
@@ -4549,7 +4688,7 @@
   function renderQuestTracker() {
     const rows = QUESTS.filter((q) => ['active', 'ready'].includes(questState(q.key)));
     const done = questsDone();
-    if (done === QUESTS.length) { questTracker.style.display = 'none'; return; }
+    if (done === QUESTS.length || !questsOpen()) { questTracker.style.display = 'none'; return; }
     questTracker.style.display = 'block';
     questTracker.replaceChildren(mk('div', { color: '#e8c46a', fontWeight: '700', marginBottom: rows.length ? '4px' : '0' }, `Quests ${done}/${QUESTS.length}${rows.length ? '' : ' · look for a gold ! to start one'}`),
       ...rows.map((q) => { const ready = questState(q.key) === 'ready';
@@ -4559,6 +4698,7 @@
         return row; }));
   }
   renderQuestTracker();
+  addEventListener('kingdom:tourdone', () => { renderQuestTracker(); if (questsDone() < QUESTS.length) setTimeout(() => toast('Your directors have quests for you. Look for the gold ! over their heads, or on the map.', 'vizier'), 600); });
   // the things that complete a quest
   setInterval(() => {
     if (questState('engineer') === 'active' && [...document.querySelectorAll('.wz h2')].some((h) => /Connections/.test(h.textContent))) questEvent('connections');
@@ -4567,11 +4707,221 @@
   }, 500);
   window.__quests = { state: questState, event: questEvent, reset: () => { quests = {}; saveQuests(); }, all: () => ({ ...quests }), set: (k, st) => { quests[k] = st; saveQuests(); } };
 
+  // ---------- team and usage (feedback round 3): who is free, working or waiting on you, and what the AI used ----------
+  // Usage comes from the AI helper's own log (counts and tokens only, never what was said). Your Claude plan's own
+  // percentage isn't readable here yet (see NOTES, future improvements).
+  const usageBox = mk('div', { position: 'fixed', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', width: 'min(620px, calc(100vw - 32px))', maxHeight: 'calc(100vh - 120px)', overflow: 'auto',
+    background: 'rgba(18,20,28,.97)', border: '1px solid rgba(232,196,106,.5)', borderRadius: '14px', padding: '16px 18px', zIndex: 25, display: 'none', color: '#f5efe2', font: '13px system-ui, sans-serif', pointerEvents: 'auto' });
+  usageBox.className = 'hud'; usageBox.setAttribute('role', 'dialog'); usageBox.setAttribute('aria-label', 'Team and usage');
+  document.body.appendChild(usageBox);
+  let usageData = null, usageTimer = 0;
+  const fmtTok = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? Math.round(n / 1e3) + 'k' : String(n));
+  function statusLabel(key) {
+    const d = directors().find((x) => x.key === key);
+    if (state.meeting && seatOf(key)) return ['In the meeting', '#9fb4ff'];
+    const st = statusOf(key);
+    if (st === 'you') return ['Waiting for you', '#f6ca33'];
+    if (st === 'busy') return ['Working on a task', '#5fc0bd'];
+    if (d && d.sitting && d.sitUntil) return ['At their desk', '#b9d98a'];
+    return ['Free', '#c9c1ae'];
+  }
+  function renderUsage() {
+    const u = usageData, box = usageBox;
+    const head = mk('div', { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' });
+    const close = mk('button', { background: 'transparent', border: '1px solid rgba(232,196,106,.5)', color: '#f5efe2', borderRadius: '8px', padding: '4px 10px', cursor: 'pointer' }, 'Close');
+    close.onclick = () => closeUsage();
+    head.append(mk('div', { font: '700 17px system-ui' }, '\u{1F4CA} Team and usage'), close);
+    const tiles = mk('div', { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '8px', marginBottom: '12px' });
+    const tile = (label, big, small, pct) => {
+      const t = mk('div', { background: 'rgba(255,255,255,.05)', border: '1px solid rgba(232,196,106,.22)', borderRadius: '10px', padding: '10px' });
+      t.append(mk('div', { color: '#c9c1ae', fontSize: '11px', letterSpacing: '.06em' }, label), mk('div', { font: '700 20px system-ui', margin: '2px 0' }, big), mk('div', { color: '#c9c1ae', fontSize: '12px' }, small));
+      if (pct != null) { const bar = mk('div', { height: '6px', background: 'rgba(255,255,255,.1)', borderRadius: '3px', marginTop: '6px' }); bar.append(mk('div', { width: Math.min(100, pct) + '%', height: '100%', borderRadius: '3px', background: pct > 80 ? '#d9643f' : '#5fc0bd' })); t.append(bar); }
+      return t;
+    };
+    if (u) {
+      tiles.append(tile('TODAY', `${u.today.replies} replies`, `${fmtTok(u.today.tokens)} tokens`), tile('THIS WEEK', `${u.week.replies} replies`, `${fmtTok(u.week.tokens)} tokens`),
+        tile('THIS HOUR', `${u.hour} of ${u.perHour}`, 'the helper pauses at its hourly cap', (u.hour / u.perHour) * 100));
+    } else tiles.append(tile('USAGE', 'Not available', "The AI helper isn't running. Start it to see usage."));
+    const parts = [head, tiles];
+    if (u) {  // the last seven days, one bar each
+      const max = Math.max(1, ...u.days.map((d) => d.replies));
+      const chart = mk('div', { display: 'flex', alignItems: 'flex-end', gap: '6px', height: '86px', padding: '0 2px', marginBottom: '4px' });
+      const labels = mk('div', { display: 'flex', gap: '6px', padding: '0 2px', marginBottom: '12px' });
+      for (const d of u.days) {
+        const col = mk('div', { flex: '1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%' });
+        col.title = `${d.date}: ${d.replies} replies, ${fmtTok(d.tokens)} tokens`;
+        col.append(mk('div', { fontSize: '10px', color: '#c9c1ae' }, d.replies ? String(d.replies) : ''), mk('div', { width: '70%', height: `${Math.max(2, (d.replies / max) * 64)}px`, background: '#e8c46a', borderRadius: '3px 3px 0 0', opacity: d.replies ? '1' : '.25' }));
+        chart.append(col);
+        labels.append(mk('div', { flex: '1', textAlign: 'center', fontSize: '10px', color: '#c9c1ae' }, new Date(d.date + 'T12:00').toLocaleDateString(undefined, { weekday: 'short' })));
+      }
+      parts.push(mk('div', { color: '#c9c1ae', fontSize: '11px', letterSpacing: '.06em', marginBottom: '6px' }, 'REPLIES, LAST 7 DAYS'), chart, labels);
+    }
+    // the roster: everyone, with what they're doing; click a row to talk
+    const keysAll = ['vizier', ...RES.map((r) => r.key)];
+    const counts = { free: 0, working: 0, you: 0 };
+    for (const k of keysAll) { const st = statusOf(k); if (st === 'busy') counts.working++; else if (st === 'you') counts.you++; else counts.free++; }
+    parts.push(mk('div', { color: '#c9c1ae', fontSize: '11px', letterSpacing: '.06em', margin: '2px 0 6px' }, `THE TEAM · ${counts.free} free · ${counts.working} working · ${counts.you} waiting for you`));
+    const list = mk('div', { display: 'grid', gap: '4px' });
+    for (const k of keysAll) {
+      const row = mk('button', { display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,.04)', border: '1px solid rgba(232,196,106,.15)', borderRadius: '8px', padding: '5px 8px', color: '#f5efe2', cursor: 'pointer', textAlign: 'left', font: '13px system-ui' });
+      const face = (window.__castPortraits && window.__castPortraits[k]) || null;
+      if (face && face.toDataURL) { const im = mk('img', { width: '30px', height: '30px', borderRadius: '50%', background: '#2b2f3a', flex: 'none' }); im.src = face.toDataURL(); row.append(im); }
+      const [label, colour] = statusLabel(k), a = u && u.agents[k];
+      const who = mk('div', { flex: '1', minWidth: '0' }); who.append(mk('div', { fontWeight: '600' }, relabel(nameOf(k))), mk('div', { color: '#c9c1ae', fontSize: '11px' }, roleOf(k)));
+      const pill = mk('span', { background: colour + '33', color: colour, border: `1px solid ${colour}`, borderRadius: '10px', padding: '1px 8px', fontSize: '11px', whiteSpace: 'nowrap' }, label);
+      row.append(who, pill, mk('span', { color: '#c9c1ae', fontSize: '11px', width: '74px', textAlign: 'right' }, a ? `${a.today} today` : u ? '0 today' : ''));
+      row.onclick = (e) => { if (!e.isTrusted) return; closeUsage(); openChat(k); };
+      list.append(row);
+    }
+    parts.push(list);
+    if (u && Object.keys(u.models).length) parts.push(mk('div', { color: '#c9c1ae', fontSize: '11px', marginTop: '10px' }, 'This week by model: ' + Object.entries(u.models).map(([m, n]) => `${m} ${n}`).join(' · ') + `. All on your Claude ${u.plan || ''} subscription.`));
+    box.replaceChildren(...parts);
+  }
+  function refreshUsage() {
+    fetch(`${BRAIN}/usage`).then((r) => (r.ok ? r.json() : null)).then((j) => { usageData = j; }).catch(() => { usageData = null; }).finally(() => { if (usageBox.style.display !== 'none') renderUsage(); });
+  }
+  function openUsage() { front(usageBox); usageBox.style.display = 'block'; renderUsage(); refreshUsage(); clearInterval(usageTimer); usageTimer = setInterval(refreshUsage, 3000); }
+  function closeUsage() { usageBox.style.display = 'none'; clearInterval(usageTimer); }
+  const toggleUsage = () => (usageBox.style.display === 'none' ? openUsage() : closeUsage());
+  addEventListener('keydown', (e) => { if (isTyping() || e.repeat || document.querySelector('.wz')) return; if (e.code === 'KeyU') { e.preventDefault(); toggleUsage(); } else if (e.code === 'Escape' && usageBox.style.display !== 'none') closeUsage(); });
+
+  // ---------- the studio board (feedback round 3): walk into a building with a head and it's all about that building ----------
+  // The head, who works here, the building's own to-dos, a studio meeting at the workstations, and taking project
+  // workers on or letting them go (both only on your click). Other buildings and businesses stay out of it.
+  const studioBox = mk('div', { position: 'fixed', left: '16px', top: '124px', width: 'min(330px, calc(100vw - 32px))', maxHeight: 'calc(100vh - 220px)', overflow: 'auto',
+    background: 'rgba(18,20,28,.94)', border: '1px solid rgba(232,196,106,.5)', borderRadius: '12px', padding: '12px', zIndex: 6, display: 'none', color: '#f5efe2', font: '13px system-ui, sans-serif', pointerEvents: 'auto' });
+  studioBox.className = 'hud'; studioBox.setAttribute('aria-label', 'Studio board');
+  document.body.appendChild(studioBox);
+  for (const type of ['keydown', 'keyup']) studioBox.addEventListener(type, (e) => { if (e.target.tagName === 'INPUT') e.stopPropagation(); });
+  let studio = null, studioMeet = false, studioRendered = '';
+  const studioOf = (sceneId) => {
+    const b = (scenes[sceneId] || {}).building; if (!b || !b.custom || !b.custom.head) return null;
+    const h = HEADS.find((x) => x.key === b.custom.head.key); if (!h) return null;
+    const crew = [...b.custom.agents.filter((k) => RES.some((r) => r.key === k)), ...RES.filter((r) => r.boss === h.key).map((r) => r.key)];
+    return { b, h, crew, room: sceneId, log: 'kingdom-one-studio-' + b.custom.id };
+  };
+  const studioLog = (st) => { try { return JSON.parse(localStorage.getItem(st.log)) || []; } catch (e) { return []; } };
+  const saveStudioLog = (st, list) => store(st.log, list.slice(-40));
+  const sBtn = (label, go, fn) => { const x = mk('button', { padding: '5px 10px', borderRadius: '8px', border: go ? '0' : '1px solid rgba(232,196,106,.5)', background: go ? '#e8c46a' : 'transparent', color: go ? '#1b1406' : '#f5efe2', font: '600 12px system-ui', cursor: 'pointer' }, label); x.onclick = (e) => { if (e.isTrusted) fn(); }; return x; };
+  const sHead = (t) => mk('div', { color: '#c9c1ae', fontSize: '11px', letterSpacing: '.06em', margin: '10px 0 4px' }, t);
+  function personRow(k, extra) {
+    const row = mk('div', { display: 'flex', alignItems: 'center', gap: '8px', margin: '3px 0' });
+    const face = (window.__castPortraits && window.__castPortraits[k]) || null;
+    if (face && face.toDataURL) { const im = mk('img', { width: '26px', height: '26px', borderRadius: '50%', background: '#2b2f3a', flex: 'none' }); im.src = face.toDataURL(); row.append(im); }
+    const who = mk('div', { flex: '1', minWidth: '0' }); who.append(mk('div', { fontWeight: '600' }, relabel(nameOf(k))), mk('div', { color: '#c9c1ae', fontSize: '11px' }, roleOf(k)));
+    const [label, colour] = statusLabel(k);
+    row.append(who, mk('span', { color: colour, fontSize: '11px', whiteSpace: 'nowrap' }, label), ...(extra || []));
+    return row;
+  }
+  function renderStudio(force) {
+    const st = studio; if (!st) return;
+    const mine = todos.filter((t) => t.by === st.h.key || t.to === st.h.key || st.crew.includes(t.by) && t.to === st.h.key).slice(-6).reverse();
+    const sig = JSON.stringify([studioMeet, mine.map((t) => t.id + t.status), st.crew.map(statusOf), studioLog(st).length, RES.filter((r) => r.boss === st.h.key).length]);
+    if (!force && sig === studioRendered) return; studioRendered = sig;
+    const parts = [];
+    const top = mk('div', { display: 'flex', alignItems: 'center', justifyContent: 'space-between' });
+    top.append(mk('div', { font: '700 15px system-ui' }, `\u{1F3E2} ${st.b.custom.name}`), sBtn('Hide', false, () => { studioBox.style.display = 'none'; }));
+    parts.push(top);
+    if (st.b.custom.purpose) parts.push(mk('div', { color: '#c9c1ae', fontSize: '12px', marginTop: '2px' }, st.b.custom.purpose));
+    parts.push(sHead('HEAD'), personRow(st.h.key, [sBtn('Talk', true, () => openChat(st.h.key, true))]));
+    const workers = RES.filter((r) => r.boss === st.h.key).map((r) => r.key);
+    const others = st.crew.filter((k) => !workers.includes(k));
+    if (others.length) { parts.push(sHead('WORKS HERE')); for (const k of others) parts.push(personRow(k)); }
+    parts.push(sHead(`PROJECT WORKERS · ${workers.length} of 4`));
+    for (const k of workers) parts.push(personRow(k, [sBtn('Let go', false, () => releaseWorker(st, k))]));
+    if (!workers.length) parts.push(mk('div', { color: '#c9c1ae', fontSize: '12px' }, 'None yet.'));
+    const acts = mk('div', { display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' });
+    acts.append(sBtn(studioMeet ? 'End studio meeting' : 'Studio meeting', !studioMeet, () => toggleStudioMeeting()),
+      ...(workers.length < 4 ? [sBtn('Take someone on', false, () => takeOn(st))] : []));
+    parts.push(acts);
+    if (studioMeet) {  // the meeting: everyone here at their workstation, talking only about this building
+      parts.push(sHead('STUDIO MEETING · put @ before a name to ask one person'));
+      const log = mk('div', { display: 'grid', gap: '4px', maxHeight: '220px', overflow: 'auto', background: 'rgba(255,255,255,.04)', borderRadius: '8px', padding: '6px' });
+      const msgs = studioLog(st);
+      if (!msgs.length) log.append(mk('div', { color: '#c9c1ae', fontSize: '12px' }, `Everyone in ${st.b.custom.name} is here. Say what you'd like to discuss.`));
+      for (const m of msgs.slice(-20)) { const line = mk('div', { fontSize: '12px', lineHeight: '1.35' }); line.append(mk('b', { color: m.from === 'you' ? '#e8c46a' : '#9fd8d4' }, (m.from === 'you' ? 'You' : relabel(nameOf(m.from))) + ': '), mk('span', {}, m.text)); log.append(line); }
+      const inp = mk('input', { width: '100%', boxSizing: 'border-box', marginTop: '6px', padding: '7px 9px', borderRadius: '8px', border: '1px solid rgba(232,196,106,.4)', background: '#12151c', color: '#f5efe2', font: '13px system-ui' });
+      inp.placeholder = `Talk to the ${st.b.custom.name} team`; inp.setAttribute('aria-label', 'Studio meeting message');
+      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter' && inp.value.trim()) { const t = inp.value.trim(); inp.value = ''; studioSay(st, t); } });
+      parts.push(log, inp);
+      setTimeout(() => { log.scrollTop = log.scrollHeight; }, 0);
+    }
+    // the building's own to-do list
+    parts.push(sHead(`${st.b.custom.name.toUpperCase()} TO-DOS`));
+    if (!mine.length) parts.push(mk('div', { color: '#c9c1ae', fontSize: '12px' }, 'Nothing yet.'));
+    for (const t of mine) { const r = mk('div', { fontSize: '12px', margin: '2px 0' }); r.append(mk('span', { color: t.status === 'done' ? '#b9d98a' : t.status === 'ready' ? '#f6ca33' : '#c9c1ae' }, `• ${t.status === 'done' ? 'Done' : t.status === 'ready' ? 'Ready for your OK' : 'Waiting'}: `), mk('span', {}, t.text)); parts.push(r); }
+    const add = mk('input', { width: '100%', boxSizing: 'border-box', marginTop: '6px', padding: '7px 9px', borderRadius: '8px', border: '1px solid rgba(232,196,106,.4)', background: '#12151c', color: '#f5efe2', font: '13px system-ui' });
+    add.placeholder = `A task for ${st.h.name}`; add.setAttribute('aria-label', `A task for ${st.b.custom.name}`);
+    add.addEventListener('keydown', (e) => { if (e.key === 'Enter' && add.value.trim()) { addTodo(add.value.trim(), { to: st.h.key, direct: true }); add.value = ''; toast(`${st.h.name} has it. It's on your to-do list too.`, st.h.key); renderStudio(true); } });
+    parts.push(add);
+    const keepFocus = document.activeElement && studioBox.contains(document.activeElement) ? document.activeElement.getAttribute('aria-label') : null;
+    studioBox.replaceChildren(...parts);
+    if (keepFocus) { const el = studioBox.querySelector(`[aria-label="${keepFocus}"]`); if (el) el.focus(); }
+  }
+  async function studioSay(st, text) {
+    const list = studioLog(st); list.push({ from: 'you', text }); saveStudioLog(st, list); renderStudio(true);
+    const people = [st.h.key, ...st.crew];
+    const named = mentionsIn(text).filter((k) => people.includes(k));
+    const who = named.length ? named.slice(0, 4) : /\b(all|everyone|team|each of you)\b/i.test(text) ? people.slice(0, 4) : [st.h.key];
+    const names = people.map((k) => nameOf(k)).join(', ');
+    for (const k of who) {
+      let line;
+      if (brainOn()) {
+        const hist = studioLog(st).slice(-16).map((m) => ({ from: m.from, text: m.text }));
+        const hint = `This is a studio meeting inside ${st.b.custom.name}, run by its head ${st.h.name}, with ${names}. Talk only about ${st.b.custom.name}'s work; keep every other business and building out of it.${named.includes(k) ? ' The Chief asked you by name: answer yourself.' : ''}`;
+        try { line = await window.kingdomBrain(k, hist, { room: 'everyone', hint }); } catch (e) { line = `(The helper couldn't answer: ${e.message})`; }
+      } else line = k === st.h.key ? `Noted. The AI helper isn't running, so I'm only taking notes for now.` : 'Noted.';
+      const l2 = studioLog(st); l2.push({ from: k, text: plain(line) }); saveStudioLog(st, l2); renderStudio(true);
+    }
+  }
+  function toggleStudioMeeting() {
+    const st = studio; if (!st) return;
+    studioMeet = !studioMeet;
+    const room = scenes[st.room];
+    for (const k of [st.h.key, ...st.crew]) {  // everyone comes in and sits at their workstation (the head at the desk)
+      const d = npcOf(k); if (!d) continue;
+      if (studioMeet) {
+        const ws = (room.workstations || []).find((w) => w.owner === k);
+        if (d.sitting) Object.assign(d, { sitting: false, seated: null, sitUntil: 0 });
+        d.goal = ws ? { scene: st.room, tile: ws.tile, then: 'sit', seat: ws.seat, until: 3600 } : k === st.h.key ? { scene: st.room, tile: deskOf(d).side, then: 'sit', until: 3600 } : null;
+        d.path = null; d.wait = 0; d.mode = null; d.studio = true;
+      } else { d.studio = false; if (d.sitting && d.sitUntil) d.sitUntil = state.time; }  // stand up and get back to the day
+    }
+    toast(studioMeet ? `The ${st.b.custom.name} team is coming in for a studio meeting.` : 'Studio meeting over.', st.h.key);
+    renderStudio(true);
+  }
+  function takeOn(st) {
+    const t = addTodo(`Hire a project worker for ${st.h.name}, head of ${st.b.custom.name}`);
+    toast(`Vizier will find a candidate for ${st.b.custom.name} and bring them to the town hall for your interview. Only you can say yes.`, 'vizier');
+    if (t && todoBox.style.display === 'flex') renderTodos();
+    renderStudio(true);
+  }
+  async function releaseWorker(st, k) {
+    if (!confirm(`Let ${nameOf(k)} go from ${st.b.custom.name}? Their folder and notes are kept; they leave the village.`)) return;
+    try {
+      const r = await fetch(BRAIN + '/release', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: k }) });
+      const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'no answer');
+    } catch (e) { toast(`${st.h.name}: I couldn't do that: ${e.message}. Is the AI helper running?`, st.h.key); return; }
+    const i = RES.findIndex((r) => r.key === k); if (i >= 0) RES.splice(i, 1);
+    const d = directors().findIndex((x) => x.key === k); if (d >= 0) directors().splice(d, 1);
+    const h = HIRES.find((x) => x.key === k); if (h) h.released = true;
+    st.crew = st.crew.filter((x) => x !== k);
+    logSay(st.h.key, `${nameOf(k)} has finished with us and moved on. Their notes are kept.`); renderLog();
+    toast(`${nameOf(k)} has been let go from ${st.b.custom.name}. Their notes are kept in agents/${k}/.`, st.h.key);
+    renderStudio(true);
+  }
+  setInterval(() => {  // open the board when you walk in, close it when you leave
+    const st = studioOf(state.scene.id);
+    if (!st) { if (studio) { studio = null; studioBox.style.display = 'none'; } return; }
+    if (!studio || studio.room !== st.room) { studio = st; studioMeet = false; studioRendered = ''; studioBox.style.display = 'block'; questTracker.style.display = 'none'; }
+    if (studioBox.style.display === 'block') renderStudio(false);
+  }, 400);
+
   // ---------- the hotbar: T, then 1 to 4, like an RPG's spell bar ----------
   // T talks to whoever is in front of you (feedback round 1), and to Vizier when nobody is.
   const talkTarget = () => (directorNear() || {}).key || 'vizier';
   const HOTBAR = [['T', '\u{1F4AC}', () => `Talk to ${relabel(nameOf(talkTarget()))}`, 'chief'], ['1', '\u{1F4DD}', () => 'New task', 'task'], ['2', '\u{1F3DB}', () => (state.meeting ? 'End meeting' : 'Meeting'), 'meeting'],
-    ['3', '\u26F2', () => 'Town square', 'square'], ['4', '\u{1F319}', () => 'Day / night', 'night']];
+    ['3', '\u26F2', () => 'Town square', 'square'], ['4', '\u{1F319}', () => 'Day / night', 'night'], ['5', '\u{1F4CA}', () => 'Team & usage', 'usage']];
   let hotTalk = 'vizier';
   setInterval(() => { const k = talkTarget(); if (k !== hotTalk) { hotTalk = k; renderHotbar(); } }, 250);  // the label follows who you're next to
   const hotbar = mk('div', {}); hotbar.id = 'hotbar'; hotbar.className = 'hud'; hotbar.setAttribute('role', 'toolbar'); hotbar.setAttribute('aria-label', 'Quick actions');
@@ -4588,6 +4938,7 @@
       } };
     } else if (act === 'night') dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyN', key: 'n' }));
     else if (act === 'sound') { toggleSound(); }
+    else if (act === 'usage') toggleUsage();
     renderHotbar();
   }
   function renderHotbar() {
@@ -4602,7 +4953,7 @@
   renderHotbar(); document.body.appendChild(hotbar);
   addEventListener('keydown', (e) => {
     if (isTyping() || e.repeat || document.querySelector('.wz')) return;
-    const i = ['Digit1', 'Digit2', 'Digit3', 'Digit4'].indexOf(e.code);
+    const i = ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5'].indexOf(e.code);
     if (i >= 0) { e.preventDefault(); hotAction(HOTBAR[i + 1][3]); }
     if (e.code === 'KeyQ' || e.code === 'KeyC' || e.code === 'KeyN') setTimeout(renderHotbar, 0);
   });

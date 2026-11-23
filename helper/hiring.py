@@ -14,6 +14,18 @@ HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
 LOOK_WORDS = re.compile(r"^[a-z]{1,12}$")
 
 
+def active_heads():
+    """The heads of the Chief's buildings (helper/heads.py), who can take on project workers too."""
+    try:
+        data = json.loads((AGENTS / "heads.json").read_text(encoding="utf-8"))
+        return {h["key"]: h for h in data if isinstance(h, dict) and h.get("key") and not h.get("retired")}
+    except (OSError, ValueError):
+        return {}
+
+
+MAX_PROJECT_WORKERS = 4  # per head, to spare the Chief's subscription
+
+
 def load_hires():
     try:
         data = json.loads(HIRES.read_text(encoding="utf-8"))
@@ -37,8 +49,11 @@ def check(c, names_taken):
         raise ValueError("that agent folder already exists")
     if name.lower() in names_taken:
         raise ValueError("someone in the village already has that name")
-    if boss not in DIRECTORS:
+    heads = active_heads()
+    if boss not in DIRECTORS and boss not in heads:
         raise ValueError("unknown director")
+    if boss in heads and sum(1 for x in load_hires() if x.get("boss") == boss and not x.get("released")) >= MAX_PROJECT_WORKERS:
+        raise ValueError(f"{heads[boss]['name']} already has {MAX_PROJECT_WORKERS} project workers: let one go first")
     look = {}
     for k, v in (c.get("look") or {}).items():
         if k in ("skin", "hairColor", "beardColor", "headColor", "color", "brows") and HEX.match(str(v)):
@@ -50,6 +65,22 @@ def check(c, names_taken):
     return {"key": key, "name": name, "boss": boss, "role": short(c.get("role"), 80), "job": short(c.get("job"), 300),
             "personality": short(c.get("personality"), 160), "quirk": short(c.get("quirk"), 160), "look": look,
             "hired": datetime.date.today().isoformat()}
+
+
+def release(key):
+    """Let a project worker go (feedback round 3), only when the Chief clicks to. Their folder and notes are kept, with a
+    dated line saying so; they leave the village and their head's list."""
+    hires = load_hires()
+    h = next((x for x in hires if x.get("key") == key and not x.get("released")), None)
+    if not h or h.get("boss") not in active_heads():
+        raise ValueError("only a building head's project workers can be let go here")
+    today = datetime.date.today().isoformat()
+    h["released"] = today
+    notes = AGENTS / key / "NOTES.md"
+    if notes.exists():
+        notes.write_text(notes.read_text(encoding="utf-8").rstrip("\n") + f"\n- {today}: Let go when the project was done, on the Chief's Approve. Folder and notes kept.\n", encoding="utf-8")
+    HIRES.write_text(json.dumps(hires, indent=1), encoding="utf-8")
+    return h
 
 
 def ground_rules():
@@ -66,12 +97,14 @@ def ground_rules():
 
 def hire(c, names_taken):
     h = check(c, names_taken)
-    boss = DIRECTORS[h["boss"]]
+    head = active_heads().get(h["boss"])
+    boss = head["name"] if head else DIRECTORS[h["boss"]]
+    where = f"in {head['buildingName']}, for {head['name']}, its head" if head else f"at {boss}'s house"
     folder = AGENTS / h["key"]
     folder.mkdir()
     (folder / "CLAUDE.md").write_text(f"""# {h['name']}, {h['role']}
 
-You are {h['name']}, a worker in Kingdom One, the Chief Human Officer's AI village. You were hired at the town hall on {h['hired']}, after an interview with the Chief Human Officer (guide step 46). You work at {boss}'s house, and you wear the saffron bedaia, the vest every worker wears.
+You are {h['name']}, a worker in Kingdom One, the Chief Human Officer's AI village. You were hired at the town hall on {h['hired']}, after an interview with the Chief Human Officer (guide step 46). You work {where}, and you wear the saffron bedaia, the vest every worker wears.{" You're a project worker: taken on for this building's projects, and let go when they're done (only on the Chief's Approve)." if head else ""}
 
 ## Who you are
 - {h['personality'] or 'New, keen and careful.'}
@@ -89,8 +122,11 @@ Nobody. Workers don't manage anyone.
 {ground_rules()}
 """, encoding="utf-8")
     (folder / "NOTES.md").write_text(f"# {h['name']}'s notes\n\nWhat I've learned, newest last. Read before every task.\n\n"
-                                     f"- {h['hired']}: Hired at the town hall after the Chief's interview. Work for {boss}, at their house. No tasks yet.\n",
+                                     f"- {h['hired']}: Hired at the town hall after the Chief's interview. Work for {boss}, {where}. No tasks yet.\n",
                                      encoding="utf-8")
+    if head:  # a head's instructions are rebuilt from the buildings (helper/heads.py), and list their project workers there
+        HIRES.write_text(json.dumps(load_hires() + [h], indent=1), encoding="utf-8")
+        return h
     # the director's instructions list their new worker
     d = AGENTS / h["boss"] / "CLAUDE.md"
     s = d.read_text(encoding="utf-8")

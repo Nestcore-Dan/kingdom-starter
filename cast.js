@@ -29,6 +29,16 @@ for (const h of (typeof window !== 'undefined' && window.__hires) || []) {
   HIRE_BOSS[h.key] = h.bossName || h.boss;
 }
 
+// feedback round 3: the head of each building the Chief put up, in the building's colour, drawn from a look picked by their key
+const HEAD_LOOKS = [{ skin: '#c68b63', hair: 'short', hairColor: '#2a1b12', beard: 'short', beardColor: '#2a1b12' }, { skin: '#a8714d', hair: 'long', hairColor: '#1b1612', beard: 'none', smile: true },
+  { skin: '#8a5a3c', head: 'turban', headColor: '#e8b04b', beard: 'full', beardColor: '#1b1612' }, { skin: '#f1cfae', hair: 'curly', hairColor: '#6b3a1e', beard: 'none', glasses: true },
+  { skin: '#6e4630', head: 'tarbouch', headColor: '#a8473a', beard: 'stubble' }, { skin: '#d9a77f', hair: 'long', hairColor: '#3b2a20', beard: 'none', glasses: true, smile: true }];
+for (const h of (typeof window !== 'undefined' && window.__heads) || []) {
+  let n = 0; for (const ch of h.key) n = (n * 31 + ch.charCodeAt(0)) >>> 0;
+  const c = { key: h.key, name: h.name, role: `Head of ${h.building}`, home: h.building, color: h.colour, kit: 'folder', ...HEAD_LOOKS[n % HEAD_LOOKS.length] };
+  CAST.push({ ...robeOf(c.color), ...c });
+}
+
 // Who has moved in. Guide step 24: you and your chief of staff. Step 26: the six directors. Step 28: the workers,
 // one or more for every director, in their workshops. Nobody acts on orders yet: no AI runs until the user says so.
 export const MOVED_IN = new Set(CAST.map((c) => c.key));

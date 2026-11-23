@@ -641,7 +641,10 @@
     const box = el('div', { class: 'wz', role: 'dialog', 'aria-modal': 'true' }), card = el('div', { class: 'wz-card' }); box.append(card);
     const old = o.existing || null;
     const rec = { id: old ? old.id : 'b' + Date.now().toString(36), plot: o.plot, look: old ? old.look : o.looks[0].id, colour: old ? old.colour : o.colours[0],
-      name: old ? old.name : '', purpose: old ? old.purpose || '' : '', agents: old ? [...old.agents] : [], tools: old ? [...old.tools] : [] };
+      name: old ? old.name : '', purpose: old ? old.purpose || '' : '', agents: old ? [...old.agents] : [], tools: old ? [...old.tools] : [], head: old ? old.head || null : undefined };
+    const taken = new Set(defaults.agents.map((a) => agentName(a.key).toLowerCase()));
+    const HEAD_NAMES = ['Samir', 'Yasmin', 'Karim', 'Leila', 'Nadia', 'Omar', 'Rania', 'Tariq', 'Zara', 'Idris'].filter((n) => !taken.has(n.toLowerCase()));
+    if (rec.head === undefined) rec.head = { key: 'head-' + rec.id.slice(0, 14), name: HEAD_NAMES[Math.floor(Math.random() * HEAD_NAMES.length)] || 'Samir' };
     const conns = ((settings && settings.connections) || []);
     const err = el('div', { class: 'err' });
     let step = 0;
@@ -659,7 +662,7 @@
     const lookTile = (lk) => el('button', { class: 'ag lk' + (rec.look === lk.id ? ' on' : ''), 'aria-pressed': String(rec.look === lk.id), onclick: (e) => { if (!e.isTrusted) return; rec.look = lk.id; show(); } },
       el('img', { src: lk.src(rec.colour), alt: '', width: '110', height: '90' }), el('span', { class: 'agn' }, lk.label));
     function show() {
-      const dots = el('div', { class: 'dots' }, `STEP ${step + 1} OF 5`);
+      const dots = el('div', { class: 'dots' }, `STEP ${step + 1} OF 6`);
       const views = [
         () => [el('h2', {}, old ? `Change ${old.name}` : 'Build here'), el('p', {}, 'Pick a look and a colour. It only changes how the building looks.'),
           el('div', { class: 'ags' }, ...o.looks.map(lookTile)),
@@ -673,6 +676,21 @@
             el('label', {}, 'Name'), n, el('label', {}, 'What happens here'), pu,
             nav(true, () => { read(); if (!rec.name) { err.textContent = 'Give it a name first.'; return; } err.textContent = ''; step = 2; show(); })];
         },
+        () => {  // the head: lives here and is the one you talk to about this building
+          const n = el('input', { maxlength: '20', autocomplete: 'off', placeholder: 'One name, like Samir' }); n.value = rec.head ? rec.head.name : '';
+          const none = el('input', { type: 'checkbox' }); none.checked = !rec.head;
+          const read = () => {
+            if (none.checked) { rec.head = null; return true; }
+            const v = clean(n.value, 20).replace(/^./, (c) => c.toUpperCase());
+            if (!/^[A-Z][a-z]+(?:[ '-][A-Z][a-z]+)?$/.test(v)) { err.textContent = 'Give the head one simple name, like Samir.'; return false; }
+            if (taken.has(v.toLowerCase())) { err.textContent = 'Someone in your town already has that name.'; return false; }
+            rec.head = { key: 'head-' + rec.id.slice(0, 14), name: v }; return true;
+          };
+          return [el('h2', {}, `Who runs ${rec.name}?`), el('p', {}, `The head lives in ${rec.name} and is the one you talk to about it. They ask Engineer, Merchant, Librarian and the others when they need their help, and they suggest taking people on (or letting them go) only for you to approve.`),
+            el('div', { class: 'bsum' }, el('div', { style: 'font-size:40px' }, '\u{1F9D1}\u200D\u{1F4BC}'), el('div', {}, el('label', {}, 'Head\'s name'), n)),
+            el('label', { class: 'ck' }, none, ' No head for now (you talk to the people who work here directly)'),
+            nav(true, () => { if (!read()) return; err.textContent = ''; step = 3; show(); })];
+        },
         () => {
           const grid = el('div', { class: 'ags' }, ...defaults.agents.map((a) => {
             const on = rec.agents.includes(a.key);
@@ -681,7 +699,7 @@
             } }, faceSlot(a.key), el('span', { class: 'agn' }, agentName(a.key)), el('span', { class: 'agr' }, a.role));
           }));
           return [el('h2', {}, 'Who works here?'), el('p', {}, 'Tap the people who should work in this building. They keep their own house too, and drop by here.'), grid,
-            nav(true, () => { step = 3; show(); })];
+            nav(true, () => { step = 4; show(); })];
         },
         () => {
           const tiles = conns.map((c) => {
@@ -691,14 +709,14 @@
             } }, logo(c.kind, c.detail), el('span', { class: 'agn' }, c.name), el('span', { class: 'agr' }, c.on ? 'On' : 'Off for now'));
           });
           return [el('h2', {}, 'Which tools does it use?'), el('p', {}, tiles.length ? 'Tap the tools this building works with. This only records it: who may use a tool is still set in Settings → Connections.' : 'No tools are connected yet. You can connect them later in Settings → Connections, then come back here.'),
-            ...(tiles.length ? [el('div', { class: 'ags' }, ...tiles)] : []), nav(true, () => { step = 4; show(); })];
+            ...(tiles.length ? [el('div', { class: 'ags' }, ...tiles)] : []), nav(true, () => { step = 5; show(); })];
         },
         () => {
           const lk = o.looks.find((x) => x.id === rec.look) || o.looks[0];
           const people = rec.agents.map(agentName).join(', ') || 'Nobody yet';
           const tools = rec.tools.map((id) => (conns.find((c) => c.id === id) || {}).name).filter(Boolean).join(', ') || 'None yet';
           return [el('h2', {}, `Build ${rec.name}?`), el('div', { class: 'bsum' }, el('img', { src: lk.src(rec.colour), alt: '', width: '150', height: '122' }),
-            el('div', {}, el('b', {}, rec.name), el('p', { class: 'role' }, rec.purpose || lk.label), el('p', {}, `\u{1F465} ${people}`), el('p', {}, `\u{1F9F0} ${tools}`))),
+            el('div', {}, el('b', {}, rec.name), el('p', { class: 'role' }, rec.purpose || lk.label), el('p', {}, `\u{1F9D1}\u200D\u{1F4BC} ${rec.head ? rec.head.name + ', the head' : 'No head'}`), el('p', {}, `\u{1F465} ${people}`), el('p', {}, `\u{1F9F0} ${tools}`))),
             nav(true, () => {
               err.textContent = 'Building…';
               const list = ((settings && settings.buildings) || []).filter((b) => b.id !== rec.id && b.plot !== rec.plot);
@@ -760,6 +778,7 @@
         el('div', { class: 'kgrid' }, el('span'), kc('\u2191'), el('span'), kc('\u2190'), kc('\u2193'), kc('\u2192')), el('div', { class: 'kor' }, '+'), el('div', { class: 'kcol' }, kc('Shift', 'wide'), cap('to run'))),
       map: () => el('div', { class: 'cv' }, el('div', { class: 'kcol' }, kc('M'), cap('big map')), el('div', { class: 'kor' }, '\u2192'), el('div', { class: 'kcol' }, kc('M'), cap('small again'))),
       talk: () => el('div', { class: 'cv' }, el('div', { class: 'kcol' }, el('span', { class: 'kc wide' }, '\u{1F5B1} Click'), cap('anyone')), el('div', { class: 'kor' }, 'or'), el('div', { class: 'kcol' }, kc('T'), cap('when next to them'))),
+      quest: () => el('div', { class: 'cv col' }, ...[['#f6ca33', '!', 'A quest to start'], ['#cfd4dc', '!', "One you're on"], ['#f6ca33', '?', 'Done: hand it in']].map(([c, ch, t]) => el('div', { class: 'srow' }, el('b', { style: `color:${c};font:900 22px Georgia,serif;width:22px;text-align:center;text-shadow:0 0 2px #2a1c08,0 0 2px #2a1c08` }, ch), t))),
       status: () => el('div', { class: 'cv col' }, ...[['busy', 'Busy working'], ['you', 'Waiting for you to reply or approve'], ['free', 'Free, waiting for work']].map(([k, t]) => el('div', { class: 'srow' }, el('span', { class: 'st ' + k }, k === 'you' ? '!' : k === 'free' ? '\u2022\u2022\u2022' : ''), t))),
       team: () => {
         const crew = (a) => defaults.agents.filter((w) => w.boss === a.key).length;
@@ -785,13 +804,14 @@
       { say: 'Walk with W A S D or the arrow keys. Hold Shift to run. Try it now.', visual: 'walk', keys: MOVE, need: 8, hint: 'Walk a few steps', top: true },
       { say: 'This is your map. You are the "Me" pin. Press M to make it big, then M again to make it small.', visual: 'map', target: () => window.__mapRect && window.__mapRect(), keys: ['KeyM'], need: 2, hint: 'Press M twice' },
       { say: 'To talk to someone, click them. Or walk up to them and press T.', visual: 'talk', event: 'kingdom:chat', hint: 'Click anyone to talk', top: true },
-      { say: `Your quick actions. Press T or 1 to 4, or click them. T talks to whoever is in front of you, or to me when nobody is, and 3 takes you back to the town square.`, target: '#hotbar', keys: ['KeyT', 'Digit1', 'Digit2', 'Digit3', 'Digit4'], click: '#hotbar', hint: 'Try one' },
+      { say: `Your quick actions. Press T or 1 to 5, or click them. T talks to whoever is in front of you, or to me when nobody is, 3 takes you back to the town square, and 5 shows your team and usage.`, target: '#hotbar', keys: ['KeyT', 'Digit1', 'Digit2', 'Digit3', 'Digit4'], click: '#hotbar', hint: 'Try one' },
       { say: 'The marker over each person shows what they are doing.', visual: 'status', center: true },
       { say: 'Directors each run one area. When a director needs more hands, a worker is taken on. The director gives the worker every task and checks the work.', visual: 'team', center: true },
       { say: "Your to-do list. Type a task and the right person does it. When it's done, you approve it.", visual: 'todo', target: '[data-act="todo"]', keys: ['KeyK'], click: '[data-act="todo"]', hint: 'Open your to-do list' },
       { say: 'Call a meeting to talk to all your directors at once.', visual: 'meeting', target: '[data-act="meeting"]' },
       { say: 'Night, sound and help.', visual: 'extras', target: '[data-act="night"]', center: true },
       { say: 'Settings: rename anyone, connect your tools, and replay this guide. Nothing is ever sent, spent or posted without your click.', target: '[data-act="settings"]', last: true },
+      { say: 'Last thing. Anyone with a gold ! over their head has a quest for you: one short thing to try with them. Talk to them to start. The guide is over, enjoy your town!', visual: 'quest', center: true },
     ];
     let n = 0, count = 0, moving = false;
     const box = el('div', { class: 'coach', role: 'dialog', 'aria-label': `A guide to ${world}` });
@@ -831,7 +851,8 @@
     function end() {
       box.remove(); spot.remove(); dim.remove(); clearInterval(timer);
       removeEventListener('keydown', onKey, true); document.removeEventListener('click', onClick, true); removeEventListener('kingdom:chat', onEvent);
-      if (settings && !settings.tourDone) save({ ...settings, tourDone: true }).catch(() => {});
+      const done = () => dispatchEvent(new CustomEvent('kingdom:tourdone'));  // the quests open once the guide is over
+      if (settings && !settings.tourDone) save({ ...settings, tourDone: true }).then(done, done); else done();
     }
     const go = (d) => { moving = false; n += d; count = 0; if (n >= steps.length) end(); else { n = Math.max(0, n); show(); } };
     const soon = () => { if (!moving) { moving = true; setTimeout(() => { if (moving) go(1); }, 700); } };  // once per step, however many keys follow
@@ -860,10 +881,8 @@
   function start(d, hasData) {
     defaults = d;
     if (!got.ok) { build(); return; }  // no settings server: defaults, nothing saved
-    if (!settings && hasData) {  // an existing install: keep everything, mark it set up, no onboarding
-      settings = { version: VERSION, setupDone: true, worldName: '', ownerName: '', agents: {}, tourDone: true, migrated: true };
-      save(settings).catch(() => {});
-    }
+    // No settings record means onboarding, always: setup, then the guide (feedback round 3). Anything this browser
+    // already holds (chats, to-dos) is kept; it just doesn't skip the welcome any more.
     build();
     if (!settings || !settings.setupDone) wizard(() => location.reload());
     else setTimeout(() => tour(false), 1500);
