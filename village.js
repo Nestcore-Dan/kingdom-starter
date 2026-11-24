@@ -5237,8 +5237,8 @@
     if (r && !big) qlog.style.top = Math.round(r.y + r.h + 22) + 'px';
     const rank = (t) => (['needs', 'failed'].includes(t.status) ? 0 : t.status === 'ready' ? 1 : 2);  // what needs you first
     const mine = todos.filter((t) => t.status !== 'done').slice().reverse().sort((a, b) => rank(a) - rank(b));
-    const finished = todos.filter((t) => t.status === 'done').slice(-3).reverse();
-    const meet = questsOpen() && questsDone() < QUESTS.length ? QUESTS.filter((q) => questState(q.key)) : [];
+    const finished = [];  // feedback round 9: finished quests aren't listed here any more
+    const meet = questsOpen() && questsDone() < QUESTS.length ? QUESTS.filter((q) => questState(q.key) && questState(q.key) !== 'done') : [];
     const sig = JSON.stringify([qlogOpen, mine.map((t) => t.id + t.status + titleOf(t)), finished.map((t) => t.id), meet.map((q) => q.key + questState(q.key)), taskOpen]);
     if (sig === qlogSig) return; qlogSig = sig;
     const head = mk('button', { display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: '0', color: '#e8c46a', font: '700 13px system-ui', cursor: 'pointer', padding: '0' });
@@ -5256,13 +5256,13 @@
       const sec = (t) => mk('div', { color: '#9a9486', fontSize: '10px', letterSpacing: '.08em', margin: '8px 0 0' }, t);
       if (!mine.length && !finished.length && !meet.length) parts.push(mk('div', { color: '#9a9486', marginTop: '6px' }, 'Add a task (press 1) and it becomes a quest here.'));
       if (mine.length) { parts.push(sec('YOUR QUESTS')); for (const t of mine) { const [mk2, c, sub] = markOf(t); parts.push(row(mk2, c, titleOf(t), `${sub} · ${nameOf(t.doneBy || t.by)}`, () => openTask(t), taskOpen === t.id)); } }
-      if (finished.length) { parts.push(sec('RECENTLY FINISHED')); for (const t of finished) parts.push(row('✔', '#8fc27a', titleOf(t), `Finished · ${nameOf(t.doneBy || t.by)}`, () => openTask(t), taskOpen === t.id)); }
+      // feedback round 9: finished quests leave the log; they stay in the to-do list under Done
       if (meet.length) {
         parts.push(sec('MEET THE DIRECTORS'));
         const waitingQ = meet.filter((q) => questState(q.key) === 'available');
         if (waitingQ.length) parts.push(row('!', '#f6ca33', `${waitingQ.length} director${waitingQ.length > 1 ? 's have' : ' has'} a quest for you`, 'Look for the gold ! over their heads', () => toast(`Quests waiting with ${waitingQ.map((q) => relabel(nameOf(q.key))).join(', ')}. Walk up and talk to them.`, 'vizier'), false));
         for (const q of meet.filter((x) => !['available', 'done'].includes(questState(x.key)))) { const st = questState(q.key); parts.push(row(st === 'ready' ? '?' : '!', st === 'active' ? '#cfd4dc' : '#f6ca33', q.title, st === 'available' ? `Talk to ${relabel(nameOf(q.key))} to start` : st === 'ready' ? `Hand it in to ${relabel(nameOf(q.key))}` : relabel(q.how), () => showQuestCard(q.key), false)); }
-        for (const q of meet.filter((x) => questState(x.key) === 'done')) parts.push(row('\u2714', '#8fc27a', q.title, `Handed in to ${relabel(nameOf(q.key))}`, () => toast(`${q.title}: done and handed in to ${relabel(nameOf(q.key))}.`, q.key), false));
+        // feedback round 9: a handed-in quest leaves the log (the director's quest card still shows it as done)
       }
     }
     qlog.replaceChildren(...parts);
