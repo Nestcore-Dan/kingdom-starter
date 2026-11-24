@@ -3578,7 +3578,7 @@
         list = parts.filter((x) => /\?\s*$/.test(x)); main = parts.filter((x) => !/\?\s*$/.test(x)).join(' ');
       }
       if (t.status === 'failed' && !list.length) list = ['Read what happened, then answer with what to do, or remove the task and add it again'];
-      if (!list.length) list = ['Answer them in the box below'];
+      if (!list.length) list = ['Nothing specific was asked. Reply "carry on" to let them finish it, or say what to change'];
       const [short, more] = splitShort(main);
       return { main: short || 'They got stuck and need your help to carry on.', more, list, kind: 'needs' };
     }
@@ -3644,6 +3644,10 @@
     if (t.report && (t.status === 'ready' || t.status === 'done')) {  // the full result, for reading it all
       // (the Details in the card above already holds the full result)
     }
+    // feedback round 10: only the card above needs reading; the background is folded away
+    const bg = mk('details', { display: 'grid', gap: '8px' }); bg.append(mk('summary', { cursor: 'pointer', color: '#e8c46a', fontSize: '12px' }, 'Background: your request and how it went'));
+    body.append(bg);
+    { const body = bg;
     body.append(label2('YOUR ORIGINAL REQUEST'), box6({ color: '#c9c1ae' }, t.text));
     if (t.context) body.append(label2(`WHAT YOU TOLD ${relabel(nameOf('vizier')).toUpperCase()}`), box6({ color: '#c9c1ae' }, t.context));
     if ((t.steps || []).length) {
@@ -3656,6 +3660,7 @@
       }
     }
     if (t.chiefNotes && t.chiefNotes.length) body.append(label2('WHAT YOU SAID'), ...t.chiefNotes.map((n) => box6({ color: '#f5efe2' }, '• ' + n)));
+    }
     const foot = mk('div', { padding: '10px 12px', borderTop: '1px solid rgba(232,196,106,.25)', display: 'grid', gap: '8px' });
     const btn = (label, bg, fn, fg) => { const b = mk('button', { background: bg, color: fg || '#fff', border: '0', borderRadius: '8px', padding: '7px 14px', cursor: 'pointer', font: '650 13px system-ui' }, label); b.onclick = fn; return b; };
     const writeBox = (ph, sendLabel, onSend) => {
@@ -3803,7 +3808,9 @@
   // ("ASK Librarian: ...", at most twice a task). The colleague answers from their own area and notes, the answer goes
   // back to the agent, and every question and answer is kept on the task with the rest of the hand-over.
   const MAX_CONSULTS = 2;
-  const whoIs = (n) => { n = String(n || '').trim().toLowerCase(); return ['vizier', ...RES.map((r) => r.key)].find((k) => k === n || nameOf(k).toLowerCase() === n) || null; };
+  // feedback round 10: agents use the names the Chief chose, so match those as well as the built-in ones
+  const namesFor = (k) => [k, nameOf(k), relabel(nameOf(k))].map((x) => String(x).toLowerCase());
+  const whoIs = (n) => { n = String(n || '').trim().toLowerCase(); return ['vizier', ...RES.map((r) => r.key)].find((k) => namesFor(k).includes(n)) || null; };
   async function ask(t, key, room, job, line) {  // one step of the work, recorded on the task as it happens
     const run = async (j, l) => {
       t.now = l; t.with = key; saveTodos(); if (todoBox.style.display === 'flex') renderTodos();
@@ -3874,7 +3881,8 @@
     try {
       const out = await ask(t, d, 'task', { text: t.text, note, context: t.context || '' }, `${nameOf(d)} is deciding who does it`);
       const v = verdict(out, ['HAND TO', 'DONE', 'NEEDS THE CHIEF']);
-      const w = v.word === 'HAND TO' && team.find((k) => v.tail.toLowerCase().includes(nameOf(k).toLowerCase()) || v.tail.toLowerCase().includes(k));
+      const tail = v.tail.toLowerCase();
+      const w = v.word === 'HAND TO' && (team.find((k) => namesFor(k).some((x) => tail.includes(x))) || (team.length === 1 ? team[0] : null));  // one worker: it can only be them
       if (!w) {  // the director did it themselves
         step(t, d, 'did it', v.rest);
         finish(t, v.word === 'DONE' ? 'done' : 'needs', v.rest, d, null);

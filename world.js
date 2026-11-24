@@ -601,7 +601,7 @@
     function keepDraft() { Object.assign(draft, f.read(), { step }); return save({ ...(settings || {}), setupDone: false, draft }).catch(() => {}); }
     const finish = (rec) => {
       err.textContent = 'Saving…';
-      save({ setupDone: true, worldName: rec.worldName, ownerName: rec.ownerName, agents: rec.agents, connections: rec.connections || [], tourDone: false, draft: null })
+      save({ setupDone: true, worldName: rec.worldName, ownerName: rec.ownerName, agents: rec.agents, connections: rec.connections || [], buildings: (settings && settings.buildings) || [], tourDone: false, draft: null })  // a reset can keep buildings (round 9)
         .then(() => { box.remove(); onDone(); })
         .catch((e) => { err.textContent = `Couldn't save (${e.message}). Nothing was created twice: try again.`; });
     };
