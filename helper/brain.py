@@ -658,6 +658,17 @@ def connector_tools(key, names, drafts=()):
     return allowed, blocked, missing
 
 
+def crew_note(key):
+    """Feedback round 11: an agent the Chief put on a building's crew knows it, and why they're sometimes found there."""
+    rows = [h for h in heads.load() if isinstance(h, dict) and not h.get("retired") and key in (h.get("crew") or [])]
+    if not rows:
+        return ""
+    lines = [f"- You're on the crew of {h.get('buildingName')}, led by {h.get('name')}, its head ({h.get('purpose') or 'its own work'}). "
+             f"The Chief put you there: you keep your own role, house and director, and you go to {h.get('buildingName')} to work on its "
+             f"projects when {h.get('name')} needs your expertise. So you'll sometimes be found working there." for h in rows]
+    return "\n## Buildings you also work in (the Chief's choice)\n" + "\n".join(lines) + "\n"
+
+
 def display_note(key, display):
     """Personalisation (world.js): the names the Chief gave this world and its agents. Only the names people see
     change: everyone keeps their role, instructions, permissions and history."""
@@ -686,6 +697,8 @@ def reply(key, history, room, hint, job=None, retried=False, display=None):
     model = "sonnet" if key in WORKERS or room == "candidate" else "opus"
     prompt = hiring.candidate_prompt(job or {}) if room == "candidate" else system_prompt(key, room, job)
     prompt += display_note(key, display)
+    if room != "candidate":
+        prompt += crew_note(key)
     access = []
     names, unmatched, drafts = access_for(key, room)
     pretty = lambda ns: " and ".join(n.replace("claude.ai ", "") for n in ns)

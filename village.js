@@ -3231,7 +3231,7 @@
     chatWith = key; renderChat(); chatBox.style.display = 'flex'; keys.clear(); hideHover && hideHover();
     renderPermBar();
     setTimeout(() => chatInput.focus(), 0);
-    if (key === 'vizier') openLog();
+    // feedback round 11: talking to Vizier no longer opens her chat log as a second panel; press L for it
   }
   function closeChat() { chatBox.style.display = 'none'; chatWith = null; chatInput.blur(); }
   function renderLog() {
