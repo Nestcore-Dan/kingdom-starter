@@ -548,11 +548,11 @@ def task_rules(key, room):
 
 
 def task_ask(key, room, job):
-    text = str(job.get("text", ""))[:2000]
+    text = str(job.get("text", ""))[:4000]
     parts = [f"The task from the Chief: {text}"]
     if job.get("context"):
         parts.append("What the Chief said to Vizier when giving this task (use these details exactly, and don't add any the Chief didn't give):\n"
-                     + str(job["context"])[:2000])
+                     + str(job["context"])[:8000])
     if job.get("note"):
         parts.append(f"(Village note: {str(job['note'])[:500]})")
     if job.get("instructions"):
@@ -786,10 +786,20 @@ def reply(key, history, room, hint, job=None, retried=False, display=None):
     if access:  # step 48: nothing that sends, spends or publishes, whatever the lists say
         i, j = access.index("--allowedTools"), access.index("--disallowedTools")
         access = access[:i + 1] + [t for t in access[i + 1:j] if not never(t)] + access[j:]
-    base = [str(CLAUDE), "-p", ask, "--system-prompt", prompt, "--tools", "",
+    # feedback round 12: the instructions go in a file and the request on standard input, because Windows refuses a
+    # command line over about 32,000 characters (WinError 206) and the fuller briefs plus a long chat went over it
+    pfile = RUN_DIR / f"prompt-{threading.get_ident()}-{time.time_ns()}.txt"
+    pfile.write_text(prompt, encoding="utf-8")
+    base = [str(CLAUDE), "-p", "--system-prompt-file", str(pfile), "--tools", "",
             "--settings", str(SETTINGS), "--no-session-persistence", "--model", model, "--output-format", "stream-json", "--verbose"]
     args = base + (access if access else ["--strict-mcp-config", "--setting-sources", "project"])
-    r = subprocess.run(args, cwd=RUN_DIR, env=clean_env(), capture_output=True, text=True, encoding="utf-8", timeout=240)
+    try:
+        r = subprocess.run(args, input=ask, cwd=RUN_DIR, env=clean_env(), capture_output=True, text=True, encoding="utf-8", timeout=240)
+    finally:
+        try:
+            pfile.unlink()
+        except OSError:
+            pass
     init, result = None, None
     for line in r.stdout.splitlines():
         try:
