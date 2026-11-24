@@ -3,6 +3,53 @@
 // every building can be walked into. Plain JavaScript on a canvas; all art is drawn in code
 // to the locked style guide in NOTES.md (no text in the art, nothing fetched).
 'use strict';
+// ---------- Kingdom 2.0 phase 1: the Core is the source of truth ----------
+// Before anything else runs, the page loads its state from the Kingdom Core (the AI helper's store) into this
+// browser's storage, which from then on is only a cache. Every save of Kingdom state is written through to the Core.
+// The first time, whatever this browser holds is imported once. If the Core isn't running, the cache is used and
+// changes are sent when it's back. Per-browser conveniences (sound, panel sizes) stay in this browser only.
+(() => {
+  const CORE_KEYS = /^kingdom-one-(chats|todo|log|quests|orders|notes|talk|minutes|candidate|studio-[a-z0-9-]{1,30})$/;
+  const BRAIN = `http://127.0.0.1:${(+location.port || 8765) + 1}`;
+  const C = window.__core = { on: false, token: '', pending: new Set(), timer: null, error: '' };
+  const rawSet = Storage.prototype.setItem, rawRemove = Storage.prototype.removeItem;
+  const sync = (method, url, body) => {
+    const x = new XMLHttpRequest(); x.open(method, url, false);
+    if (url.startsWith(BRAIN)) x.setRequestHeader('X-Kingdom-Token', C.token);
+    if (body) x.setRequestHeader('Content-Type', 'application/json');
+    x.send(body ? JSON.stringify(body) : null); return x;
+  };
+  const mine = () => { const o = {}; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (CORE_KEYS.test(k)) { try { o[k] = JSON.parse(localStorage.getItem(k)); } catch (e) { /* skip */ } } } return o; };
+  try {
+    C.token = JSON.parse(sync('GET', '/api/session').responseText).token || '';
+    if (C.token) {
+      let x = sync('GET', BRAIN + '/core/state');
+      if (x.status === 200) {
+        let st = JSON.parse(x.responseText);
+        const local = mine();
+        if (st.empty && Object.keys(local).length) {  // the one-time import of this browser's Kingdom
+          const m = sync('POST', BRAIN + '/core/migrate', { items: local });
+          if (m.status === 200) { C.migrated = JSON.parse(m.responseText); rawSet.call(localStorage, 'kingdom-one-migrated', new Date().toISOString()); }
+          x = sync('GET', BRAIN + '/core/state'); st = JSON.parse(x.responseText);
+        }
+        for (const [k, v] of Object.entries(st.state || {})) if (CORE_KEYS.test(k)) rawSet.call(localStorage, k, JSON.stringify(v));
+        C.on = true;
+      }
+    }
+  } catch (e) { C.error = String(e && e.message || e); }
+  const flush = () => {
+    C.timer = null; const keys = [...C.pending]; C.pending.clear();
+    for (const k of keys) {
+      let value = null; try { value = JSON.parse(localStorage.getItem(k)); } catch (e) { value = null; }
+      fetch(BRAIN + '/core/state', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Kingdom-Token': C.token }, body: JSON.stringify({ key: k, value }) })
+        .then((r) => { if (r.status === 401) return fetch('/api/session').then((s) => s.json()).then((j) => { C.token = j.token || ''; C.pending.add(k); queue(); }); if (!r.ok) throw new Error(r.status); C.on = true; })
+        .catch(() => { C.on = false; C.pending.add(k); setTimeout(queue, 5000); });
+    }
+  };
+  const queue = (k) => { if (k) C.pending.add(k); if (!C.timer) C.timer = setTimeout(flush, 400); };
+  Storage.prototype.setItem = function (k, v) { rawSet.call(this, k, v); if (this === localStorage && CORE_KEYS.test(k)) queue(k); };
+  Storage.prototype.removeItem = function (k) { rawRemove.call(this, k); if (this === localStorage && CORE_KEYS.test(k)) queue(k); };
+})();
 (() => {
   const T = 32;          // tile size in world pixels
   const SPEED = 150;     // walking speed, world pixels per second
@@ -442,7 +489,8 @@
       spices: ['spice-measures', 1.1], copperlamp: ['tall-copper-lantern', 1.3] };
     // the square: a juice cart, a spice stall, pottery and baskets
     put('juicecart', 44, 30, 2); put('spicestall', 34, 30, 2);
-    put('pottery', 33, 27); put('baskets', 46, 27); put('pottery', 46, 31); put('baskets', 33, 31);
+    // 2026-11-24: moved off rows 27-28, where the main street enters the square (they blocked both entrances)
+    put('pottery', 33, 24); put('baskets', 46, 24); put('pottery', 46, 32); put('baskets', 33, 32);
     // market dressing round the square and in the yards (each is placed only where there's free open ground)
     for (const [k, x, y, w] of [['shade', 36, 33, 2], ['kilims', 42, 33], ['textile', 47, 29], ['copper', 32, 29], ['jar', 47, 33], ['tea', 35, 27],
       ['bollard', 37, 24], ['bollard', 42, 24], ['spices', 21, 43], ['kilims', 29, 43], ['copperlamp', 27, 43], ['jar', 48, 43], ['copper', 56, 43],
@@ -3209,10 +3257,23 @@
   // through Claude Code on the user's own subscription, talk-only. When it isn't, replies are scripted.
   const BRAIN = `http://127.0.0.1:${(+location.port || 8765) + 1}`;  // the brain helper: the port after the village's
   let brain = null;  // the helper's status while it's reachable
+  // Kingdom 2.0 phase 1: the helper answers only requests carrying its token, which the village's own server hands
+  // to this page. A new token comes with every helper restart, so on a 401 the page fetches it again once.
+  let helperToken = '';
+  const getToken = async () => { try { const j = await (await fetch('/api/session', { cache: 'no-store' })).json(); helperToken = j.token || ''; } catch (e) { helperToken = ''; } return helperToken; };
+  const fetch = async (url, opts = {}) => {
+    if (!String(url).startsWith(BRAIN)) return window.fetch(url, opts);
+    if (!helperToken) await getToken();
+    const go = () => window.fetch(url, { ...opts, headers: { ...(opts.headers || {}), 'X-Kingdom-Token': helperToken } });
+    let r = await go();
+    if (r.status === 401) { await getToken(); r = await go(); }
+    return r;
+  };
+  const reportUrl = (path) => `${BRAIN}${path}${path.includes('?') ? '&' : '?'}t=${helperToken}`;
   const askBrain = async (key, history, opts = {}) => {
     const r = await fetch(BRAIN + '/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ agent: key, history, room: opts.room || '', hint: opts.hint || '', job: opts.job || null, names: W ? W.names() : null, world: W ? W.worldName() : null }) });
     const j = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(j.error || 'no answer');
+    if (!r.ok) throw Object.assign(new Error(j.error || 'no answer'), { blocked: r.status === 423 });
     return j.reply;
   };
   async function checkBrain() {
@@ -3222,6 +3283,9 @@
       brain = r.ok ? await r.json() : null;
     } catch (e) { brain = null; }
     if (brain && !window.kingdomBrain) window.kingdomBrain = askBrain;
+    if (brain) fetch(BRAIN + '/privacy').then((r) => r.json()).then((j) => {  // Kingdom 2.0: which agents are private comes from the helper's policy
+      PRIVATE_AGENTS.clear(); for (const [k, v] of Object.entries(j.home || {})) if (v === 'personal') PRIVATE_AGENTS.add(k);
+    }).catch(() => { /* keep the last known list */ });
     if (!brain && window.kingdomBrain === askBrain) delete window.kingdomBrain;
     try { chatNote.textContent = brainLabel(); mNote.textContent = brainLabel(); } catch (e) { /* boxes not built yet */ }
   }
@@ -3231,6 +3295,8 @@
   const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch (e) { return d; } };
   const store = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* private window: this visit only */ } };
   const chats = load(CHAT_KEY, {}), chatLog = load(LOG_KEY, []);
+  const PRIVATE_AGENTS = new Set(['steward']);  // until the helper's policy arrives (GET /privacy); the helper enforces it either way
+  const isPrivate = (k) => PRIVATE_AGENTS.has(k);
   const panelStyle = { background: 'rgba(18,20,28,.94)', border: '1px solid rgba(232,196,106,.45)', borderRadius: '14px', display: 'none',
     flexDirection: 'column', font: '13px system-ui', color: '#f5efe2', pointerEvents: 'auto', zIndex: '15', overflow: 'hidden' };
   const mk = (tag, style, text) => { const e = document.createElement(tag); if (style) Object.assign(e.style, style); if (text != null) e.textContent = relabel(text); return e; };
@@ -3298,7 +3364,7 @@
   function openLog() { renderLog(); logBox.style.display = 'flex'; front(logBox); }
   function closeLog() { logBox.style.display = 'none'; }
   logClose.onclick = closeLog;
-  const say = (key, from, text) => { (chats[key] = chats[key] || []).push({ from, text, at: new Date().toISOString() }); chats[key] = chats[key].slice(-60); store(CHAT_KEY, chats); };
+  const say = (key, from, text) => { (chats[key] = chats[key] || []).push({ from, text, at: new Date().toISOString(), ...(PRIVATE_AGENTS.has(key) ? { scope: 'personal' } : {}) }); chats[key] = chats[key].slice(-60); store(CHAT_KEY, chats); };
   const logSay = (from, text) => { chatLog.push({ from, text, at: new Date().toISOString() }); chatLog.splice(0, Math.max(0, chatLog.length - 100)); store(LOG_KEY, chatLog); };
   const GREETING = /^\s*(hi|hello|hey|salaam|salam|good (morning|afternoon|evening)|how are you)\b/i;
   // names people go by, for "get Keeper", "Librarian, come here" and the like
@@ -3337,7 +3403,7 @@
   // feedback round 13: "carry on", "go ahead", "yes, do it"... are go-aheads for what the agent just proposed
   const GO_AHEAD = /^\s*(yes|yep|yeah|ok(ay)?|sure|great|perfect|sounds good|go ahead|go for it|carry on|continue|proceed|do it|please do|let'?s do it|make it so|approved)\b[^?]{0,80}$/i;
   // the recent back-and-forth with one agent, both sides, so a task (and anyone it's passed to) has the whole story
-  const chatConvo = (key, n = 10) => (chats[key] || []).slice(-n).map((m) => `${m.from === 'you' ? 'Chief' : nameOf(m.from)}: ${String(m.text).replace(/\s+/g, ' ').slice(0, 500)}`).join('\n');
+  const chatConvo = (key, n = 10) => (chats[key] || []).slice(-n).map((m) => `${m.from === 'you' ? 'Chief' : nameOf(m.from)}: ${String(m.text).replace(/\s+/g, ' ').slice(0, 2000)}`).join('\n');
   function taskFromChat(key, text, reply) {  // returns the task if one was made
     if (key === 'vizier' || !AGREES.test(reply || '')) return null;
     const go = GO_AHEAD.test(text) && !asksToDo(text);
@@ -3345,14 +3411,15 @@
     const before = (chats[key] || []).slice(0, -1).reverse().find((m) => m.from === key);  // what the go-ahead answers (the agent's reply isn't saved yet)
     const task = go && before ? `${text.trim()}: go ahead with what ${nameOf(key)} proposed: ${String(before.text).replace(/\s+/g, ' ').slice(0, 300)}` : text;
     const t = addTodo(task, { to: key, from: nameOf(key), direct: true, logged: true, title: go && before ? shortName(String(before.text).replace(/^(happy to help|sure|of course|good question)[.!,]*\s*/i, '').replace(/^i could\s+/i, '')) : null, context: `Your conversation with the Chief (most recent last):\n${chatConvo(key)}` });
-    if (t) { logSay('vizier', `Noted: the Chief agreed a task with ${nameOf(key)} directly: "${titleOf(t)}". I'll keep track of it.`); renderLog(); }
+    if (t) { logSay('vizier', isPrivate(key) ? `Noted: the Chief agreed a personal task with ${nameOf(key)} directly (kept private).` : `Noted: the Chief agreed a task with ${nameOf(key)} directly: "${titleOf(t)}". I'll keep track of it.`); renderLog(); }
     return t;
   }
   // feedback round 13: Vizier knows what the Chief has been discussing with others directly today
+  // privacy fix (2026-11-24): personal conversations never leave the garden, not even as a summary for Vizier
   function directDigest() {
     const day = today(), out = [];
     for (const [k, list] of Object.entries(chats)) {
-      if (k === 'vizier' || isCand(k) || !Array.isArray(list)) continue;
+      if (k === 'vizier' || isPrivate(k) || isCand(k) || !Array.isArray(list)) continue;
       const todays = list.filter((m) => String(m.at || '').slice(0, 10) === day);
       if (!todays.length) continue;
       out.push(`${nameOf(k)}:\n` + todays.slice(-6).map((m) => `  ${m.from === 'you' ? 'Chief' : nameOf(m.from)}: ${String(m.text).replace(/\s+/g, ' ').slice(0, 220)}`).join('\n'));
@@ -3360,7 +3427,7 @@
     return out.length ? `The Chief's direct conversations with others today (most recent last; you weren't in them, but keep track and coordinate):\n${out.slice(-6).join('\n')}` : '';
   }
   // what you said to Vizier just before an order (feedback round 4): it goes with the task so nothing gets lost or changed
-  const chatContext = (key) => (chats[key] || []).slice(-8).filter((m) => m.from === 'you').map((m) => `- ${String(m.text).slice(0, 300)}`).join('\n');
+  const chatContext = (key) => (chats[key] || []).slice(-8).filter((m) => m.from === 'you').map((m) => `- ${String(m.text).slice(0, 2000)}`).join('\n');
   function routeAndLog(text) {  // Vizier records the order, phones the owner, and the hand-over shows in her log
     const r = placeOrder(text);
     let hint = r.to === 'vizier' ? 'The village recorded this as an order for Vizier herself to keep.' : r.to === 'hire' ? 'The village noted this as a hiring request, for later.' : '';
@@ -3397,10 +3464,10 @@
       if (brainOn()) {
         const routed = key === 'vizier' && isOrder(text) ? routeAndLog(text) : null;
         const wait = thinking(chatBody, key);
-        const dig = key === 'vizier' ? directDigest() : '';
+        const dig = key === 'vizier' && !(window.__core && window.__core.on) ? directDigest() : '';  // with the Core on, it builds this from its records
         try { reply = await window.kingdomBrain(key, chats[key], isCand(key) ? { room: 'candidate', job: candidate } : { hint: [routed ? routed.hint : '', dig].filter(Boolean).join('\n\n') }); } catch (e) { reply = (routed ? routed.r.reply.replace(/^Vizier: /, '') : scriptedReply(key, text)) + ` (The helper couldn't answer: ${e.message})`; }
         wait.remove();
-        if (routed) addTodo(text, { to: routed.r.to, from: 'Vizier', logged: true, context: [chatContext('vizier'), directDigest()].filter(Boolean).join('\n\n') });
+        if (routed) addTodo(text, { to: routed.r.to, from: 'Vizier', logged: true, context: chatContext('vizier'), withDigest: true });
         else if (!isCand(key)) taskFromChat(key, text, reply);
       } else {
         const routed = key === 'vizier' && !(GREETING.test(text) && text.length < 40) ? routeAndLog(text) : null;
@@ -3548,7 +3615,7 @@
       const mid = mk('div', { flex: '1', minWidth: '0' });
       const txt = mk('div', { color: t.status === 'done' ? '#9a9486' : '#f5efe2', overflowWrap: 'anywhere' });
       txt.append(mk('div', { fontWeight: '650' }, titleOf(t)), mk('div', { fontSize: '11px', color: '#9a9486', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }, t.text));
-      const [label, col] = t.status === 'done' && t.approvedBy === 'project' ? ['Approved within the project (it works on its own)', '#8fc27a'] : STATUS[t.status];
+      const [label, col] = t.status === 'done' && t.approvedBy === 'project' ? ['Approved within the project (it works on its own)', '#8fc27a'] : t.status === 'done' && t.approvedBy === 'director' ? [`Accepted by ${nameOf(t.checkedBy)} (routine work)`, '#8fc27a'] : STATUS[t.status];
       const who = t.status === 'working' ? (t.now || `${nameOf(t.by)} is on it`)
         : t.doneBy ? `${label} · by ${nameOf(t.doneBy)}${t.checkedBy ? `, checked by ${nameOf(t.checkedBy)}` : ''}` : `${label} · ${nameOf(t.by)}`;
       mid.append(txt, mk('div', { fontSize: '11px', color: col, marginTop: '2px' }, (t.emailDraft ? '✉ Draft, not sent · ' : '') + (t.toolAsk ? '🔧 Tool options for you · ' : '') + who));
@@ -3584,7 +3651,7 @@
       del.onclick = () => { const i = todos.indexOf(t); if (i >= 0) { todos.splice(i, 1); saveTodos(); todoTip.style.display = 'none'; renderTodos(); } };
       if (t.pdf) {
         const pdf = mk('a', { color: '#e8c46a', fontSize: '11px', fontWeight: '650', textDecoration: 'none', border: '1px solid rgba(232,196,106,.45)', borderRadius: '6px', padding: '1px 6px', alignSelf: 'center' }, 'PDF');
-        pdf.href = BRAIN + t.pdf; pdf.target = '_blank'; pdf.rel = 'noopener'; pdf.title = 'Open the report for this task';
+        pdf.href = reportUrl(t.pdf); pdf.target = '_blank'; pdf.rel = 'noopener'; pdf.title = 'Open the report for this task';
         row.append(mid, pdf, del);
       } else row.append(mid, del);
       row.style.cursor = 'pointer'; row.title = 'Open it to read everything and answer';
@@ -3709,7 +3776,7 @@
     taskSig = sig;
     const head = mk('div', { padding: '10px 12px', borderBottom: '1px solid rgba(232,196,106,.25)', display: 'flex', gap: '10px', alignItems: 'flex-start' });
     const img = faceImg(t.with || t.doneBy || t.by, 34); if (img) head.append(img);
-    const [label, col] = t.status === 'done' && t.approvedBy === 'project' ? ['Approved within the project', '#8fc27a'] : STATUS[t.status];
+    const [label, col] = t.status === 'done' && t.approvedBy === 'project' ? ['Approved within the project', '#8fc27a'] : t.status === 'done' && t.approvedBy === 'director' ? [`Accepted by ${nameOf(t.checkedBy)}`, '#8fc27a'] : STATUS[t.status];
     const ht = mk('div', { flex: '1', minWidth: '0' });
     ht.append(box6({ fontWeight: '650', color: '#f5efe2', fontSize: '15px' }, titleOf(t)), mk('div', { fontSize: '12px', color: col, marginTop: '3px' }, `${t.status === 'working' ? t.now || 'Working on it' : label} · ${nameOf(t.by)}${t.doneBy && t.doneBy !== t.by ? `, done by ${nameOf(t.doneBy)}` : ''}`));
     const x = mk('button', { background: 'none', border: '0', color: '#c9c1ae', cursor: 'pointer', fontSize: '18px' }, '×'); x.title = 'Close'; x.onclick = closeTask;
@@ -3755,10 +3822,10 @@
       const row = mk('div', { display: 'flex', gap: '8px', flexWrap: 'wrap' });
       row.append(btn('Approve', '#3f7d5a', (e) => { approveTask(t, e); renderTask(true); }));
       if (t.emailDraft && t.report) row.append(btn('Copy draft', '#2b8a8a', () => { navigator.clipboard && navigator.clipboard.writeText(t.report).then(() => toast('Draft copied. Nothing was sent.', 'vizier')); }));
-      if (t.pdf) { const a = mk('a', { color: '#e8c46a', alignSelf: 'center', fontWeight: '650' }, 'Open the PDF'); a.href = BRAIN + t.pdf; a.target = '_blank'; a.rel = 'noopener'; row.append(a); }
+      if (t.pdf) { const a = mk('a', { color: '#e8c46a', alignSelf: 'center', fontWeight: '650' }, 'Open the PDF'); a.href = reportUrl(t.pdf); a.target = '_blank'; a.rel = 'noopener'; row.append(a); }
       foot.append(row);
       writeBox('Or send it back: what needs changing?', 'Send back', (v, e) => { sendBackTask(t, v, e); renderTask(true); });
-    } else if (t.status === 'done') foot.append(mk('div', { color: '#8fc27a', fontSize: '12px' }, t.approvedBy === 'project' ? 'Approved within the project, which works on its own.' : `Approved by you${t.approvedAt ? ' · ' + when(t.approvedAt) : ''}.`));
+    } else if (t.status === 'done') foot.append(mk('div', { color: '#8fc27a', fontSize: '12px' }, t.approvedBy === 'project' ? 'Approved within the project, which works on its own.' : t.approvedBy === 'director' ? `Accepted by ${nameOf(t.checkedBy)} as routine work they checked. Reply below to reopen it.` : `Approved by you${t.approvedAt ? ' · ' + when(t.approvedAt) : ''}.`));
     else foot.append(mk('div', { color: '#c9c1ae', fontSize: '12px' }, "Nothing to do: they're on it and will report back."));
     taskBox.replaceChildren(head, body, foot);
   }
@@ -3768,7 +3835,7 @@
     const dup = todos.find((x) => x.text.toLowerCase() === text.toLowerCase() && Date.now() - new Date(x.at).getTime() < 10 * 60 * 1000);
     if (dup) return dup;
     const r = opts.to ? { to: opts.to, reply: null } : placeOrder(text);  // Vizier records it and phones the director who owns it
-    const by = ownerOf(r.to), t = { id: Date.now().toString(36), text, title: opts.title || shortName(text), to: r.to, by, status: 'waiting', at: new Date().toISOString(), from: opts.from || null, direct: !!opts.direct, context: opts.context || '', parent: opts.parent || null, depth: opts.depth || 0 };
+    const by = ownerOf(r.to), t = { id: Date.now().toString(36), text, title: opts.title || shortName(text), to: r.to, by, status: 'waiting', at: new Date().toISOString(), from: opts.from || null, direct: !!opts.direct, context: opts.context || '', parent: opts.parent || null, depth: opts.depth || 0, withDigest: !!opts.withDigest };
     todos.push(t); saveTodos();
     questEvent('task');  // any task you give, however you give it (feedback round 7: Vizier's chat didn't count before)
     const personal = r.to === 'steward';
@@ -3832,7 +3899,7 @@
   function approveTask(t, e) {
     if (!e || !e.isTrusted || t.status !== 'ready') return;
     Object.assign(t, { status: 'done', approvedBy: 'you', approvedAt: new Date().toISOString(), pdf: null, pdfError: null });
-    saveTodos(); renderTodos(); logSay('vizier', `The Chief approved "${t.text.length > 50 ? t.text.slice(0, 47) + '...' : t.text}".`); renderLog();
+    saveTodos(); renderTodos(); logSay('vizier', isPrivate(t.by) ? 'The Chief approved a personal task (kept private).' : `The Chief approved "${t.text.length > 50 ? t.text.slice(0, 47) + '...' : t.text}".`); renderLog();
     toast(`Approved: "${t.text.length > 60 ? t.text.slice(0, 57) + '...' : t.text}". The report is updated.`, t.checkedBy || t.doneBy || 'vizier');
     makeReport(t);
   }
@@ -3842,7 +3909,7 @@
     (t.chiefNotes = t.chiefNotes || []).push(note.slice(0, 500));
     t.lastResult = t.report;
     Object.assign(t, { status: 'waiting', pdf: null, pdfError: null, doneAt: null, now: null });
-    saveTodos(); renderTodos(); logSay('vizier', `To ${nameOf(t.by)}: ${t.answered ? 'the Chief answered on' : 'the Chief sent'} "${t.text.length > 40 ? t.text.slice(0, 37) + '...' : t.text}"${t.answered ? '' : ' back'}: ${note}`); renderLog();
+    saveTodos(); renderTodos(); logSay('vizier', isPrivate(t.by) ? `To ${nameOf(t.by)}: the Chief ${t.answered ? 'answered on' : 'sent back'} a personal task (kept private).` : `To ${nameOf(t.by)}: ${t.answered ? 'the Chief answered on' : 'the Chief sent'} "${t.text.length > 40 ? t.text.slice(0, 37) + '...' : t.text}"${t.answered ? '' : ' back'}: ${note}`); renderLog();
     toast(t.answered ? `Vizier: I've passed your answer to ${nameOf(t.by)}, word for word. They're carrying on.` : `Sent back to ${nameOf(t.by)} with your note. It's queued again.`, 'vizier');
     runTodos();
   }
@@ -3929,10 +3996,12 @@
     for (const m of lines.slice(0, MAX_PASSES)) {
       const who = whoIs(m[1]);
       if (!who || who === from || who === 'vizier' || (t.depth || 0) >= 1) { passed.push(`${m[1].trim()} (not passed on: ${!who ? 'nobody by that name' : (t.depth || 0) >= 1 ? 'this was already passed on once' : 'that is the same person'}): ${m[2]}`); continue; }
-      const ctx = [t.context || '', `Passed on by ${nameOf(from)} from the task "${titleOf(t)}" (the Chief's words: ${t.text.slice(0, 400)}). ${nameOf(from)}'s part, already done:\n${keep.join('\n').slice(0, 3000)}`].filter(Boolean).join('\n\n');
+      const priv = isPrivate(from) || isPrivate(t.by);
+      const ctx = priv ? `Passed on by ${nameOf(from)} from a personal task. Only this part was shared; the personal details stay private, so don't ask for them.`
+        : [t.context || '', `Passed on by ${nameOf(from)} from the task "${titleOf(t)}" (the Chief's words: ${t.text.slice(0, 400)}). ${nameOf(from)}'s part, already done:\n${keep.join('\n').slice(0, 3000)}`].filter(Boolean).join('\n\n');
       const c = addTodo(m[2].trim(), { to: who, from: nameOf(from), logged: true, context: ctx, parent: t.id, depth: (t.depth || 0) + 1 });
       if (c) {
-        logSay('vizier', `To ${nameOf(c.by)}: ${nameOf(from)} passed you part of "${titleOf(t)}": ${m[2].trim().slice(0, 160)}`); logSay(c.by, "Got it, Vizier. I'll pick it up.");
+        logSay(from, `To ${nameOf(c.by)}, directly: part of ${priv ? 'a personal task' : `"${titleOf(t)}"`}: ${m[2].trim().slice(0, 160)}`); logSay(c.by, `Got it, ${nameOf(from)}. I'll pick it up.`);  // Kingdom 2.0: direct, through the Core's policy layer; Vizier sees it here
         passed.push(`${nameOf(c.by)}: ${m[2].trim()}`);
       }
     }
@@ -3948,6 +4017,12 @@
       emailDraft: status !== 'failed' && ((emailTask && EMAIL_DRAFT.test(plain(report))) || /^\s*\**POST DRAFT\b/im.test(plain(report)) || /Saved as a draft in (Gmail|Outlook)/i.test(plain(report))),  // email or social media drafts
       toolAsk: /^\s*TOOL OPTIONS\b/im.test(plain(report)) });  // a tool was missing: the agent compared options for the Chief
     const own = projectOn(t);
+    // Kingdom 2.0 (delegated authority): routine internal work that a director checked and approved is accepted
+    // operationally. Nothing in it needs the Chief (no draft to send, no tool to run), so it's done; the Chief can reopen it.
+    if (status === 'ready' && checkedBy && checkedBy !== doneBy && !t.emailDraft && !t.toolAsk && !own) {
+      Object.assign(t, { status: 'done', approvedBy: 'director', approvedAt: new Date().toISOString() });
+      logSay(checkedBy, `Accepted "${isPrivate(t.by) ? 'a personal task' : titleOf(t)}" for ${nameOf(doneBy)} (routine work, checked). The Chief can reopen it.`);
+    }
     if (status === 'ready' && own && !t.emailDraft && !t.toolAsk) {  // feedback round 4: the project works on its own
       Object.assign(t, { status: 'done', approvedBy: 'project', approvedAt: new Date().toISOString() });
       logSay(own.head.key, `Finished and approved within ${own.name} (it works on its own): "${t.text.slice(0, 60)}".`);
@@ -3980,7 +4055,7 @@
         ? `You (or your worker) were stuck and asked the Chief for help. The Chief answered: "${t.chiefNotes[t.chiefNotes.length - 1]}". Carry on with the task using that answer. Your last report was: ${String(t.lastResult || '').slice(0, 1200)}`
         : `The Chief sent the last result back with this note: "${t.chiefNotes[t.chiefNotes.length - 1]}". Fix exactly that. The last result was: ${String(t.lastResult || '').slice(0, 1200)}`) : ''].filter(Boolean).join(' ');
     try {
-      const out = await ask(t, d, 'task', { text: t.text, note, context: t.context || '' }, `${nameOf(d)} is deciding who does it`);
+      const out = await ask(t, d, 'task', { text: t.text, note, context: t.context || '', taskId: t.id, withDigest: !!t.withDigest }, `${nameOf(d)} is deciding who does it`);
       const v = verdict(out, ['HAND TO', 'DONE', 'NEEDS THE CHIEF']);
       const tail = v.tail.toLowerCase();
       const w = v.word === 'HAND TO' && (team.find((k) => namesFor(k).some((x) => tail.includes(x))) || (team.length === 1 ? team[0] : null));  // one worker: it can only be them
@@ -3994,7 +4069,7 @@
         showCall(d, w, `Handing a task to ${nameOf(w)}.`, 4);
         let feedback = '', report = '', head2 = '', last = '', escalated = '';
         for (let round = 0; round <= MAX_SENDBACKS; round++) {
-          const wo = await ask(t, w, 'task', { text: t.text, instructions, report: round ? report : '', worker: w, feedback, context: t.context || '' }, `${nameOf(w)} is working on it${round ? ` again (try ${round + 1})` : ''}`);
+          const wo = await ask(t, w, 'task', { text: t.text, instructions, report: round ? report : '', worker: w, feedback, context: t.context || '', taskId: t.id }, `${nameOf(w)} is working on it${round ? ` again (try ${round + 1})` : ''}`);
           const wv = verdict(wo, ['DONE', 'NEEDS THE CHIEF']); head2 = wv.word || ''; report = wv.rest;
           step(t, w, round ? `did it again (try ${round + 1})` : 'did it', report);
           if (wv.word === 'NEEDS THE CHIEF') {  // feedback round 5: stuck? the director answers first
@@ -4023,12 +4098,17 @@
         else finish(t, 'needs', `${nameOf(d)} sent it back ${MAX_SENDBACKS + 1} times and it still isn't right. ${nameOf(d)}'s last notes: ${last}\n\n${nameOf(w)}'s last attempt: ${report}`, w, d);
       }
     } catch (e) {
+      if (e.blocked) {  // Kingdom 2.0: stopped, paused or resting: the task waits its turn instead of failing
+        Object.assign(t, { status: 'waiting', now: e.message, with: null }); saveTodos();
+        if (todoBox.style.display === 'flex') renderTodos();
+        todoBusy = false; setTimeout(runTodos, 60000); return;
+      }
       step(t, 'vizier', 'stopped', `The helper couldn't finish it: ${e.message}`);
       finish(t, 'failed', `The helper couldn't finish it: ${e.message}. It hasn't been done. Remove it and add it again to retry.`, t.with || d, null);
     }
     const short = t.text.length > 50 ? t.text.slice(0, 47) + '...' : t.text;
     const checked = t.checkedBy ? `, checked by ${nameOf(t.checkedBy)}` : '';
-    logSay(t.checkedBy || t.doneBy, `To Vizier: ${t.status === 'ready' ? 'ready for the Chief' : 'reported back on'} "${short}" (by ${nameOf(t.doneBy)}${checked}).`); renderLog();
+    logSay(t.checkedBy || t.doneBy, `To Vizier: ${t.status === 'ready' ? 'ready for the Chief' : 'reported back on'} ${isPrivate(t.by) ? 'a personal task (kept private)' : `"${short}"`} (by ${nameOf(t.doneBy)}${checked}).`); renderLog();
     if (todoBox.style.display === 'flex') renderTodos();
     const how = t.status === 'ready' ? 'Ready for your OK' : t.status === 'needs' ? 'Did what we could, and the rest needs you' : "Couldn't finish";
     if (t.status === 'needs' || t.status === 'failed') {  // feedback round 4: Vizier chases it and tells you herself
@@ -5141,6 +5221,21 @@
         tile('THIS HOUR', `${u.hour} of ${u.perHour}`, 'the helper pauses at its hourly cap', (u.hour / u.perHour) * 100));
     } else tiles.append(tile('USAGE', 'Not available', "The AI helper isn't running. Start it to see usage."));
     const parts = [head, tiles];
+    // Kingdom 2.0 phase 1: operational controls. Only a real click by the Chief changes them.
+    const ops = coreOps, ctl = (ops && ops.controls) || {};
+    const ctlBtn = (label, bg, fn) => { const b = mk('button', { background: bg, color: '#fff', border: '0', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer', font: '650 12px system-ui' }, label); b.onclick = (e) => { if (e.isTrusted) fn(); }; return b; };
+    if (ops) {
+      const bar = mk('div', { display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', margin: '0 0 12px', padding: '8px 10px', borderRadius: '10px', background: ctl.stop ? 'rgba(217,100,63,.18)' : 'rgba(255,255,255,.04)', border: `1px solid ${ctl.stop ? '#d9643f' : 'rgba(232,196,106,.22)'}` });
+      bar.append(ctl.stop ? ctlBtn('Start the Kingdom again', '#3f7d5a', () => setControl('stop', null)) : ctlBtn('Emergency stop', '#b5523b', () => setControl('stop', true)),
+        mk('div', { color: '#c9c1ae', fontSize: '12px', flex: '1' }, ctl.stop ? 'Everything is stopped: no agent will run until you start it again.' : ctl['provider:claude:until'] ? "Claude's usage limit was reached: the Kingdom is resting before it tries again." : 'Stops every agent at once. Pause one agent with its button below.'));
+      parts.push(bar);
+      const byOrg = (ops.usage && ops.usage.org) || [], byTask = ((ops.usage && ops.usage.task) || []).filter((r) => r.k);
+      if (byOrg.length) parts.push(mk('div', { color: '#c9c1ae', fontSize: '12px', marginBottom: '4px' }, 'Today by organisation: ' + byOrg.map((r) => `${r.k || 'none'} ${r.runs} runs, ${fmtTok(r.tokens || 0)} tokens`).join(' · ')));
+      if (byTask.length) {
+        const name = (id) => { const t = todos.find((x) => String(x.id) === String(id)); return t ? titleOf(t) : `task ${id}`; };
+        parts.push(mk('div', { color: '#c9c1ae', fontSize: '12px', marginBottom: '12px' }, 'Today by task: ' + byTask.slice(0, 6).map((r) => `${name(r.k)} ${r.runs} runs, ${fmtTok(r.tokens || 0)}`).join(' · ')));
+      }
+    }
     if (u) {  // the last seven days, one bar each
       const max = Math.max(1, ...u.days.map((d) => d.replies));
       const chart = mk('div', { display: 'flex', alignItems: 'flex-end', gap: '6px', height: '86px', padding: '0 2px', marginBottom: '4px' });
@@ -5168,6 +5263,13 @@
       const who = mk('div', { flex: '1', minWidth: '0' }); who.append(mk('div', { fontWeight: '600' }, relabel(nameOf(k))), mk('div', { color: '#c9c1ae', fontSize: '11px' }, roleOf(k)));
       const pill = mk('span', { background: colour + '33', color: colour, border: `1px solid ${colour}`, borderRadius: '10px', padding: '1px 8px', fontSize: '11px', whiteSpace: 'nowrap' }, label);
       row.append(who, pill, mk('span', { color: '#c9c1ae', fontSize: '11px', width: '74px', textAlign: 'right' }, a ? `${a.today} today` : u ? '0 today' : ''));
+      if (ops) {  // pause or resume one agent
+        const paused = !!ctl[`pause:agent:${k}`];
+        const pb = mk('span', { border: '1px solid rgba(232,196,106,.5)', borderRadius: '8px', padding: '2px 8px', fontSize: '11px', color: paused ? '#8fc27a' : '#e8c46a', cursor: 'pointer' }, paused ? 'Resume' : 'Pause');
+        pb.onclick = (e) => { e.stopPropagation(); if (e.isTrusted) setControl(`pause:agent:${k}`, paused ? null : true); };
+        row.append(pb);
+        if (paused) pill.textContent = 'paused';
+      }
       row.onclick = (e) => { if (!e.isTrusted) return; closeUsage(); openChat(k); };
       list.append(row);
     }
@@ -5175,7 +5277,14 @@
     if (u && Object.keys(u.models).length) parts.push(mk('div', { color: '#c9c1ae', fontSize: '11px', marginTop: '10px' }, 'This week by model: ' + Object.entries(u.models).map(([m, n]) => `${m} ${n}`).join(' · ') + `. All on your Claude ${u.plan || ''} subscription.`));
     box.replaceChildren(...parts);
   }
+  let coreOps = null;
+  function setControl(key, value) {
+    fetch(BRAIN + '/core/control', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key, value }) })
+      .then((r) => r.json()).then((j) => { if (j && j.controls) coreOps = j; renderUsage(); toast(key === 'stop' ? (value ? 'Emergency stop: no agent will run.' : 'The Kingdom is running again.') : value ? 'Paused.' : 'Resumed.', 'vizier'); })
+      .catch(() => toast("Couldn't reach the AI helper to change that.", 'vizier'));
+  }
   function refreshUsage() {
+    fetch(BRAIN + '/core/ops').then((r) => (r.ok ? r.json() : null)).then((j) => { coreOps = j; }).catch(() => { coreOps = null; });
     fetch(`${BRAIN}/usage`).then((r) => (r.ok ? r.json() : null)).then((j) => { usageData = j; }).catch(() => { usageData = null; }).finally(() => { if (usageBox.style.display !== 'none') renderUsage(); });
   }
   function openUsage() { front(usageBox); usageBox.style.display = 'block'; renderUsage(); refreshUsage(); clearInterval(usageTimer); usageTimer = setInterval(refreshUsage, 3000); }

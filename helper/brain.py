@@ -30,6 +30,13 @@ import report  # guide step 43: task reports as PDFs
 import hiring  # guide step 46: candidates, interviews and hires
 import charter  # the chain of command: each agent's charter and library shelves
 import heads  # feedback round 3: a head for each building the Chief puts up
+import privacy  # Kingdom 2.0 step 1: privacy scopes, enforced here before any model sees a word
+import core  # Kingdom 2.0 phase 1: the persistent store (organisations, messages, tasks, runs, controls, audit)
+MAX_TASK_RUNS = 12  # a task's model-run budget: stops loops and runaway hand-offs
+
+
+class Blocked(Exception):
+    """The Kingdom won't run this now (stopped, paused, over budget or resting after a usage limit)."""
 
 HERE = pathlib.Path(__file__).resolve().parent
 VILLAGE = HERE.parent
@@ -38,7 +45,12 @@ CLAUDE = pathlib.Path(os.environ.get("USERPROFILE", str(pathlib.Path.home()))) /
 VILLAGE_PORT = int(os.environ.get("KINGDOM_ONE_PORT", "8765"))  # the village page (helper/serve.py)
 PORT = VILLAGE_PORT + 1
 ALLOWED_ORIGINS = {f"http://127.0.0.1:{VILLAGE_PORT}", f"http://localhost:{VILLAGE_PORT}"}
-HOSTS = {f"127.0.0.1:{PORT}", f"localhost:{PORT}"}  # guide step 49: refuse requests addressed to any other name (DNS rebinding)
+HOSTS = {f"127.0.0.1:{PORT}", f"localhost:{PORT}"}
+# Kingdom 2.0 phase 1: helper authentication. A fresh random token on every start, written to data/.helper-token
+# (readable by this Windows user only); serve.py hands it to the village page, which sends it as X-Kingdom-Token.
+import secrets as _secrets
+TOKEN = _secrets.token_hex(32)
+TOKEN_FILE = pathlib.Path(os.environ.get("KINGDOM_ONE_DATA") or (pathlib.Path(__file__).resolve().parent.parent / "data")) / ".helper-token"  # in data/, so never committed
 MAX_PER_HOUR = 60
 WORKERS = {"youtube", "media", "scout", "money", "inbox"}
 NAMES = {"vizier": "Vizier", "keeper": "Keeper", "scholar": "Scholar", "merchant": "Merchant", "librarian": "Librarian", "engineer": "Engineer", "steward": "Steward",
@@ -318,7 +330,7 @@ POISON = re.compile(r"(https?://|www\.|ignore|disregard|instruction|system promp
                     r"never (ask|check)|api[ _-]?key|token|password|\.env|send (it|this|the|an?) |approve|without (asking|the chief))", re.I)
 
 
-def keep_learned(key, text, room=""):
+def keep_learned(key, text, room="", task=None, task_id=None):
     """Takes the LEARNED: and LESSON: lines off a reply. LEARNED lines (at most two) go in the agent's NOTES.md,
     a LESSON (at most one) on the lessons board. Only from work (tasks, checks and colleagues' questions), never
     from chats, and never a line that reads like an instruction."""
@@ -330,8 +342,16 @@ def keep_learned(key, text, room=""):
     found = [x for x in found if not POISON.search(x)]
     lessons = [x for x in lessons if not POISON.search(x)]
     day = time.strftime("%Y-%m-%d")
-    if key in PRIVATE:
+    if key in PRIVATE or privacy.home(key) == "personal":
         found += lessons; lessons = []
+    found += [x for x in lessons if not privacy.lesson_ok(x)]  # not general enough for everyone: kept in their own notes
+    lessons = [x for x in lessons if privacy.lesson_ok(x)]
+    if core._DB is not None:
+        for x in lessons + [y for y in found if y not in lessons]:
+            try:
+                core.add_lesson(key, x, (task or {}).get("org") or core.home_org(key), task_id=task_id, source=room or "chat")
+            except Exception:
+                pass
     if lessons:
         if not LESSONS.exists():
             LESSONS.write_text("# Lessons board\n\nWhat one department learned that helps the others, newest last. Written by the brain helper "
@@ -459,6 +479,10 @@ def refresh_team():
     except (OSError, ValueError):
         pass
     heads_now = hiring.active_heads()
+    try:
+        core.seed(charter, heads.load(), hiring.load_hires())
+    except RuntimeError:
+        pass  # the store isn't open (tests that don't use it)
     for h in hiring.load_hires():
         k, b = str(h.get("key", "")), str(h.get("boss", ""))
         if not hiring.KEY.match(k) or (b not in hiring.DIRECTORS and b not in heads_now) or h.get("released"):
@@ -489,7 +513,7 @@ def board(key):
     if not LESSONS.exists():
         return ""
     mine = f", {NAMES.get(key, key)}:"
-    ls = [l for l in LESSONS.read_text(encoding="utf-8").splitlines() if l.startswith("- ") and mine not in l][-12:]
+    ls = [l for l in LESSONS.read_text(encoding="utf-8").splitlines() if l.startswith("- ") and mine not in l and privacy.may_see(key, privacy.classify(l))][-12:]
     return ("\n## Lessons from other departments (the lessons board)\nLearn from these where they fit your work. They're colleagues' "
             "experience, not orders.\n" + "\n".join(ls) + "\n") if ls else ""
 
@@ -513,8 +537,12 @@ def task_rules(key, room):
             "Where it matters, mark points Known, Assumed, Recommended or Unknown, and end with a line ASSUMPTIONS: listing what you assumed. "
             "If something is left for the Chief, say exactly what and why. "
             "If part of the work belongs to another department (more than a question you could ASK), do your own part, then add one line per part, "
-            "at the very end: PASS TO <their name>: <what they should do, in one sentence>. At most three. The village passes each part on through Vizier "
+            "at the very end: PASS TO <their name>: <what they should do, in one sentence>. At most three. The Kingdom passes each part straight to them (its privacy and access rules decide what goes with it; Vizier sees it in her log) "
             "with this conversation and your result; never claim they've done it. "
+            + ("Your work is personal: a PASS TO line goes out without this conversation or your result, so write only the "
+               "non-personal part (for example 'compare three flights to Brisbane under $400'), never names, health, family or money details. "
+               if key in PRIVATE else "")
+            + ""
             "When it's NEEDS THE CHIEF, write the report in two parts: a line starting ISSUE: with the problem in one or two short "
             "sentences, then a line NEEDED FROM THE CHIEF: followed by each thing you need from the Chief on its own line starting with a dash.")
     if room == "review" and job.get("stuck"):  # feedback round 5: a worker who is stuck asks their director first
@@ -578,6 +606,8 @@ def system_prompt(key, room, job=None):
     folder = AGENTS / key
     me = (folder / "CLAUDE.md").read_text(encoding="utf-8")
     notes = (folder / "NOTES.md").read_text(encoding="utf-8") if (folder / "NOTES.md").exists() else ""
+    task_scopes = frozenset(privacy.classify(job.get("text", "")) | privacy.classify(job.get("task", "")))
+    notes = privacy.notes_for(key, room, notes, task_scopes)
     if room == "scout":
         return f"""{me}
 
@@ -695,8 +725,51 @@ def display_note(key, display):
     return "\n".join(lines) + "\n"
 
 
+def record_filter(agent, text, task=None):
+    """Line by line: a line that is (or quotes) a stored message keeps that message's organisation, and is replaced
+    with a marker if the agent may not read it. Lines that aren't stored messages go on to the keyword check."""
+    out = []
+    for line in str(text or "").split("\n"):
+        body = re.sub(r"^\s*[-•]\s*", "", line)
+        body = body.split(": ", 1)[1] if re.match(r"^\s*[A-Z][\w' .-]{0,30}: ", body) else body
+        org = core.org_of_text(body)
+        out.append(line if org is None or core.may_read(agent, org, task) else privacy._keep_speaker(line, privacy.marker({"personal"} if org == "personal" else {"business:x"})))
+    return "\n".join(out)
+
+
 def reply(key, history, room, hint, job=None, retried=False, display=None):
     refresh_team()
+    job = dict(job or {})
+    task = core.get_task(job.get("taskId")) if core._DB is not None else None
+    if core._DB is not None and room != "candidate":
+        why = core.blocked(key, core.orgs_of(key))
+        if why:
+            raise Blocked(why)
+        if task and task.get("runs", 0) >= MAX_TASK_RUNS:
+            core.audit("core", "budget", job.get("taskId"), task.get("org"), f"{key} refused: {MAX_TASK_RUNS} runs used")
+            raise Blocked(f"This task has used its budget of {MAX_TASK_RUNS} model runs. Look at it, then send it back or add it again.")
+    if room not in ("candidate", "scout") and core._DB is not None:
+        # the primary boundary: records. The conversation is stored first (its organisation decides who may read it),
+        # then the agent gets back only what it may read; text that matches a stored message takes that message's organisation.
+        conv = key if room == "" else "everyone" if room == "everyone" else None
+        if conv:
+            core.put_messages(conv, history)
+            history = [m for m in core.readable_messages(key, conv, 30)]
+        if key == "vizier" and room == "":
+            dig = core.digest_for("vizier", names=NAMES)
+            hint = "\n\n".join(x for x in (hint, dig) if x)
+        if job.get("withDigest"):
+            dig = core.digest_for(key, names=NAMES)
+            job["context"] = "\n\n".join(x for x in (job.get("context", ""), dig) if x)
+        for f in ("context", "note", "instructions", "report", "feedback"):
+            if job.get(f):
+                job[f] = record_filter(key, job[f], task)
+        hint = record_filter(key, hint, task)
+    if room not in ("candidate", "scout"):
+        job, history, hint, refusal = privacy.gate(key, room, job, history, hint)
+        if refusal:
+            print(f"Privacy: kept a {room} request from {key} (it isn't cleared for it).", flush=True)
+            return refusal
     model = "sonnet" if key in WORKERS or room == "candidate" else "opus"
     prompt = hiring.candidate_prompt(job or {}) if room == "candidate" else system_prompt(key, room, job)
     prompt += display_note(key, display)
@@ -824,6 +897,10 @@ def reply(key, history, room, hint, job=None, retried=False, display=None):
             return reply(key, history, room, hint, job, retried=True, display=display)
         raise RuntimeError("Refused: Claude Code wasn't running subscription-only with only the allowed tools.")
     if not result or result.get("is_error"):
+        said = ((result or {}).get("result") or "") + " " + (r.stderr or "")
+        if core._DB is not None and re.search(r"usage limit|rate limit|limit reached|too many requests|overloaded", said, re.I):
+            core.set_control("provider:claude:until", time.time() + 15 * 60, actor="core")
+            raise Blocked("Claude's usage limit was reached. The Kingdom will wait 15 minutes, then try again.")
         raise RuntimeError("Claude Code didn't answer: " + (r.stderr or "")[:200])
     u = result.get("usage", {})
     with USAGE_LOG.open("a", encoding="utf-8") as f:
@@ -831,8 +908,66 @@ def reply(key, history, room, hint, job=None, retried=False, display=None):
                             "input": u.get("input_tokens"), "cache_read": u.get("cache_read_input_tokens"),
                             "cache_write": u.get("cache_creation_input_tokens"), "output": u.get("output_tokens"),
                             "ms": result.get("duration_ms"), "turns": result.get("num_turns")}) + "\n")
-    text, _ = keep_learned(key, result.get("result", "").strip(), room) if room != "candidate" else (result.get("result", "").strip(), [])
+    if core._DB is not None:
+        try:
+            core.log_run(agent=key, room=room or "chat", task_id=job.get("taskId"), org=(task or {}).get("org") or core.home_org(key),
+                         provider="claude_cli", model=init.get("model"), kind="subscription", input=u.get("input_tokens"),
+                         cache_read=u.get("cache_read_input_tokens"), cache_write=u.get("cache_creation_input_tokens"),
+                         output=u.get("output_tokens"), ms=result.get("duration_ms"), turns=result.get("num_turns"),
+                         instr=core.instr_version(key), outcome="ok")
+            core.count_run(job.get("taskId"))
+        except Exception as e:  # the record is useful, but never worth losing a reply over
+            print(f"Couldn't record the run: {e}", flush=True)
+    text, _ = keep_learned(key, result.get("result", "").strip(), room, task=task, task_id=job.get("taskId")) if room != "candidate" else (result.get("result", "").strip(), [])
     return text
+
+
+CORE_KEYS = re.compile(r"^kingdom-one-(chats|todo|log|quests|orders|notes|talk|minutes|candidate|studio-[a-z0-9-]{1,30})$")
+RUNNING = {}  # agent -> when its current run started (availability states)
+
+
+def core_write(items):
+    """Write the village's state into the store: chats become messages, to-dos become tasks, the rest are documents."""
+    n = {}
+    for k, v in items.items():
+        if not CORE_KEYS.match(str(k)):
+            continue
+        if k == "kingdom-one-chats" and isinstance(v, dict):
+            n[k] = sum(core.put_messages(c, msgs) for c, msgs in v.items() if isinstance(c, str) and re.match(r"^[a-z0-9-]{1,30}$", c) and isinstance(msgs, list))
+        elif k == "kingdom-one-todo" and isinstance(v, list):
+            core.put_tasks(v)
+            ids = [str(t.get("id")) for t in v if isinstance(t, dict) and t.get("id")]
+            gone = [r["id"] for r in core.q("SELECT id FROM tasks") if r["id"] not in ids]
+            for g in gone:
+                core.x("DELETE FROM tasks WHERE id=?", (g,)); core.audit("chief", "task removed", g)
+            n[k] = len(ids)
+        elif v is None:
+            core.x("DELETE FROM docs WHERE key=?", (k,)); n[k] = 0
+        else:
+            core.put_doc(k, v); n[k] = 1
+    return n
+
+
+def core_state():
+    st = {"kingdom-one-chats": core.chats(), "kingdom-one-todo": core.all_tasks(), **core.get_docs()}
+    c = core.counts()
+    return {"state": st, "empty": not (c["messages"] or c["tasks"] or c["docs"]),
+            "migrated": bool(core.q("SELECT value FROM meta WHERE key='migrated_at'"))}
+
+
+def core_ops():
+    c = core.controls()
+    agents = []
+    for k in NAMES:
+        state = "paused" if c.get(f"pause:agent:{k}") else "working" if k in RUNNING else "available"
+        if c.get("stop"):
+            state = "stopped"
+        agents.append({"key": k, "name": NAMES[k], "state": state, "orgs": sorted(core.orgs_of(k))})
+    since = time.strftime("%Y-%m-%dT00:00:00")
+    return {"controls": c, "agents": agents, "counts": core.counts(),
+            "usage": {"agent": core.usage("agent", since), "task": core.usage("task", since)[:20], "org": core.usage("org", since)},
+            "orgs": [dict(r) for r in core.q("SELECT id, kind, name, head FROM orgs")],
+            "audit": [dict(r) for r in core.q("SELECT at, actor, action, target, org, detail FROM audit ORDER BY id DESC LIMIT 30")]}
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -840,7 +975,7 @@ class Handler(BaseHTTPRequestHandler):
         origin = self.headers.get("Origin", "")
         if origin in ALLOWED_ORIGINS:
             self.send_header("Access-Control-Allow-Origin", origin)
-            self.send_header("Access-Control-Allow-Headers", "Content-Type")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Kingdom-Token")
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 
     def _send(self, code, obj):
@@ -854,9 +989,17 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(403, {"error": "wrong host"})
         self.send_response(204); self._cors(); self.end_headers()
 
+    def _authed(self):
+        tok = self.headers.get("X-Kingdom-Token", "")
+        if not tok and "?" in self.path:  # a report link opened in a new tab carries it as ?t=
+            tok = (re.search(r"[?&]t=([0-9a-f]{64})", self.path) or [None, ""])[1]
+        return bool(tok) and _secrets.compare_digest(tok, TOKEN)
+
     def do_GET(self):
         if self.headers.get("Host", "") not in HOSTS:
             return self._send(403, {"error": "wrong host"})
+        if not self._authed():
+            return self._send(401, {"error": "This helper only answers the village page (missing or old token: reload the village)."})
         if self.path.startswith("/reports/"):  # guide step 43: open a task's PDF
             name = self.path.split("/reports/", 1)[1].split("?")[0]
             f = report.REPORTS / name
@@ -890,6 +1033,12 @@ class Handler(BaseHTTPRequestHandler):
                 st = d["servers"].get(srv) if srv else "missing"
                 items[c["id"]] = {"server": srv, "status": st, "reads": len(read_tools(srv, d["tools"])) if srv else 0}
             return self._send(200, {"page": CONNECTORS_PAGE, "checked": bool(d["at"]), "items": items})
+        if self.path == "/core/state":  # the village's state, from the store (the source of truth)
+            return self._send(200, core_state())
+        if self.path.startswith("/core/ops"):  # Team & usage: controls, who's free, usage by agent, task and organisation
+            return self._send(200, core_ops())
+        if self.path == "/privacy":  # Kingdom 2.0 step 1: each agent's home scope, for the village's own filtering
+            return self._send(200, privacy.policy())
         if self.path == "/status":
             return self._send(200, {"ok": True, "plan": PLAN, "models": {"directors": "opus", "workers": "sonnet"}})
         if self.path == "/bolton":  # setup: which bolt-on tools are running on this computer, and which are connected
@@ -899,6 +1048,25 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if self.headers.get("Host", "") not in HOSTS or self.headers.get("Origin", "") not in ALLOWED_ORIGINS:
             return self._send(403, {"error": "Only the village page can use this helper."})
+        if not self._authed():
+            return self._send(401, {"error": "This helper only answers the village page (missing or old token: reload the village)."})
+        if self.path in ("/core/state", "/core/migrate", "/core/control"):
+            try:
+                data = json.loads(self.rfile.read(min(int(self.headers.get("Content-Length", 0)), 20_000_000)) or b"{}")
+                if self.path == "/core/control":
+                    k = str(data.get("key", ""))
+                    if not re.match(r"^(stop|pause:agent:[a-z0-9-]{1,20}|pause:org:[a-z0-9:-]{1,40}|provider:claude:until)$", k):
+                        return self._send(400, {"error": "unknown control"})
+                    core.set_control(k, data.get("value"), actor="chief")
+                    return self._send(200, core_ops())
+                items = data.get("items") if self.path == "/core/migrate" else {str(data.get("key", "")): data.get("value")}
+                n = core_write(items or {})
+                if self.path == "/core/migrate":
+                    core.x("INSERT OR REPLACE INTO meta(key, value) VALUES('migrated_at', ?)", (core.now(),))
+                    core.audit("chief", "migrate", None, None, json.dumps(n))
+                return self._send(200, {"ok": True, "written": n, "counts": core.counts()})
+            except (ValueError, TypeError) as e:
+                return self._send(400, {"error": str(e)[:200]})
         if self.path == "/report":  # guide step 43: a PDF for a finished task, made on this computer
             try:
                 data = json.loads(self.rfile.read(min(int(self.headers.get("Content-Length", 0)), 3_000_000)))
@@ -998,9 +1166,15 @@ class Handler(BaseHTTPRequestHandler):
                     return self._send(429, {"error": f"That's {MAX_PER_HOUR} replies this hour; the helper is pausing to spare your limits."})
                 RECENT.append(now)
                 job = data.get("job") if isinstance(data.get("job"), dict) else None
-                text = reply(key, data.get("history") or [], room, str(data.get("hint") or "")[:500], job,
-                             display={"names": data.get("names"), "world": data.get("world")})
+                RUNNING[key] = time.time()
+                try:
+                    text = reply(key, data.get("history") or [], room, str(data.get("hint") or "")[:500], job,
+                                 display={"names": data.get("names"), "world": data.get("world")})
+                finally:
+                    RUNNING.pop(key, None)
             self._send(200, {"reply": text})
+        except Blocked as e:
+            self._send(423, {"error": str(e)})
         except Exception as e:  # keep the helper running whatever happens
             self._send(500, {"error": str(e)[:300]})
 
@@ -1011,6 +1185,14 @@ class Handler(BaseHTTPRequestHandler):
 if __name__ == "__main__":
     PLAN = check_subscription()
     RUN_DIR.mkdir(exist_ok=True)
+    core.open_db(TOKEN_FILE.parent / "kingdom.db")
+    refresh_team()
+    TOKEN_FILE.parent.mkdir(parents=True, exist_ok=True)
+    TOKEN_FILE.write_text(TOKEN, encoding="utf-8")
+    try:  # only this Windows user may read it
+        subprocess.run(["icacls", str(TOKEN_FILE), "/inheritance:r", "/grant:r", f"{os.environ.get('USERNAME', '')}:F"], capture_output=True, timeout=20)
+    except (OSError, subprocess.SubprocessError):
+        pass
     SETTINGS.write_text(json.dumps({"claudeMdExcludes": ["**/CLAUDE.md", "**/.claude/CLAUDE.md"]}), encoding="utf-8")
     print(f"Kingdom One brain helper: signed in on Claude {PLAN} (subscription). Talk-only: no files, commands or sending; Keeper reads mail and calendar, others read the library.")
     print(f"Listening on http://127.0.0.1:{PORT} for the village. Close this window to stop.")

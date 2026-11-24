@@ -1,4 +1,5 @@
 data/
+logs/
 reports/
 helper/.run/
 helper/usage.jsonl

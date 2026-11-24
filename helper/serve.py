@@ -146,7 +146,18 @@ class Handler(SimpleHTTPRequestHandler):
         except Exception as e:
             return self._json(400, {"error": str(e)[:200]})
 
+    def _session(self):
+        """Kingdom 2.0 phase 1: the AI helper's token, for the village page only (same host; a browser sends
+        Sec-Fetch-Site: same-origin for the page's own requests, and other sites can't read the answer anyway)."""
+        if self.headers.get("Host", "") not in HOSTS or self.headers.get("Sec-Fetch-Site", "same-origin") not in ("same-origin", "none"):
+            return self._json(403, {"error": "village page only"})
+        f = DATA / ".helper-token"
+        tok = f.read_text(encoding="utf-8").strip() if f.exists() else ""
+        return self._json(200, {"token": tok})
+
     def do_GET(self):
+        if self.path.split("?", 1)[0] == "/api/session":
+            return self._session()
         if self.path.split("?", 1)[0] == "/api/settings" and self.headers.get("Host", "") in HOSTS:
             if not SETTINGS.exists():
                 return self._json(404, {"error": "no settings yet"})
