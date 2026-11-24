@@ -56,7 +56,7 @@ def conns(items):
     return out
 
 
-LOOKS = {"tower", "cedar", "garden", "art-keeper", "art-librarian", "art-merchant", "art-engineer", "art-scholar"}
+LOOKS = {"tower", "cedar", "garden", "art-keeper", "art-scholar", "art-merchant", "art-engineer", "art-librarian"}
 COLOUR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 PLOT_RE = re.compile(r"^p[0-9]{1,2}$")
 

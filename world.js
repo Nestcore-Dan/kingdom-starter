@@ -165,13 +165,13 @@
   const SOCIAL = [['inbox', 'drafts posts and replies'], ['merchant', 'drafts business posts']];
   const SUGGEST = { Gmail: MAIL, Outlook: MAIL,
     'Google Calendar': [['keeper', 'tracks meetings and deadlines'], ['steward', 'plans personal appointments'], ['vizier', 'plans your day']],
-    'Google Drive': [['librarian', 'finds and files documents'], ['merchant', 'finds proposals and quotes'], ['engineer', 'reads technical documents']],
+    'Google Drive': [['scholar', 'finds and files documents'], ['merchant', 'finds proposals and quotes'], ['engineer', 'reads technical documents']],
     'Google Sheets': [['money', 'reads the numbers'], ['merchant', 'tracks clients and quotes'], ['keeper', 'keeps trackers up to date']],
-    Notion: [['librarian', 'reads your notes'], ['keeper', 'reads your task boards']],
+    Notion: [['scholar', 'reads your notes'], ['keeper', 'reads your task boards']],
     Xero: [['money', 'reads invoices, bills and cash'], ['merchant', 'checks how the business is doing']],
     Slack: [['inbox', 'reads team messages'], ['keeper', 'picks up requests']],
     YouTube: [['youtube', 'drafts video posts'], ...SOCIAL],
-    repo: [['engineer', 'reads the code'], ['scholar', 'researches projects']], local: [['engineer', 'uses tools built here']], api: [['engineer', 'builds on it'], ['scholar', 'looks things up']] };
+    repo: [['engineer', 'reads the code'], ['librarian', 'researches projects']], local: [['engineer', 'uses tools built here']], api: [['engineer', 'builds on it'], ['librarian', 'looks things up']] };
   function suggestFor(k, d) {
     const list = SUGGEST[d] || (k === 'social' ? SOCIAL : SUGGEST[k]) || [];
     return list.filter(([key]) => defaults && defaults.agents.some((a) => a.key === key));
@@ -687,7 +687,7 @@
             if (taken.has(v.toLowerCase())) { err.textContent = 'Someone in your town already has that name.'; return false; }
             rec.head = { key: 'head-' + rec.id.slice(0, 14), name: v }; return true;
           };
-          return [el('h2', {}, `Who runs ${rec.name}?`), el('p', {}, `The head lives in ${rec.name} and is the one you talk to about it. They ask Engineer, Merchant, Librarian and the others when they need their help, and they suggest taking people on (or letting them go) only for you to approve.`),
+          return [el('h2', {}, `Who runs ${rec.name}?`), el('p', {}, `The head lives in ${rec.name} and is the one you talk to about it. They ask Engineer, Merchant, Scholar and the others when they need their help, and they suggest taking people on (or letting them go) only for you to approve.`),
             el('div', { class: 'bsum' }, el('div', { style: 'font-size:40px' }, '\u{1F9D1}\u200D\u{1F4BC}'), el('div', {}, el('label', {}, 'Head\'s name'), n)),
             el('label', { class: 'ck' }, none, ' No head for now (you talk to the people who work here directly)'),
             nav(true, () => { if (!read()) return; err.textContent = ''; step = 3; show(); })];

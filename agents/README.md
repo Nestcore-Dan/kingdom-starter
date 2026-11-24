@@ -11,9 +11,9 @@ Every agent in the village has a folder here (guide steps 27 and 28):
 |---|---|---|---|---|
 | `vizier/` | Vizier | Chief of Staff, the town hall | the Chief Human Officer | the six directors |
 | `keeper/` | Keeper | Operations Manager | Vizier | Inbox |
-| `librarian/` | Librarian | Knowledge & Learning Manager | Vizier | Projectionist, Media sorter |
+| `scholar/` | Scholar | Knowledge & Learning Manager | Vizier | Projectionist, Media sorter |
 | `merchant/` | Merchant | Business Manager | Vizier | Money |
-| `scholar/` | Scholar | Research & Strategy Analyst | Vizier | Hub scout |
+| `librarian/` | Librarian | Research & Strategy Analyst | Vizier | Hub scout |
 | `engineer/` | Engineer | Technology Lead | Vizier | Studio |
 | `steward/` | Steward | Personal Assistant (private) | Vizier | Garden helper |
 
@@ -21,9 +21,9 @@ Every agent in the village has a folder here (guide steps 27 and 28):
 
 | Folder | Worker | Works in | Director |
 |---|---|---|---|
-| `youtube/` | Projectionist | Projectionist, the video shop (the media centre) | Librarian |
-| `media/` | Media sorter | the Media sorter's darkroom | Librarian |
-| `scout/` | Hub scout | the Hub scout's lookout | Scholar |
+| `youtube/` | Projectionist | Projectionist, the video shop (the media centre) | Scholar |
+| `media/` | Media sorter | the Media sorter's darkroom | Scholar |
+| `scout/` | Hub scout | the Hub scout's lookout | Librarian |
 | `money/` | Money | the Money counting house | Merchant |
 | `studio/` | Studio | the Studio workshop | Engineer |
 | `inbox/` | Inbox | the Inbox post house | Keeper |

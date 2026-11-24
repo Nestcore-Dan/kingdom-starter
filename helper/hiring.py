@@ -7,7 +7,7 @@ import datetime, json, pathlib, re
 HERE = pathlib.Path(__file__).resolve().parent
 AGENTS = HERE.parent / "agents"
 HIRES = AGENTS / "hires.json"
-DIRECTORS = {"keeper": "Keeper", "librarian": "Librarian", "merchant": "Merchant", "scholar": "Scholar", "engineer": "Engineer", "steward": "Steward"}
+DIRECTORS = {"keeper": "Keeper", "scholar": "Scholar", "merchant": "Merchant", "librarian": "Librarian", "engineer": "Engineer", "steward": "Steward"}
 CLEAN_NAME = re.compile(r"^[A-Z][a-z]+(?:[ '-][A-Z][a-z]+)?$")
 KEY = re.compile(r"^[a-z][a-z0-9-]{1,19}$")
 HEX = re.compile(r"^#[0-9a-fA-F]{6}$")

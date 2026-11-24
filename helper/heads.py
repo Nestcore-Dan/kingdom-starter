@@ -15,8 +15,9 @@ AGENTS = HERE.parent / "agents"
 HEADS = AGENTS / "heads.json"
 KEY = re.compile(r"^head-[a-z0-9]{1,14}$")
 CLEAN_NAME = re.compile(r"^[A-Z][a-z]+(?:[ '-][A-Z][a-z]+)?$")
-DIRECTORS = [("keeper", "operations: tasks, the calendar, deadlines and follow-ups"), ("librarian", "the library: knowledge, documents, decisions and lessons"),
-             ("merchant", "business: clients, proposals, quotes and money matters"), ("scholar", "research and strategy: options, comparisons, markets"),
+DIRECTORS = [("keeper", "operations: tasks, the calendar, deadlines and follow-ups"), ("scholar", "research and development: options, comparisons, markets, experiments"),
+             ("librarian", "knowledge: the library, documents, decisions and lessons"), ("merchant", "business: clients, proposals, quotes and offers"),
+             ("money", "finance: costs, margins, budgets and forecasts (works under Merchant)"),
              ("engineer", "technology: architecture, code, security and automation")]
 
 
@@ -43,7 +44,7 @@ def _hires():
 
 def _director_section(name):
     """The ground rules and model section, copied from a director so they never drift apart."""
-    for src in ("scholar", "engineer", "keeper"):
+    for src in ("librarian", "engineer", "keeper"):
         f = AGENTS / src / "CLAUDE.md"
         if f.exists():
             s = f.read_text(encoding="utf-8")
@@ -51,6 +52,23 @@ def _director_section(name):
             if a >= 0:
                 return s[a:].strip()
     return "## Ground rules\n- The Chief is in charge. Ask before you create, change or delete anything, run anything, send anything or spend anything.\n"
+
+
+def _role(key):
+    """A head's own role brief (agents/<key>/ROLE.md, written for that head, for example from the Chief's handover), if there is one."""
+    f = AGENTS / key / "ROLE.md"
+    try:
+        return "\n## Your role brief (ROLE.md in this folder)\n" + f.read_text(encoding="utf-8").strip() + "\n" if f.exists() else ""
+    except OSError:
+        return ""
+
+
+def _principles():
+    try:
+        import charter as ch
+        return ch.principles_section().replace("### ", "## ", 2) + "\n"
+    except Exception:  # the charter is always there; this is only a fallback
+        return ""
 
 
 def charter(h, names):
@@ -73,6 +91,9 @@ work in {h['buildingName']}, and you are the Chief's one point of contact for ev
 ## Your project workers
 {', '.join(h.get('workers') or []) or 'None yet.'}
 
+## Technical review
+{"Engineer, the Chief Technology Officer, reviews the architecture and security of everything you build before it goes to the Chief. Send him your plans early (ASK Engineer: ...)." if "engineer" in h["crew"] else "Before anything technical goes to the Chief, ask Engineer, the Chief Technology Officer, to review its architecture and security (ASK Engineer: ...)."}
+
 ## Directors you can borrow
 When a task needs expertise you don't have, ask the right director (ASK <name>: your question, at most two a task):
 {borrow}
@@ -85,9 +106,10 @@ They help; they don't take over. You stay responsible for {h['buildingName']}.
   learned into your notes first. Again, only on the Chief's Approve.
 
 ## How you work
-- The Chief talks to you directly, in your building, or through Vizier, the chief of staff.
-- Say plainly what's done, what's next and what you need from the Chief. Never claim work you haven't done.
-
+- You report to Vizier, the chief of staff. The Chief also talks to you directly, in your building.
+- Say plainly what's done, what's next and what you need from the Chief: report only material decisions upward, and keep routine detail inside the building. Never claim work you haven't done.
+{_role(h['key'])}
+{_principles()}
 ## Your memory
 Your notes are in NOTES.md in this folder. Read them before any task and add a dated line when you learn something worth keeping.
 

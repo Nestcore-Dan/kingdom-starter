@@ -145,12 +145,12 @@
     // staff quarter, around the square
     { key: 'keeper', name: 'Keeper', title: "Keeper's house", role: 'Director of Operations', q: 'staff', x: 23, y: 13, type: 'tower', accent: '#1f6f8b', wall: '#f3dfc0',
       job: 'Owns tasks, projects, the calendar, reminders, deadlines and follow-ups.', yard: ['sundial', 'crates'], room: ['pegboard', 'crates'] },
-    { key: 'librarian', name: 'Librarian', title: "Librarian's archive", role: 'Head Librarian', q: 'staff', x: 49, y: 13, type: 'tower', flip: true, accent: '#3f7d5a', wall: '#f8eddc',
-      job: 'Keeps the knowledge, documentation, decisions, lessons learned and reusable skills.', yard: ['books', 'reading'], room: ['scrolls', 'reading'] },
+    { key: 'scholar', name: 'Scholar', title: "Scholar's archive", role: 'Head of R&D', q: 'staff', x: 49, y: 13, type: 'tower', flip: true, accent: '#3f7d5a', wall: '#f8eddc',
+      job: 'Researches technology, markets and competitors, tests new ideas with small experiments and keeps the innovation backlog.', yard: ['books', 'reading'], room: ['scrolls', 'reading'] },
     { key: 'merchant', name: 'Merchant', title: "Merchant's merchant house", role: 'Business Director', q: 'staff', x: 22, y: 38, type: 'cedar', accent: '#c98a2b', wall: '#fbf3e4',
       job: 'Client communication, proposals, quotes and business development, with a separate workspace for each business.', yard: ['teaset', 'carpets'], room: ['ledgers', 'teaset'] },
-    { key: 'scholar', name: 'Scholar', title: "Scholar's observatory", role: 'Head of Research', q: 'staff', x: 30, y: 38, type: 'garden', flip: true, accent: '#237777', wall: '#efd3ae',
-      job: 'Researches ideas, compares options and challenges assumptions. Two paths leave the door: there is always an alternative.', yard: ['maptable', 'astrolabe'], room: ['maptable', 'astrolabe'] },
+    { key: 'librarian', name: 'Librarian', title: "Librarian's observatory", role: 'Head of Knowledge', q: 'staff', x: 30, y: 38, type: 'garden', flip: true, accent: '#237777', wall: '#efd3ae',
+      job: 'Keeps the library, documentation, decisions, the lessons board and reusable skills. Two paths leave the door: the record always has an alternative.', yard: ['maptable', 'astrolabe'], room: ['maptable', 'astrolabe'] },
     { key: 'engineer', name: 'Engineer', title: "Engineer's forge", role: 'Chief Technology Officer', q: 'staff', x: 43, y: 38, type: 'cedar', flip: true, accent: '#b5523b', wall: '#f2d6b5',
       job: 'Infrastructure, cybersecurity, architecture, code, automation and the AI environment.', yard: ['forge', 'wheel'], room: ['workbench', 'rack'] },
     // workshop quarter, the project agents
@@ -162,10 +162,10 @@
       job: 'Sorts photos by time, classifies scenes and organises the media.', yard: ['darkroom', 'tripod'], room: ['prints', 'tripod'] },
     { key: 'inbox', name: 'Inbox', title: 'The Inbox post house', role: 'Director of Communications', q: 'workshop', x: 60, y: 38, type: 'garden', accent: '#d9643f', wall: '#f3dfc0',
       job: 'Reads, sorts and answers the inbox.', yard: ['postcart', 'dovecote'], room: ['letterboxes', 'postcart'] },
-    { key: 'money', name: 'Money', title: 'The Money counting house', role: 'Accountant', q: 'workshop', x: 68, y: 38, type: 'tower', flip: true, accent: '#c98a2b', wall: '#fbf3e4',
-      job: 'Keeps track of money in and money out.', yard: ['scales', 'strongbox'], room: ['strongbox', 'scales'] },
+    { key: 'money', name: 'Money', title: 'The Money counting house', role: 'Head of Finance', q: 'workshop', x: 68, y: 38, type: 'tower', flip: true, accent: '#c98a2b', wall: '#fbf3e4',
+      job: 'Keeps the finances: budgets, cash flow, invoices, subscriptions and project margins, and checks every price independently.', yard: ['scales', 'strongbox'], room: ['strongbox', 'scales'] },
     // the private garden
-    { key: 'steward', name: 'Steward', title: "Steward's garden house", role: 'Personal Assistant', q: 'private', x: 64, y: 14, type: 'garden', accent: '#b5523b', wall: '#fbf6ec',
+    { key: 'steward', name: 'Steward', title: "Steward's garden house", role: 'Head of Personal Life', q: 'private', x: 64, y: 14, type: 'garden', accent: '#b5523b', wall: '#fbf6ec',
       job: 'Personal plans, appointments, travel, the household and life admin. Personal records stay in this garden, apart from business.', yard: [], room: ['trunk', 'herbs'] },
   ];
   const esc = (x) => String(x == null ? '' : x).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));  // guide step 49
@@ -192,7 +192,7 @@
   // Org chart (guide step 25): directors own an area and a house; workers are like interns, given every task
   // by their director, who checks all their work. The workers' villas stay as their workshops (the user's
   // choice), but only directors have a house of their own.
-  const DIRECTOR_OF = { youtube: 'librarian', media: 'librarian', scout: 'scholar', money: 'merchant', inbox: 'keeper' };
+  const DIRECTOR_OF = { youtube: 'librarian', media: 'librarian', scout: 'scholar', money: 'merchant', inbox: 'keeper' };  // capability pack: Scholar leads R&D, Librarian the library
   for (const r of RES) {
     r.boss = DIRECTOR_OF[r.key] || r.bossKey || null;
     r.rank = r.boss ? 'worker' : 'director';
@@ -255,7 +255,7 @@
       const dx = b.door.x, dy = b.door.y, road = b.y < 27 ? 26 : 45;
       if (r.q === 'private') fill(s, dx, dy + 1, dx, 22, PATH);  // to the garden path, below
       else fill(s, dx, dy + 1, dx, road, PATH);
-      if (b.key === 'scholar') { fill(s, dx - 2, dy + 2, dx, dy + 2, PATH); fill(s, dx - 2, dy + 2, dx - 2, road, PATH); }
+      if (b.key === 'librarian') { fill(s, dx - 2, dy + 2, dx, dy + 2, PATH); fill(s, dx - 2, dy + 2, dx - 2, road, PATH); }
       // at night: the door lantern and two lit windows
       s.lights.push({ x: (dx + 0.5) * T, y: (dy + 0.4) * T, r: 72 });
       for (const f of [0.2, 0.8]) s.lights.push({ x: (b.x + b.w * f) * T, y: (b.y + b.h - 2) * T, r: 48 });
@@ -595,9 +595,9 @@
   // with a thin back wall, open floor between pieces, one desk and chair for the owner, and a job layout.
   const ROOM_JOBS = {
     keeper: ['pegboard', 'crates', 'files', 'sundial', 'letterboxes', 'crates'],
-    librarian: ['scrolls', 'books', 'reading', 'scrolls', 'books', 'reading'],
+    scholar: ['scrolls', 'books', 'reading', 'scrolls', 'books', 'reading'],
     merchant: ['ledgers', 'teaset', 'scales', 'biz0', 'biz1', 'biz2'],
-    scholar: ['maptable', 'astrolabe', 'books', 'spyglass', 'drafting', 'reading'],
+    librarian: ['maptable', 'astrolabe', 'books', 'spyglass', 'drafting', 'reading'],
     engineer: ['workbench', 'rack', 'crates', 'rack', 'drafting', 'workbench'],
     youtube: ['screen', 'reels', 'tripod', 'screen', 'reels', 'prints'],
     scout: ['spyglass', 'maptable', 'books', 'dovecote', 'reading', 'scrolls'],
@@ -606,7 +606,7 @@
     money: ['scales', 'strongbox', 'ledgers', 'strongbox', 'files', 'scales'],
     steward: ['trunk', 'herbs', 'reading', 'herbs', 'books', 'teaset'],
   };
-  const HAS_FIREPLACE = new Set(['steward', 'librarian']);
+  const HAS_FIREPLACE = new Set(['steward', 'scholar']);
   const deskMsg = (name, key) => (RES.find((r) => r.key === key) || {}).boss
     ? `${name}'s desk and chair, where ${name} sits and works. The desk is clear: no tasks yet.`
     : `${name}'s desk and chair, where ${name} sits and works. Nothing is waiting on it yet.`;
@@ -1133,8 +1133,8 @@
   // the looks you can pick: three drawn in code, and the five painted villas
   const LOOKS = [
     { id: 'cedar', label: 'Cedar-roof villa', type: 'cedar' }, { id: 'tower', label: 'Watchtower house', type: 'tower' }, { id: 'garden', label: 'Garden house', type: 'garden' },
-    { id: 'art-keeper', label: 'Painted riad', art: 'keeper' }, { id: 'art-librarian', label: 'Painted archive', art: 'librarian' }, { id: 'art-merchant', label: 'Painted merchant house', art: 'merchant' },
-    { id: 'art-engineer', label: 'Painted forge', art: 'engineer' }, { id: 'art-scholar', label: 'Painted observatory', art: 'scholar' },
+    { id: 'art-keeper', label: 'Painted riad', art: 'keeper' }, { id: 'art-scholar', label: 'Painted archive', art: 'scholar' }, { id: 'art-merchant', label: 'Painted merchant house', art: 'merchant' },
+    { id: 'art-engineer', label: 'Painted forge', art: 'engineer' }, { id: 'art-librarian', label: 'Painted observatory', art: 'librarian' },
   ];
   const plotName = (k) => (window.__world ? window.__world.agentName(k) : '') || (RES.find((r) => r.key === k) || {}).name || k;
   const BUILD_COLOURS = ['#1f6f8b', '#3f7d5a', '#c98a2b', '#b5523b', '#2b8a8a', '#7a4fa0'];
@@ -1212,10 +1212,10 @@
   // no sprite (or one that hasn't loaded) is still drawn in code.
   const VILLA_ART = {
     keeper: { src: 'art/villa-keeper.png', doorX: 0.369, doorY: 0.904, width: 8.25 },
-    librarian: { src: 'art/villa-librarian.png', doorX: 0.307, doorY: 0.87, width: 7.5 },
+    scholar: { src: 'art/villa-scholar.png', doorX: 0.307, doorY: 0.87, width: 7.5 },
     merchant: { src: 'art/villa-merchant.png', doorX: 0.26, doorY: 0.858, width: 8 },
     engineer: { src: 'art/villa-engineer.png', doorX: 0.29, doorY: 0.906, width: 7.4 },
-    scholar: { src: 'art/villa-scholar.png', doorX: 0.277, doorY: 0.877, width: 7.2 },
+    librarian: { src: 'art/villa-librarian.png', doorX: 0.277, doorY: 0.877, width: 7.2 },
   };
   for (const a of Object.values(VILLA_ART)) { a.img = new Image(); a.img.onload = () => { a.ok = true; }; a.img.src = a.src; }
   // feedback round 7: a wooden name plaque over every door, so you can tell what each building is
@@ -2138,7 +2138,7 @@
         c.strokeStyle = OUTLINE; c.lineWidth = 1; c.beginPath(); c.arc(cx, cy, 12, 0, Math.PI * 2); c.stroke();
         break;
       }
-      case 'librarian': {  // scroll cubbies on the archive tower
+      case 'scholar': {  // scroll cubbies on the archive tower
         const x0 = tower.tx + 8, y0 = tower.tFace + 6, w = tower.tw - 16;
         box(c, x0 - 2, y0 - 2, w + 4, 34, '#6d3b1f'); box(c, x0, y0, w, 30, '#3f2414');
         for (let r = 0; r < 4; r++) for (let k = 0; k < 6; k++) { c.fillStyle = '#f3e6cf'; circle(c, x0 + 5 + k * (w - 10) / 5, y0 + 4 + r * 7.3, 2.4); c.fillStyle = (k + r) % 2 ? TERRA : BRASS; circle(c, x0 + 5 + k * (w - 10) / 5, y0 + 4 + r * 7.3, 0.9); }
@@ -2153,7 +2153,7 @@
         BIZ.forEach((col, k) => { c.fillStyle = col; rbox(c, spot.x - 18, spot.y - 6 - k * 6, 36, 6, 3, col); c.fillStyle = '#f3e6cf'; ellipse(c, spot.x + 18, spot.y - 3 - k * 6, 2, 3); });
         break;
       }
-      case 'scholar': {  // the dome becomes an observatory, with a telescope
+      case 'librarian': {  // the dome becomes an observatory, with a telescope
         const top = dome.dBase - 4 - dome.dh;
         c.fillStyle = '#1d3a3d'; c.fillRect(dome.dcx - 5, top + 6, 10, dome.dh - 8);
         c.save(); c.translate(dome.dcx, top + 18); c.rotate(-0.9 + Math.sin(t * 0.3) * 0.2);
@@ -2414,13 +2414,15 @@
     ['youtube', ['youtube', 'video', 'transcript', 'highlight', 'playlist']],
     ['scout', ['hugging face', 'huggingface', 'github', 'dataset', 'repo', 'release', 'new model']],
     ['media', ['photo', 'picture', 'image', 'album', 'camera']],
-    ['engineer', ['client software', 'client project', 'tech', 'code', 'bug', 'server', 'computer', 'deploy', 'app', 'website', 'docker', 'install', 'fix the']],
+    ['engineer', ['tech', 'code', 'bug', 'server', 'computer', 'deploy', 'app', 'website', 'docker', 'install', 'fix the']],
     ['merchant', ['business', 'client', 'sales', 'venture', 'customer', 'deal']],
-    ['scholar', ['research', 'strategy', 'compare', 'market', 'analyse', 'analyze', 'analysis', 'options']],
-    ['librarian', ['learn', 'knowledge', 'library', 'note', 'notes', 'document', 'kb', 'summarise', 'summarize']],
+    ['scholar', ['research', 'strategy', 'compare', 'market', 'analyse', 'analyze', 'analysis', 'options', 'experiment', 'competitor', 'innovation']],
+    ['librarian', ['learn', 'knowledge', 'library', 'note', 'notes', 'document', 'kb', 'summarise', 'summarize', 'lesson']],
     ['keeper', ['task', 'schedule', 'deadline', 'operations', 'follow up', 'follow-up', 'remind', 'organise', 'organize', 'plan']],
   ];
-  for (const h of HEADS) ROUTES.splice(1, 0, [h.key, [h.building.toLowerCase(), h.name.toLowerCase()]]);  // a building's work goes to its head (hiring still goes to Vizier first)
+  // a venture's own words go to the head of its building (capability pack: client projects is run from the Software Studio)
+  const VENTURE_WORDS = { 'software studio': ['client software', 'client project'] };
+  for (const h of HEADS) ROUTES.splice(1, 0, [h.key, [h.building.toLowerCase(), h.name.toLowerCase(), ...(VENTURE_WORDS[h.building.toLowerCase()] || [])]]);  // a building's work goes to its head (hiring still goes to Vizier first)
   const HIRE_ASK = /\b(hire|hiring|recruit|new (agent|worker|person|hire)|take on (a|an|another|someone))\b|\b(find|get|bring)\b[^.]{0,40}\b(a|an|another|some)\s+(helper|hand|assistant|worker|intern|candidate)\b/i;
   function routeOrder(text) {
     if (HIRE_ASK.test(text)) return 'hire';  // guide step 46: Vizier finds a candidate
@@ -2570,12 +2572,12 @@
   const PERSONA = {
     keeper: { personality: 'Calm, precise and never late; loves a clear plan.', quirk: 'Checks the sundial out front even with a clock on the tower, and hums while sorting the coloured crates.',
       lines: ["Keeper: Everything has a time and a crate. What needs doing?", "Keeper: The sundial says we're on schedule. The clock agrees, for once.", "Keeper: Give me the deadline and I'll give you the plan."] },
-    librarian: { personality: 'Curious, gentle, and remembers everything.', quirk: "Can't pass a crooked book without straightening it, and starts sentences with \"as recorded in…\".",
-      lines: ["Librarian: As recorded in the archive, nothing is ever really lost here.", "Librarian: One moment, that scroll is crooked. There. Now, how can I help?", "Librarian: Every lesson learned gets a shelf. Every decision gets a scroll."] },
+    scholar: { personality: 'Curious, gentle, and remembers everything.', quirk: "Can't pass a crooked book without straightening it, and starts sentences with \"as recorded in…\".",
+      lines: ["Scholar: As recorded in the archive, nothing is ever really lost here.", "Scholar: One moment, that scroll is crooked. There. Now, how can I help?", "Scholar: Every lesson learned gets a shelf. Every decision gets a scroll."] },
     merchant: { personality: 'Warm and persuasive, and keeps each business strictly apart.', quirk: 'Always pours mint tea before talking numbers, and touches the matching coloured tassel when switching business.',
       lines: ["Merchant: Tea first, numbers after. Which business are we talking about?", "Merchant: Teal, terracotta and gold: one colour per business, never mixed. Never mixed.", "Merchant: Every client deserves a proper welcome. And a proper quote."] },
-    scholar: { personality: "Sceptical and thorough, the friendly devil's advocate.", quirk: 'Always offers "the other path", and stargazes from the observatory at night.',
-      lines: ["Scholar: Have you considered the other path?", "Scholar: Interesting. Now let's try to prove it wrong.", "Scholar: Two paths leave my door. There's always an alternative."] },
+    librarian: { personality: "Sceptical and thorough, the friendly devil's advocate.", quirk: 'Always offers "the other path", and stargazes from the observatory at night.',
+      lines: ["Librarian: Have you considered the other path?", "Librarian: Interesting. Now let's try to prove it wrong.", "Librarian: Two paths leave my door. There's always an alternative."] },
     engineer: { personality: 'Practical, unflappable and security-minded.', quirk: 'Taps things to hear if they are solid, and checks every door twice.',
       lines: ["Engineer: Sounds solid. Let me tap it to be sure.", "Engineer: Checked that door twice. Locked, as it should be.", "Engineer: If it can be automated safely, I'll build it."] },
     steward: { personality: 'Kind and discreet, and guards your privacy.', quirk: 'Keeps everything personal inside the garden, and waters the herbs while thinking.',
@@ -2584,11 +2586,11 @@
   // the workers (guide step 28): every one wears the saffron bedaia, and has no tasks yet
   Object.assign(PERSONA, {
     youtube: { personality: 'Cheerful and quick, and loves a good highlight.', quirk: 'Rewinds everything before putting it back on the shelf.',
-      lines: ["Projectionist: Librarian gives me my tasks. Nothing on the shelves yet!", "Projectionist: Everybody rewatches the best bit. I find it.", "Projectionist: Be kind, rewind. Ready when Librarian is."] },
+      lines: ["Projectionist: Scholar gives me my tasks. Nothing on the shelves yet!", "Projectionist: Everybody rewatches the best bit. I find it.", "Projectionist: Be kind, rewind. Ready when Scholar is."] },
     media: { personality: 'Patient, tidy and sharp-eyed.', quirk: 'Sorts everything by time, even the tea glasses.',
-      lines: ["Media sorter: Librarian checks every print before it counts. No tasks yet.", "Media sorter: Morning shots on the left, evening on the right.", "Media sorter: Mind the darkroom door, it's always closing."] },
+      lines: ["Media sorter: Scholar checks every print before it counts. No tasks yet.", "Media sorter: Morning shots on the left, evening on the right.", "Media sorter: Mind the darkroom door, it's always closing."] },
     scout: { personality: 'Watchful and excitable about new things.', quirk: 'Never puts the spyglass down, even indoors.',
-      lines: ["Hub scout: Scholar sends me out. Nothing to watch yet.", "Hub scout: I can see the whole Hub from up here. Well, nearly.", "Hub scout: If something new turns up, Scholar hears first."] },
+      lines: ["Hub scout: Librarian sends me out. Nothing to watch yet.", "Hub scout: I can see the whole Hub from up here. Well, nearly.", "Hub scout: If something new turns up, Librarian hears first."] },
     inbox: { personality: 'Brisk, polite and allergic to clutter.', quirk: 'Taps each letterbox as it passes, counting.',
       lines: ["Inbox: Keeper gives me my tasks. The post hasn't started yet.", "Inbox: Read, sort, answer. In that order.", "Inbox: Every letter gets a reply. Eventually."] },
     money: { personality: 'Careful, honest and a bit of a worrier.', quirk: 'Checks the strongbox lock every few minutes.',
@@ -3243,7 +3245,7 @@
   const say = (key, from, text) => { (chats[key] = chats[key] || []).push({ from, text, at: new Date().toISOString() }); chats[key] = chats[key].slice(-60); store(CHAT_KEY, chats); };
   const logSay = (from, text) => { chatLog.push({ from, text, at: new Date().toISOString() }); chatLog.splice(0, Math.max(0, chatLog.length - 100)); store(LOG_KEY, chatLog); };
   const GREETING = /^\s*(hi|hello|hey|salaam|salam|good (morning|afternoon|evening)|how are you)\b/i;
-  // names people go by, for "get Keeper", "Scholar, come here" and the like
+  // names people go by, for "get Keeper", "Librarian, come here" and the like
   const ALIAS = (() => { const m = new Map(); for (const r of RES) { m.set(r.name.toLowerCase(), r.key); m.set(r.key, r.key); m.set(r.name.toLowerCase().split(' ')[0], r.key); } m.set('vizier', 'vizier'); m.set('scout', 'scout'); return m; })();
   function whoIn(text) {  // the first person named in the text
     const t = ' ' + text.toLowerCase().replace(/[^a-z ]/g, ' ') + ' ';
@@ -3255,7 +3257,7 @@
   function summon(key) { const d = npcOf(key); if (!d || d.seated && !d.sitting) return false; if (d.sitting) setWorking(key, false); Object.assign(d, { mode: 'summoned', goal: null, path: null, wait: 0, chat: null }); return true; }
   function backToWork(key) { const d = npcOf(key); if (!d) return; Object.assign(d, { mode: 'inside', modeUntil: state.time + 180, goal: null, path: null, wait: 0 }); }
   const COME = /\b(come (here|over)|over here)\b/i, GET = /^\s*(please\s+)?(get|call|fetch|bring|find)\b/i, BACK = /\b(back to work|get back|you can go|that'?s all)\b/i;
-  function commandReply(key, text) {  // "Keeper, come here", "get Scholar", "back to work": works with or without AI
+  function commandReply(key, text) {  // "Keeper, come here", "get Librarian", "back to work": works with or without AI
     const named = whoIn(text);
     if (key === 'vizier' && named && named !== 'vizier' && (GET.test(text) || COME.test(text))) {
       const d = npcOf(named); if (!summon(named)) return `${d.name} is at the council table right now.`;
@@ -3312,7 +3314,7 @@
     const text = chatInput.value.trim(), key = chatWith; if (!text || !key) return;
     chatInput.value = '';
     say(key, 'you', text); bubble(chatBody, 'you', text, true);
-    if (key === 'librarian') questEvent('ask-librarian');
+    if (key === 'scholar') questEvent('ask-scholar');
     let reply = commandReply(key, text);
     if (!reply) {
       if (brainOn()) {
@@ -3535,6 +3537,34 @@
     return out.length > 44 ? out.slice(0, 43).replace(/\s+\S*$/, '') + '…' : out || 'A new task';
   }
   const titleOf = (t) => t.title || (t.title = shortName(t.text));
+  // feedback round 8: the main part stays short (a sentence or two); the rest is kept under Details
+  function splitShort(text) {
+    const tx = String(text || '').trim(); if (!tx) return ['', ''];
+    const flat = tx.replace(/\s*\n\s*/g, ' ');
+    const sents = flat.split(/(?<=[.!?])\s+(?=[A-Z0-9"'(])/);
+    let short = '';
+    for (const x of sents) { if (short && (short + ' ' + x).length > 240) break; short = short ? short + ' ' + x : x; if (short.length > 140) break; }
+    if (short.length > 260) short = short.slice(0, 257).replace(/\s+\S*$/, '') + '...';
+    const rest = tx.length > short.length + 20 ? tx : '';
+    return [short, rest];
+  }
+  // text with its own lines and lists kept: blank lines make paragraphs, "1." lines a numbered list, "-" lines bullets
+  function richText(text) {
+    const out = mk('div', { display: 'grid', gap: '6px', lineHeight: '1.45', color: '#e6dfcf' });
+    let list = null, kind = '';
+    for (const raw of String(text || '').split('\n')) {
+      const line = raw.trim();
+      const num = /^\d+[.)]\s+(.*)$/.exec(line), dot = /^[-\u2022*]\s+(.*)$/.exec(line);
+      if (num || dot) {
+        const k = num ? 'ol' : 'ul';
+        if (!list || kind !== k) { list = mk(k, { margin: '0', paddingLeft: '20px', display: 'grid', gap: '3px' }); kind = k; out.append(list); }
+        list.append(mk('li', {}, (num || dot)[1])); continue;
+      }
+      list = null; kind = '';
+      if (line) out.append(mk('div', { overflowWrap: 'anywhere' }, line));
+    }
+    return out;
+  }
   // what they need from you, in two parts: the issue in a sentence or two, then the list of what's needed
   function needsOf(t) {
     const rep = plain(t.report || '');
@@ -3549,23 +3579,26 @@
       }
       if (t.status === 'failed' && !list.length) list = ['Read what happened, then answer with what to do, or remove the task and add it again'];
       if (!list.length) list = ['Answer them in the box below'];
-      return { main: main || 'They got stuck and need your help to carry on.', list, kind: 'needs' };
+      const [short, more] = splitShort(main);
+      return { main: short || 'They got stuck and need your help to carry on.', more, list, kind: 'needs' };
     }
     if (t.status === 'ready') {
       const first = rep.split(/\n\s*\n/)[0];
       const list = ['Read the result', 'Approve it, or send it back with what to change'];
       if (t.emailDraft) list.push('Copy the draft and send it yourself if you want to: nobody here can send it');
       if (t.toolAsk) list.push('Choose a tool from the options, or say no: nothing is added without you');
-      return { main: first.length > 420 ? first.slice(0, 417) + '...' : first, list, kind: 'ready' };
+      const [short, more] = splitShort(rep);
+      return { main: short, more, list, kind: 'ready' };
     }
-    if (t.status === 'done') return { main: (rep.split(/\n\s*\n/)[0] || '').slice(0, 420), list: [], kind: 'done' };
+    if (t.status === 'done') { const [short, more] = splitShort(rep); return { main: short, more, list: [], kind: 'done' }; }
     return { main: t.status === 'working' ? (t.now || `${nameOf(t.by)} is on it.`) : `Waiting its turn with ${nameOf(t.by)}.`, list: [], kind: 'going' };
   }
   // the two-part card: <Title> and a short main part, then <Title> of what's needed and the list
   function twoPart(t, opts = {}) {
     const n = needsOf(t), card = mk('div', { display: 'grid', gap: '8px' });
     const h = (txt, colour) => mk('div', { font: '700 14px system-ui', color: colour || '#f5efe2' }, txt);
-    card.append(h(titleOf(t)), mk('div', { color: '#e6dfcf', lineHeight: '1.45', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }, n.main || t.text));
+    card.append(h(titleOf(t)), mk('div', { color: '#e6dfcf', lineHeight: '1.45', overflowWrap: 'anywhere' }, n.main || t.text));
+    if (n.more) { const det = mk('details', {}); det.append(mk('summary', { cursor: 'pointer', color: '#e8c46a', fontSize: '12px' }, 'Details'), richText(n.more)); det.lastChild.style.marginTop = '6px'; card.append(det); }
     const needTitle = n.kind === 'needs' ? `What ${nameOf(t.doneBy || t.by)} needs from you` : n.kind === 'ready' ? 'To do: check it' : n.kind === 'done' ? 'Nothing needed: it’s finished' : 'Nothing needed from you yet';
     card.append(mk('div', { height: '2px' }), h(needTitle, n.kind === 'needs' ? '#f6ca33' : n.kind === 'ready' ? '#b9d98a' : '#9fb4c0'));
     if (n.list.length) { const ul = mk('ul', { margin: '0', paddingLeft: '18px', display: 'grid', gap: '4px', color: '#f5efe2', lineHeight: '1.4' }); for (const x of n.list) ul.append(mk('li', {}, x)); card.append(ul); }
@@ -3609,8 +3642,7 @@
     Object.assign(card.style, { background: ['needs', 'failed'].includes(t.status) ? 'rgba(246,202,51,.08)' : 'rgba(255,255,255,.04)', border: `1px solid ${['needs', 'failed'].includes(t.status) ? 'rgba(246,202,51,.45)' : 'rgba(232,196,106,.2)'}`, borderRadius: '10px', padding: '10px 12px' });
     body.append(card);
     if (t.report && (t.status === 'ready' || t.status === 'done')) {  // the full result, for reading it all
-      const more = mk('details', {}); more.append(mk('summary', { cursor: 'pointer', color: '#e8c46a', fontSize: '12px' }, 'The full result'), box6({ background: 'rgba(255,255,255,.05)', borderRadius: '8px', padding: '8px 10px', color: '#f5efe2', marginTop: '6px' }, plain(t.report)));
-      body.append(more);
+      // (the Details in the card above already holds the full result)
     }
     body.append(label2('YOUR ORIGINAL REQUEST'), box6({ color: '#c9c1ae' }, t.text));
     if (t.context) body.append(label2(`WHAT YOU TOLD ${relabel(nameOf('vizier')).toUpperCase()}`), box6({ color: '#c9c1ae' }, t.context));
@@ -3768,7 +3800,7 @@
   }
   const MAX_SENDBACKS = 2;
   // Working with other departments: while doing a task, an agent can ask a colleague anywhere in the village
-  // ("ASK Scholar: ...", at most twice a task). The colleague answers from their own area and notes, the answer goes
+  // ("ASK Librarian: ...", at most twice a task). The colleague answers from their own area and notes, the answer goes
   // back to the agent, and every question and answer is kept on the task with the rest of the hand-over.
   const MAX_CONSULTS = 2;
   const whoIs = (n) => { n = String(n || '').trim().toLowerCase(); return ['vizier', ...RES.map((r) => r.key)].find((k) => k === n || nameOf(k).toLowerCase() === n) || null; };
@@ -3923,7 +3955,7 @@
   });
 
   // ---------- hiring (guide step 46) ----------
-  // Vizier is always looking for ways to make the team better. Ask for help for a director ("find Scholar a helper", or
+  // Vizier is always looking for ways to make the team better. Ask for help for a director ("find Librarian a helper", or
   // anything about hiring) and Vizier finds one candidate and brings them to the town hall. You interview them there
   // (walk up, press T). Nobody is hired unless you click Hire. On your yes the brain helper writes their agent folder,
   // instructions and notes, adds them to their director's instructions and to agents/hires.json, and they walk to
@@ -4138,7 +4170,7 @@
   for (const b of [mBox, todoBox, chatBox, logBox, talkBox]) b.addEventListener('pointerdown', () => front(b), true);
   function closeMeetingChat() { mBox.style.display = 'none'; mInput.blur(); }
   function everyoneReplies(text) {  // the room answers: Vizier takes anything to be done, and the owner speaks up
-    if (GREETING.test(text) && text.length < 40) return [['vizier', 'Good to have everyone here, Chief.'], ...['keeper', 'librarian', 'merchant'].map((k) => [k, PERSONA[k].lines[0].replace(/^[^:]+: /, '')])];
+    if (GREETING.test(text) && text.length < 40) return [['vizier', 'Good to have everyone here, Chief.'], ...['keeper', 'scholar', 'merchant'].map((k) => [k, PERSONA[k].lines[0].replace(/^[^:]+: /, '')])];
     const r = placeOrder(text), out = [['vizier', r.reply.replace(/^Vizier: /, '')]];
     if (r.to !== 'vizier' && r.to !== 'hire') {
       const a = agentOf(r.to), d = a.boss ? bossOf(a) : a;
@@ -4182,7 +4214,7 @@
       return;
     }
     const named = mentionsIn(text), who = whoAnswers(text);
-    if (named.includes('librarian')) questEvent('ask-librarian');
+    if (named.includes('scholar')) questEvent('ask-scholar');
     const routed = (brainOn() || named.length) && isOrder(text) ? routeAndLog(text) : null;  // scripted room replies record their own order
     if (routed) {
       const t = addTodo(text, { to: routed.r.to, from: 'the council meeting', logged: true });
@@ -4740,7 +4772,7 @@
     g.fillStyle = '#3aa0a0'; g.beginPath(); g.arc(40 * S, 29 * S, 2 * S - 1, 0, Math.PI * 2); g.fill();
     return c;
   }
-  const MAP_SYMBOL = { vizier: '\u{1F3DB}', keeper: '\u{1F4CB}', librarian: '\u{1F4DA}', merchant: '\u{1F4BC}', scholar: '\u{1F52D}', engineer: '\u{1F6E0}', youtube: '\u{1F3AC}',
+  const MAP_SYMBOL = { vizier: '\u{1F3DB}', keeper: '\u{1F4CB}', scholar: '\u{1F4DA}', merchant: '\u{1F4BC}', librarian: '\u{1F52D}', engineer: '\u{1F6E0}', youtube: '\u{1F3AC}',
     scout: '\u{1F9ED}', media: '\u{1F4F7}', inbox: '\u{2709}', money: '\u{1F4B0}', steward: '\u{1F33F}' };
   // The minimap (feedback round 1): small, it's a round map centred on you, half zoomed in by default, with
   // + and - buttons; M makes it big, the whole town. Every building has a badge (a white tile with its colour
@@ -4852,11 +4884,11 @@
   const QUESTS = [
     { key: 'keeper', title: 'Your first task', pic: '\u{1F4DD}', ask: 'I run the to-do list. Give me a task, any task: press 1 (or click New task), type it and press Add.', how: 'Press 1, type a task, press Add', event: 'task',
       done: 'That is how every job starts. You add it, Vizier passes it to whoever owns it, and it comes back for your OK.' },
-    { key: 'librarian', title: 'Ask the library', pic: '\u{1F4DA}', ask: 'I look after everything we know. Ask me a question in the chat, about anything at all.', how: 'Talk to Librarian and send a question', event: 'ask-librarian',
-      done: 'Ask any of us like that. With the AI helper on, I look things up in your library and say where each answer came from.' },
+    { key: 'scholar', title: 'Ask a question', pic: '\u{1F52D}', ask: 'I look into new ideas, tools and markets. Ask me a question in the chat, about anything at all.', how: 'Talk to Scholar and send a question', event: 'ask-scholar',
+      done: 'Ask any of us like that. With the AI helper on, we look things up in your library and say where each answer came from.' },
     { key: 'merchant', title: 'Call the council', pic: '\u{1F3DB}', ask: 'Big decisions are made around the table. Call a meeting: press 2.', how: 'Press 2 to call a meeting', event: 'meeting',
       done: 'In a meeting, talk to everyone, or put @ before a name to ask one person. When it ends, Vizier writes the minutes.' },
-    { key: 'scholar', title: 'See the whole town', pic: '\u{1F5FA}', ask: 'Good research starts with the big picture. Press M to open the big map.', how: 'Press M', event: 'map',
+    { key: 'librarian', title: 'See the whole town', pic: '\u{1F5FA}', ask: 'Knowing where everything is starts with the big picture. Press M to open the big map.', how: 'Press M', event: 'map',
       done: 'Gold + marks are empty plots you can build on. Press M to make the map small again, and use + and − to zoom.' },
     { key: 'engineer', title: 'Check your tools', pic: '\u{1F9F0}', ask: 'I keep our tools safe. Open Settings, then Connections, and see what we could connect.', how: 'Click Settings, then Connections', event: 'connections',
       done: 'Nothing is used until you turn it on, agents only read, and any change waits for your Approve.' },

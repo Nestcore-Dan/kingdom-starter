@@ -41,7 +41,7 @@ ALLOWED_ORIGINS = {f"http://127.0.0.1:{VILLAGE_PORT}", f"http://localhost:{VILLA
 HOSTS = {f"127.0.0.1:{PORT}", f"localhost:{PORT}"}  # guide step 49: refuse requests addressed to any other name (DNS rebinding)
 MAX_PER_HOUR = 60
 WORKERS = {"youtube", "media", "scout", "money", "inbox"}
-NAMES = {"vizier": "Vizier", "keeper": "Keeper", "librarian": "Librarian", "merchant": "Merchant", "scholar": "Scholar", "engineer": "Engineer", "steward": "Steward",
+NAMES = {"vizier": "Vizier", "keeper": "Keeper", "scholar": "Scholar", "merchant": "Merchant", "librarian": "Librarian", "engineer": "Engineer", "steward": "Steward",
          "youtube": "Projectionist", "media": "Media sorter", "scout": "Hub scout", "money": "Money",
          "inbox": "Inbox"}
 RUN_DIR = HERE / ".run"          # an empty folder to run Claude Code in, so no project instructions are picked up
@@ -444,7 +444,8 @@ def check_subscription():
 
 
 # guide step 42: each director's workers, who they can hand tasks to
-TEAM = {"librarian": ["youtube", "media"], "scholar": ["scout"], "merchant": ["money"], "engineer": [], "keeper": ["inbox"], "steward": []}
+# capability pack (2026-11-24): Scholar leads R&D (with the Hub scout), Librarian keeps the library (with Projectionist and the Media sorter)
+TEAM = {"scholar": ["scout"], "librarian": ["youtube", "media"], "merchant": ["money"], "engineer": [], "keeper": ["inbox"], "steward": []}
 BOSS = {w: d for d, ws in TEAM.items() for w in ws}
 
 
@@ -503,9 +504,14 @@ COLLAB = ("## Working with other departments\n"
 
 def task_rules(key, room):
     can = f"What you can do: think, plan, write and answer{TASK_EXTRA.get(key, '')}. {LIMITS}"
-    done = (f"First line: DONE if the task is finished, or NEEDS THE CHIEF if any part of it needs something you can't do. "
-            f"Then a short report, under 150 words, {PLAIN}: exactly what you did and the result. If the task is writing, planning "
-            "or thinking, include the work itself. If something is left for the Chief, say exactly what and why. "
+    # capability pack (2026-11-24): work it out first; NEEDS THE CHIEF only for what the Chief alone can give
+    done = (f"Work it out first: do every part you can, and where a detail is missing make a reasonable, reversible assumption and say so. "
+            f"First line: DONE when you've delivered the work, even if it rests on assumptions; or NEEDS THE CHIEF only when something stops you "
+            f"that only the Chief can give (an approval, their money or a commitment to a client, a personal decision, access nobody here has, or a fact "
+            f"nobody in the village can find or reasonably assume). A missing detail you could sensibly assume is never a reason for NEEDS THE CHIEF. "
+            f"Then the report, {PLAIN}: two or three sentences saying what you did and the result, then the work itself in full (as long as it needs to be). "
+            "Where it matters, mark points Known, Assumed, Recommended or Unknown, and end with a line ASSUMPTIONS: listing what you assumed. "
+            "If something is left for the Chief, say exactly what and why. "
             "When it's NEEDS THE CHIEF, write the report in two parts: a line starting ISSUE: with the problem in one or two short "
             "sentences, then a line NEEDED FROM THE CHIEF: followed by each thing you need from the Chief on its own line starting with a dash.")
     if room == "review" and job.get("stuck"):  # feedback round 5: a worker who is stuck asks their director first
@@ -525,7 +531,7 @@ def task_rules(key, room):
     if key in BOSS:
         return ("## A task from your director (guide step 42)\n"
                 f"Your director {NAMES[BOSS[key]]} has handed you a task from the Chief's to-do list, with instructions. Do it now. {can}\n"
-                f"They will check your work. If they sent it back with notes, fix exactly what they asked.\nReply in exactly this form. {done}\n\n"
+                f"They will check your work. If they sent it back with notes, fix exactly what they asked. If you're truly stuck, say so: your director answers first.\nReply in exactly this form. {done}\n\n"
                 + COLLAB.format(who=colleagues(key)))
     team = TEAM.get(key, [])
     hand = ""
