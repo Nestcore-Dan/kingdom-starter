@@ -3278,9 +3278,30 @@
   const AGREES = /\b(on it|on to it|onto it|will do|leave it with me|consider it done|right away|straight away|i['’]?m on (it|that|the case)|i['’]?ll (do|get|handle|sort|look|take care|make|write|draft|put|find|check|pass|prepare|plan|research|compare|work|have|start|set|pull|dig|go|see to)|i will (do|get|handle|take care|make|write|look)|happy to (do|help|take)|i can do that|you['’]?ll have it)\b/i;
   const ASKS = /\b(can|could|would|will) you\b|\bplease\b|\bi need you to\b|\bi['’]?d like you to\b|\bi want you to\b|^\s*(\w+[,:]\s*)?(do|make|write|draft|find|check|look( into)?|get|send|sort|plan|book|research|compare|summari[sz]e|prepare|create|build|fix|review|list|organi[sz]e|remind|follow up|work out|figure out|put together|come up with|give|hand|pass)\b/i;
   const asksToDo = (text) => !(GREETING.test(text) && text.length < 40) && ASKS.test(text) && !COME.test(text) && !BACK.test(text);
+  // feedback round 13: "carry on", "go ahead", "yes, do it"... are go-aheads for what the agent just proposed
+  const GO_AHEAD = /^\s*(yes|yep|yeah|ok(ay)?|sure|great|perfect|sounds good|go ahead|go for it|carry on|continue|proceed|do it|please do|let'?s do it|make it so|approved)\b[^?]{0,80}$/i;
+  // the recent back-and-forth with one agent, both sides, so a task (and anyone it's passed to) has the whole story
+  const chatConvo = (key, n = 10) => (chats[key] || []).slice(-n).map((m) => `${m.from === 'you' ? 'Chief' : nameOf(m.from)}: ${String(m.text).replace(/\s+/g, ' ').slice(0, 500)}`).join('\n');
   function taskFromChat(key, text, reply) {  // returns the task if one was made
-    if (key === 'vizier' || !asksToDo(text) || !AGREES.test(reply || '')) return null;
-    return addTodo(text, { to: key, from: nameOf(key), direct: true });
+    if (key === 'vizier' || !AGREES.test(reply || '')) return null;
+    const go = GO_AHEAD.test(text) && !asksToDo(text);
+    if (!go && !asksToDo(text)) return null;
+    const before = (chats[key] || []).slice(0, -1).reverse().find((m) => m.from === key);  // what the go-ahead answers (the agent's reply isn't saved yet)
+    const task = go && before ? `${text.trim()}: go ahead with what ${nameOf(key)} proposed: ${String(before.text).replace(/\s+/g, ' ').slice(0, 300)}` : text;
+    const t = addTodo(task, { to: key, from: nameOf(key), direct: true, logged: true, title: go && before ? shortName(String(before.text).replace(/^(happy to help|sure|of course|good question)[.!,]*\s*/i, '').replace(/^i could\s+/i, '')) : null, context: `Your conversation with the Chief (most recent last):\n${chatConvo(key)}` });
+    if (t) { logSay('vizier', `Noted: the Chief agreed a task with ${nameOf(key)} directly: "${titleOf(t)}". I'll keep track of it.`); renderLog(); }
+    return t;
+  }
+  // feedback round 13: Vizier knows what the Chief has been discussing with others directly today
+  function directDigest() {
+    const day = today(), out = [];
+    for (const [k, list] of Object.entries(chats)) {
+      if (k === 'vizier' || isCand(k) || !Array.isArray(list)) continue;
+      const todays = list.filter((m) => String(m.at || '').slice(0, 10) === day);
+      if (!todays.length) continue;
+      out.push(`${nameOf(k)}:\n` + todays.slice(-6).map((m) => `  ${m.from === 'you' ? 'Chief' : nameOf(m.from)}: ${String(m.text).replace(/\s+/g, ' ').slice(0, 220)}`).join('\n'));
+    }
+    return out.length ? `The Chief's direct conversations with others today (most recent last; you weren't in them, but keep track and coordinate):\n${out.slice(-6).join('\n')}` : '';
   }
   // what you said to Vizier just before an order (feedback round 4): it goes with the task so nothing gets lost or changed
   const chatContext = (key) => (chats[key] || []).slice(-8).filter((m) => m.from === 'you').map((m) => `- ${String(m.text).slice(0, 300)}`).join('\n');
@@ -3320,9 +3341,10 @@
       if (brainOn()) {
         const routed = key === 'vizier' && isOrder(text) ? routeAndLog(text) : null;
         const wait = thinking(chatBody, key);
-        try { reply = await window.kingdomBrain(key, chats[key], isCand(key) ? { room: 'candidate', job: candidate } : { hint: routed ? routed.hint : '' }); } catch (e) { reply = (routed ? routed.r.reply.replace(/^Vizier: /, '') : scriptedReply(key, text)) + ` (The helper couldn't answer: ${e.message})`; }
+        const dig = key === 'vizier' ? directDigest() : '';
+        try { reply = await window.kingdomBrain(key, chats[key], isCand(key) ? { room: 'candidate', job: candidate } : { hint: [routed ? routed.hint : '', dig].filter(Boolean).join('\n\n') }); } catch (e) { reply = (routed ? routed.r.reply.replace(/^Vizier: /, '') : scriptedReply(key, text)) + ` (The helper couldn't answer: ${e.message})`; }
         wait.remove();
-        if (routed) addTodo(text, { to: routed.r.to, from: 'Vizier', logged: true, context: chatContext('vizier') });
+        if (routed) addTodo(text, { to: routed.r.to, from: 'Vizier', logged: true, context: [chatContext('vizier'), directDigest()].filter(Boolean).join('\n\n') });
         else if (!isCand(key)) taskFromChat(key, text, reply);
       } else {
         const routed = key === 'vizier' && !(GREETING.test(text) && text.length < 40) ? routeAndLog(text) : null;
@@ -3690,7 +3712,7 @@
     const dup = todos.find((x) => x.text.toLowerCase() === text.toLowerCase() && Date.now() - new Date(x.at).getTime() < 10 * 60 * 1000);
     if (dup) return dup;
     const r = opts.to ? { to: opts.to, reply: null } : placeOrder(text);  // Vizier records it and phones the director who owns it
-    const by = ownerOf(r.to), t = { id: Date.now().toString(36), text, title: shortName(text), to: r.to, by, status: 'waiting', at: new Date().toISOString(), from: opts.from || null, direct: !!opts.direct, context: opts.context || '' };
+    const by = ownerOf(r.to), t = { id: Date.now().toString(36), text, title: opts.title || shortName(text), to: r.to, by, status: 'waiting', at: new Date().toISOString(), from: opts.from || null, direct: !!opts.direct, context: opts.context || '', parent: opts.parent || null, depth: opts.depth || 0 };
     todos.push(t); saveTodos();
     questEvent('task');  // any task you give, however you give it (feedback round 7: Vizier's chat didn't count before)
     const personal = r.to === 'steward';
@@ -3840,7 +3862,30 @@
   }
   const step = (t, who, what, text) => { (t.steps = t.steps || []).push({ who, what, text: plain(text), at: new Date().toISOString() }); saveTodos(); };
   const EMAIL_DRAFT = /^\s*(subject|to|dear|hi|hello)\b[^\n]{0,120}$/im;
+  // feedback round 13: "PASS TO Engineer: build the prototype" lines become linked tasks for other departments, sent through
+  // Vizier with the conversation and this result. At most three a task, and a passed-on task can't pass work on again.
+  const MAX_PASSES = 3;
+  function passOn(t, report, from) {
+    const lines = [], keep = [];
+    for (const l of String(report || '').split('\n')) { const m = /^\W*PASS TO\s+([^:]{1,40}):\s*(.+)$/i.exec(l.trim()); if (m) lines.push(m); else keep.push(l); }
+    if (!lines.length) return report;
+    const passed = [];
+    for (const m of lines.slice(0, MAX_PASSES)) {
+      const who = whoIs(m[1]);
+      if (!who || who === from || who === 'vizier' || (t.depth || 0) >= 1) { passed.push(`${m[1].trim()} (not passed on: ${!who ? 'nobody by that name' : (t.depth || 0) >= 1 ? 'this was already passed on once' : 'that is the same person'}): ${m[2]}`); continue; }
+      const ctx = [t.context || '', `Passed on by ${nameOf(from)} from the task "${titleOf(t)}" (the Chief's words: ${t.text.slice(0, 400)}). ${nameOf(from)}'s part, already done:\n${keep.join('\n').slice(0, 3000)}`].filter(Boolean).join('\n\n');
+      const c = addTodo(m[2].trim(), { to: who, from: nameOf(from), logged: true, context: ctx, parent: t.id, depth: (t.depth || 0) + 1 });
+      if (c) {
+        logSay('vizier', `To ${nameOf(c.by)}: ${nameOf(from)} passed you part of "${titleOf(t)}": ${m[2].trim().slice(0, 160)}`); logSay(c.by, "Got it, Vizier. I'll pick it up.");
+        passed.push(`${nameOf(c.by)}: ${m[2].trim()}`);
+      }
+    }
+    renderLog();
+    t.passed = passed;
+    return `${keep.join('\n').trim()}\n\nPassed on through ${nameOf('vizier')}:\n${passed.map((x) => '- ' + x).join('\n')}`;
+  }
   function finish(t, status, report, doneBy, checkedBy) {
+    if (status !== 'failed') report = passOn(t, plain(report), checkedBy || doneBy);
     if (status === 'done') status = 'ready';  // guide step 48: finished work waits for the Chief's OK
     const emailTask = /\b(e-?mail|reply|replies|message to|write to)\b/i.test(t.text);
     Object.assign(t, { status, report: plain(report), doneBy, checkedBy: checkedBy || null, doneAt: new Date().toISOString(), now: null, with: null,

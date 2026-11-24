@@ -512,6 +512,9 @@ def task_rules(key, room):
             f"Then the report, {PLAIN}: two or three sentences saying what you did and the result, then the work itself in full (as long as it needs to be). "
             "Where it matters, mark points Known, Assumed, Recommended or Unknown, and end with a line ASSUMPTIONS: listing what you assumed. "
             "If something is left for the Chief, say exactly what and why. "
+            "If part of the work belongs to another department (more than a question you could ASK), do your own part, then add one line per part, "
+            "at the very end: PASS TO <their name>: <what they should do, in one sentence>. At most three. The village passes each part on through Vizier "
+            "with this conversation and your result; never claim they've done it. "
             "When it's NEEDS THE CHIEF, write the report in two parts: a line starting ISSUE: with the problem in one or two short "
             "sentences, then a line NEEDED FROM THE CHIEF: followed by each thing you need from the Chief on its own line starting with a dash.")
     if room == "review" and job.get("stuck"):  # feedback round 5: a worker who is stuck asks their director first
@@ -551,7 +554,7 @@ def task_ask(key, room, job):
     text = str(job.get("text", ""))[:4000]
     parts = [f"The task from the Chief: {text}"]
     if job.get("context"):
-        parts.append("What the Chief said to Vizier when giving this task (use these details exactly, and don't add any the Chief didn't give):\n"
+        parts.append("What the Chief said when giving this task, to Vizier or to you directly (use these details exactly, and don't add any the Chief didn't give):\n"
                      + str(job["context"])[:8000])
     if job.get("note"):
         parts.append(f"(Village note: {str(job['note'])[:500]})")
@@ -623,7 +626,7 @@ def system_prompt(key, room, job=None):
 {where}
 - Reply in character, in your own voice: one to three short sentences, plain words, no lists or headings.
 - You can only talk (and read the library, if you have it): you can't open files, run anything or send messages.
-- If the Chief asks you to do something, agree in a few words (for example "On it.") and say you'll report back. It goes straight onto the Chief's to-do list and you do it from there, so don't do the work in this chat. If you can't or shouldn't do it, say so plainly instead of agreeing.
+- If the Chief asks you to do something, agree in a few words (for example "On it.") and say you'll report back. If parts of it belong to other departments, say you'll pass those on through Vizier when you start. It goes straight onto the Chief's to-do list and you do it from there, so don't do the work in this chat. If you can't or shouldn't do it, say so plainly instead of agreeing.
 - Never invent results, facts about the Chief's work, or things you haven't been told.
 """
 
