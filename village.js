@@ -387,7 +387,7 @@
       if (b.doors.some(d => d.x === xx && d.y === yy)) continue;
       solidify(s, xx, yy);
     }
-    addObj(s, { sortY: (y + b.h) * T, bx: x * T - 40, by: y * T - 120, bw: b.w * T + 80, bh: b.h * T + 130, draw: (c, t) => { drawHall(c, b, t); drawPlaque(c, (x + 6) * T, (y + b.h - 1) * T - 40, 'Town Hall', `${relabel('Vizier')}, Chief of Staff`, LAGOON); } });
+    addObj(s, { sortY: (y + b.h) * T, bx: x * T - 40, by: y * T - 120, bw: b.w * T + 80, bh: b.h * T + 130, draw: (c, t) => { if (!drawSpriteHouse(c, HALL_ART, (x + 6) * T, (y + b.h) * T)) drawHall(c, b, t); drawPlaque(c, (x + 6) * T, (y + b.h - 1) * T - 40, 'Town Hall', `${relabel('Vizier')}, Chief of Staff`, LAGOON); } });
     for (const d of b.doors) s.doors.push({ x: d.x, y: d.y, to: 'hall-in', label: 'Town Hall · Vizier, Chief of Staff', building: b });
     return b;
   }
@@ -396,7 +396,8 @@
     const size = 0.85 + r() * 0.35, jx = (r() - 0.5) * 8, jy = (r() - 0.5) * 4, lean = (r() - 0.5) * 16, citrus = r() < 0.4, rot = r() * 6.28;
     solidify(s, x, y);
     const bx = x * T + 16 + jx, by = y * T + 26 + jy;
-    addObj(s, { sortY: by, bx: bx - 50, by: by - 100, bw: 100, bh: 110, draw: (c, t) => palm ? drawPalm(c, bx, by, size, lean, rot, t) : drawOlive(c, bx, by, size, citrus) });
+    addObj(s, { sortY: by, bx: bx - 50, by: by - 100, bw: 100, bh: 110, draw: (c, t) => (palm ? drawProp(c, 'slender-date-palm', bx, by, 1.6 * size) || drawPalm(c, bx, by, size, lean, rot, t)
+      : drawProp(c, citrus ? 'bitter-orange-tree' : 'atlas-olive-tree', bx, by, 1.35 * size) || drawOlive(c, bx, by, size, citrus)) });
   }
   // ---------- guide step 16: small props so the town feels lived in ----------
   // Each piece is placed only on open sand, grass or the square: never on a road or path,
@@ -409,6 +410,10 @@
     fence: 'A low carved cedar fence.',
     flowerbox: 'A raised planter of bougainvillea.',
     juicecart: 'A fresh orange-juice cart with a striped awning. The glasses are clean and waiting: nobody to serve yet.',
+    shade: 'A woven shade stall with clay pots for sale.', kilims: 'Folded wool kilims with geometric borders.',
+    textile: 'A striped rug hanging on a cedar stand.', copper: 'Hammered copper pots on a low stool.', jar: 'A white jar painted in Fez blue.',
+    bollard: 'A sandstone bollard with a zellij cap.', trellis: 'A cedar trellis with jasmine climbing it.', basin: 'A marble basin of still water, edged with tiles.',
+    tea: 'A silver teapot and two glasses. Mint tea, still warm.', spices: 'Bowls of saffron, paprika and cumin.', copperlamp: 'A tall copper lantern.',
     spicestall: 'A spice stall with cones of cumin, paprika and turmeric. Nobody is minding it yet.',
     pottery: 'Stacked terracotta pots and jars.',
     baskets: 'Woven palm baskets, stacked and empty.',
@@ -425,13 +430,23 @@
     };
     const put = (kind, x, y, w = 1) => {
       if (!canPlace(x, y, w)) return null;
-      const o = addObj(s, { kind, sortY: (y + 1) * T - 2, bx: x * T - 12, by: y * T - 50, bw: w * T + 24, bh: T + 56, msg: DECOR_MSG[kind], draw: (c, t) => DECOR[kind](c, x * T, y * T, w * T, t) });
+      const o = addObj(s, { kind, sortY: (y + 1) * T - 2, bx: x * T - 12, by: y * T - 50, bw: w * T + 24, bh: T + 56, msg: DECOR_MSG[kind], draw: (c, t) => (DECOR_SPR[kind] && drawProp(c, DECOR_SPR[kind][0], (x + w / 2) * T, (y + 1) * T - 4, DECOR_SPR[kind][1])) || (DECOR[kind] && DECOR[kind](c, x * T, y * T, w * T, t)) });
       solidify(s, x, y, w, 1, o);
       return o;
     };
+    // new art pack props (2026-11-24): [sprite, scale]; the old drawings stay as the fallback while they load
+    const DECOR_SPR = { pottery: ['twin-terracotta-amphorae', 1.1], baskets: ['reed-cargo-pair', 1.1], barrels: ['quayside-rain-barrel', 1.1],
+      spicestall: ['saffron-counter', 1.5], flowerbox: ['rosemary-planter', 1.4], bloom: ['pomegranate-tub', 1.0], shade: ['woven-shade-stall', 1.3],
+      kilims: ['folded-kilims', 1.1], textile: ['cedar-textile-stand', 1.1], copper: ['copperware-display', 1.1], jar: ['fez-blue-jar', 1.0],
+      bollard: ['zellij-bollard', 1.0], trellis: ['jasmine-trellis', 1.1], basin: ['riad-marble-basin', 1.3], tea: ['medina-tea-service', 1.2],
+      spices: ['spice-measures', 1.1], copperlamp: ['tall-copper-lantern', 1.3] };
     // the square: a juice cart, a spice stall, pottery and baskets
     put('juicecart', 44, 30, 2); put('spicestall', 34, 30, 2);
     put('pottery', 33, 27); put('baskets', 46, 27); put('pottery', 46, 31); put('baskets', 33, 31);
+    // market dressing round the square and in the yards (each is placed only where there's free open ground)
+    for (const [k, x, y, w] of [['shade', 36, 33, 2], ['kilims', 42, 33], ['textile', 47, 29], ['copper', 32, 29], ['jar', 47, 33], ['tea', 35, 27],
+      ['bollard', 37, 24], ['bollard', 42, 24], ['spices', 21, 43], ['kilims', 29, 43], ['copperlamp', 27, 43], ['jar', 48, 43], ['copper', 56, 43],
+      ['trellis', 63, 17], ['basin', 71, 19, 2], ['tea', 62, 20], ['jar', 52, 18], ['spices', 26, 18]]) put(k, x, y, w || 1);
     // along the main street
     for (const [k, x, y, w] of [['flowerbox', 28, 25, 2], ['flowerbox', 54, 25, 2], ['bush', 6, 29], ['bloom', 14, 30], ['bush', 29, 30],
       ['bloom', 50, 30], ['bush', 66, 30], ['bloom', 74, 29], ['produce', 11, 25], ['barrels', 20, 24], ['bush', 45, 25], ['bloom', 31, 25]]) put(k, x, y, w || 1);
@@ -554,7 +569,7 @@
 
   function addAgave(s, x, y, big) {
     const bx = x * T + 16, by = y * T + 26;
-    const o = addObj(s, { sortY: by, bx: bx - 20, by: by - 36, bw: 40, bh: 42, msg: 'A terracotta planter with an agave.', draw: (c) => drawAgave(c, bx, by, big) });
+    const o = addObj(s, { sortY: by, bx: bx - 20, by: by - 36, bw: 40, bh: 42, msg: 'A terracotta planter with an agave.', draw: (c) => drawProp(c, big ? 'prickly-pear-cluster' : 'aloe-in-green-pot', bx, by + 4, big ? 1.15 : 0.95) || drawAgave(c, bx, by, big) });
     solidify(s, x, y, 1, 1, o);
   }
   function addRock(s, x, y, r) {
@@ -563,12 +578,12 @@
   }
   function addLantern(s, x, y) {
     const bx = x * T + 16, by = y * T + 26;
-    const o = addObj(s, { sortY: by, bx: bx - 24, by: by - 70, bw: 48, bh: 76, msg: 'A brass street lantern, pierced with stars. It lights the street at night.', draw: (c, t) => drawLantern(c, bx, by, t) });
+    const o = addObj(s, { sortY: by, bx: bx - 24, by: by - 70, bw: 48, bh: 76, msg: 'A brass street lantern, pierced with stars. It lights the street at night.', draw: (c, t) => drawProp(c, 'hexagonal-brass-lamp', bx, by + 2, 1.05) || drawLantern(c, bx, by, t) });
     solidify(s, x, y, 1, 1, o);
-    s.lights.push({ x: bx, y: by - 20, r: 110 });
+    s.lights.push({ x: bx, y: by - 52, r: 110 });  // the lamp head of the new lantern
   }
   function addBench(s, x, y) {
-    const o = addObj(s, { sortY: (y + 1) * T, bx: x * T, by: y * T - 6, bw: 2 * T + 8, bh: T + 10, msg: 'A cedar bench on the square. Nobody is sitting here yet.', draw: (c) => drawBench(c, x * T, y * T) });
+    const o = addObj(s, { sortY: (y + 1) * T, bx: x * T, by: y * T - 6, bw: 2 * T + 8, bh: T + 10, msg: 'A cedar bench on the square. Nobody is sitting here yet.', draw: (c) => drawProp(c, 'cedar-cafe-bench', (x + 1) * T, (y + 1) * T - 4, 1.25) || drawBench(c, x * T, y * T) });
     solidify(s, x, y, 2, 1, o);
   }
   function addSign(s, x, y, color, msg, big = false) {
@@ -578,7 +593,7 @@
   }
   function addFountain(s, x, y) {
     const cx = (x + 2) * T, cy = (y + 2) * T;
-    const o = addObj(s, { sortY: (y + 4) * T - 4, bx: cx - 72, by: cy - 90, bw: 150, bh: 160, msg: 'The octagonal fountain. The water is clear and cold.', draw: (c, t) => drawFountain(c, cx, cy, t) });
+    const o = addObj(s, { sortY: (y + 4) * T - 4, bx: cx - 72, by: cy - 90, bw: 150, bh: 160, msg: 'The octagonal fountain. The water is clear and cold.', draw: (c, t) => drawProp(c, 'zellij-octagon-fountain', cx, (y + 4) * T - 6, 1.55) || drawFountain(c, cx, cy, t) });
     solidify(s, x, y, 4, 4, o);
   }
   function addWallTile(s, x, y) {
@@ -1131,10 +1146,29 @@
   const PLOT_W = 7, PLOT_H = 5;
   const BUILT = (window.__world && window.__world.buildings ? window.__world.buildings() : []).filter((b) => PLOTS.some((p) => p.id === b.plot));
   // the looks you can pick: three drawn in code, and the five painted villas
+  // ---------- the Moroccan art packs (2026-11-24): 80 buildings and 48 props, cropped to their art (no AI label) ----------
+  const MT_B = {"cedar-riad":["Cedar Riad","riads",53,69,458,459],"jasmine-dar":["Jasmine Dar","riads",94,18,417,459],"orange-court-riad":["Orange Court Riad","riads",45,107,467,458],"carved-plaster-house":["Carved Plaster House","riads",72,70,439,459],"blue-door-dar":["Blue Door Dar","riads",136,18,376,459],"zellij-courtyard-house":["Zellij Courtyard House","riads",47,61,465,459],"limewash-lane-house":["Limewash Lane House","riads",97,67,415,459],"mint-patio-house":["Mint Patio House","riads",71,138,441,459],"cedar-fondouk":["Cedar Fondouk","fondouks",35,69,477,459],"mule-gate-fondouk":["Mule Gate Fondouk","fondouks",41,103,471,459],"saffron-merchants-inn":["Saffron Merchants' Inn","fondouks",49,93,462,459],"three-bay-caravan-lodge":["Three-Bay Caravan Lodge","fondouks",48,152,464,459],"ring-court-inn":["Ring Court Inn","fondouks",40,73,471,459],"coppersmith-fondouk":["Coppersmith Fondouk","fondouks",47,161,465,459],"roof-walk-inn":["Roof Walk Inn","fondouks",59,98,452,459],"dyers-lodging":["Dyers' Lodging","fondouks",58,148,453,459],"attarine-spice-arcade":["Attarine Spice Arcade","souks",45,98,466,461],"lantern-makers-lane":["Lantern Makers' Lane","souks",67,105,444,459],"booksellers-passage":["Booksellers' Passage","souks",50,67,462,459],"cedar-lattice-souk":["Cedar Lattice Souk","souks",58,172,453,458],"blue-pottery-row":["Blue Pottery Row","souks",46,168,466,458],"basketmakers-corner":["Basketmakers' Corner","souks",76,162,436,459],"leather-souk-steps":["Leather Souk Steps","souks",59,119,453,459],"guild-canopy-hall":["Guild Canopy Hall","souks",40,125,472,459],"red-earth-kasbah":["Red Earth Kasbah","kasbahs",49,67,463,459],"valley-ksar-gate":["Valley Ksar Gate","kasbahs",42,133,469,459],"palm-gorge-watch":["Palm Gorge Watch","kasbahs",116,106,395,458],"atlas-granary":["Atlas Granary","kasbahs",47,134,464,459],"terraced-ksar-homes":["Terraced Ksar Homes","kasbahs",38,94,473,459],"south-ramp-kasbah":["South Ramp Kasbah","kasbahs",46,79,466,458],"oasis-gate-lodge":["Oasis Gate Lodge","kasbahs",78,150,434,459],"hill-granary-court":["Hill Granary Court","kasbahs",47,144,465,459],"cedar-school-court":["Cedar School Court","civic",46,56,466,459],"green-eaves-hall":["Green Eaves Hall","civic",53,132,459,459],"zellij-council-room":["Zellij Council Room","civic",68,153,443,459],"calligraphers-court":["Calligrapher's Court","civic",67,105,445,459],"medina-reading-loggia":["Medina Reading Loggia","civic",48,68,464,460],"registry-gatehouse":["Registry Gatehouse","civic",66,151,446,459],"civic-water-lodge":["Civic Water Lodge","civic",64,203,448,459],"garden-school-annex":["Garden School Annex","civic",59,148,452,459],"three-dome-hammam":["Three Dome Hammam","baths-and-water",39,117,473,459],"cool-room-hammam":["Cool Room Hammam","baths-and-water",57,112,454,459],"cistern-court-house":["Cistern Court House","baths-and-water",40,82,472,459],"atlas-spring-hall":["Atlas Spring Hall","baths-and-water",64,149,448,459],"water-clock-pavilion":["Water Clock Pavilion","baths-and-water",149,18,363,459],"stone-canal-house":["Stone Canal House","baths-and-water",49,171,462,459],"olive-aqueduct-lodge":["Olive Aqueduct Lodge","baths-and-water",49,174,463,459],"blue-vault-bath":["Blue Vault Bath","baths-and-water",76,152,435,459],"harbor-customs-house":["Harbor Customs House","coastal",44,83,467,459],"sea-wall-watch":["Sea Wall Watch","coastal",71,117,440,458],"blue-shutter-row":["Blue Shutter Row","coastal",51,155,461,459],"net-loft":["Net Loft","coastal",67,160,444,459],"salt-quay-arcade":["Salt Quay Arcade","coastal",42,141,470,460],"harbor-wind-house":["Harbor Wind House","coastal",68,60,443,460],"sea-gate-store":["Sea Gate Store","coastal",50,139,461,459],"tidekeepers-house":["Tidekeepers' House","coastal",83,102,428,459],"slate-roof-weavers-house":["Slate Roof Weavers' House","atlas-villages",75,18,436,459],"highland-press-house":["Highland Press House","atlas-villages",58,103,453,459],"mountain-courtyard":["Mountain Courtyard","atlas-villages",44,153,468,459],"rammas-lookout":["Rammas Lookout","atlas-villages",115,18,396,459],"almond-farmhouse":["Almond Farmhouse","atlas-villages",58,164,454,459],"stepped-herd-lodge":["Stepped Herd Lodge","atlas-villages",47,173,464,459],"high-pass-granary":["High Pass Granary","atlas-villages",47,168,465,459],"stone-terrace-cottage":["Stone Terrace Cottage","atlas-villages",78,114,433,459],"green-pool-pavilion":["Green Pool Pavilion","gardens-and-palaces",48,86,463,459],"royal-orange-court":["Royal Orange Court","gardens-and-palaces",38,70,473,459],"cedar-garden-belvedere":["Cedar Garden Belvedere","gardens-and-palaces",69,27,443,459],"palm-court-gallery":["Palm Court Gallery","gardens-and-palaces",46,87,466,459],"eight-point-garden-room":["Eight-Point Garden Room","gardens-and-palaces",80,59,431,459],"sunken-rose-court":["Sunken Rose Court","gardens-and-palaces",44,149,468,459],"mosaic-reception-court":["Mosaic Reception Court","gardens-and-palaces",48,102,464,459],"twin-garden-gate":["Twin Garden Gate","gardens-and-palaces",63,104,448,459],"cedar-roof-passage":["Cedar Roof Passage","infrastructure",61,64,450,458],"kasbah-switchback-stairs":["Kasbah Switchback Stairs","infrastructure",44,57,467,459],"market-wall-fountain-house":["Market Wall Fountain House","infrastructure",73,129,438,459],"pilgrim-footbridge":["Pilgrim Footbridge","infrastructure",47,239,465,459],"raised-olive-store":["Raised Olive Store","infrastructure",55,124,456,459],"bent-medina-gate":["Bent Medina Gate","infrastructure",59,103,453,459],"corner-ramparts":["Corner Ramparts","infrastructure",49,122,462,459],"long-arcaded-wall":["Long Arcaded Wall","infrastructure",40,195,471,459]};
+  const MT_S = {"hexagonal-brass-lamp":["Hexagonal Brass Lamp",110,99,145,225,128,224],"short-wall-sconce":["Short Wall Sconce",117,194,138,224,132,224],"cedar-cafe-bench":["Cedar Caf\u00e9 Bench",87,173,169,224,151,224],"zellij-bollard":["Zellij Bollard",114,173,141,224,128,224],"blue-door-sign":["Blue Door Sign",104,159,151,224,140,224],"round-brass-lantern":["Round Brass Lantern",112,182,143,224,128,224],"tall-copper-lantern":["Tall Copper Lantern",117,166,139,224,125,224],"iron-courtyard-lantern":["Iron Courtyard Lantern",111,169,144,224,128,224],"spice-measures":["Spice Measures",102,180,153,224,140,224],"medina-tea-service":["Medina Tea Service",111,189,144,224,126,224],"folded-kilims":["Folded Kilims",102,182,153,224,138,224],"cedar-textile-stand":["Cedar Textile Stand",95,153,160,224,147,224],"leather-slipper-rack":["Leather Slipper Rack",98,173,158,224,147,224],"copperware-display":["Copperware Display",107,169,149,224,135,224],"harbor-fish-basket":["Harbor Fish Basket",102,185,154,224,126,224],"saffron-counter":["Saffron Counter",100,161,156,224,142,224],"fez-blue-jar":["Fez Blue Jar",109,166,147,224,128,224],"tamegroute-bowl":["Tamegroute Bowl",106,195,149,224,128,224],"twin-terracotta-amphorae":["Twin Terracotta Amphorae",104,167,152,224,138,224],"copper-wash-basin":["Copper Wash Basin",109,190,146,224,131,224],"zellij-octagon-fountain":["Zellij Octagon Fountain",58,116,197,225,127,224],"riad-marble-basin":["Riad Marble Basin",85,156,171,224,142,224],"horseshoe-wall-fountain":["Horseshoe Wall Fountain",98,138,157,224,147,224],"terracotta-water-stand":["Terracotta Water Stand",105,157,150,224,137,224],"bitter-orange-tree":["Bitter Orange Tree",83,126,173,225,128,224],"atlas-olive-tree":["Atlas Olive Tree",75,146,181,225,112,224],"slender-date-palm":["Slender Date Palm",85,113,171,225,128,224],"pomegranate-tub":["Pomegranate Tub",99,150,156,224,128,224],"jasmine-trellis":["Jasmine Trellis",102,140,154,224,144,224],"prickly-pear-cluster":["Prickly Pear Cluster",106,163,149,224,128,224],"aloe-in-green-pot":["Aloe in Green Pot",106,164,149,224,127,224],"rosemary-planter":["Rosemary Planter",101,179,155,224,142,224],"cedar-mashrabiya-panel":["Cedar Mashrabiya Panel",83,98,173,225,158,224],"zellij-screen-wall":["Zellij Screen Wall",61,129,194,225,175,224],"horseshoe-garden-portal":["Horseshoe Garden Portal",77,91,178,225,162,224],"carved-cedar-arch":["Carved Cedar Arch",78,95,178,225,164,224],"low-earthen-wall":["Low Earthen Wall",71,153,185,225,170,224],"right-angle-garden-wall":["Right Angle Garden Wall",69,133,187,225,82,224],"three-tread-stone-steps":["Three Tread Stone Steps",83,159,172,225,144,224],"niche-seat-module":["Niche Seat Module",84,140,171,225,150,224],"harbor-coil":["Harbor Coil",107,199,148,224,137,224],"reed-cargo-pair":["Reed Cargo Pair",102,173,153,224,142,224],"cedar-cargo-sledge":["Cedar Cargo Sledge",97,175,159,224,121,224],"blue-quay-post":["Blue Quay Post",116,177,140,224,128,224],"folded-pack-saddle":["Folded Pack Saddle",98,173,158,224,125,224],"caravan-water-skins":["Caravan Water Skins",102,168,154,224,145,224],"woven-shade-stall":["Woven Shade Stall",83,138,172,224,146,224],"quayside-rain-barrel":["Quayside Rain Barrel",106,166,149,224,136,224]};
+  const MT_PX = 52;  // the packs' own scale: about 52 art pixels to a tile (a street lamp is 30% as tall as a riad is wide)
+  const mtImgs = new Map();
+  function mtImg(pack, name) {
+    const k = pack + name; let e = mtImgs.get(k);
+    if (!e) { e = { img: new Image(), ok: false }; e.img.onload = () => { e.ok = true; }; e.img.src = `art/moroccan/${pack === 'b' ? 'buildings' : 'scenery'}/${name}.png`; mtImgs.set(k, e); }
+    return e.ok ? e.img : null;
+  }
+  // a prop, standing on its ground point at (x, y); k scales it from the pack's own size
+  function drawProp(c, name, x, y, k = 1, shadow = true) {
+    const m = MT_S[name], img = m && mtImg('s', name); if (!img) return false;
+    const [, l, t, r, b, ax, ay] = m, sc = k * T / MT_PX, w = (r - l) * sc, h = (b - t) * sc;
+    if (shadow) { c.fillStyle = SHADOW; ellipse(c, x + 2, y - 1, w * 0.36, Math.max(3, w * 0.09)); }
+    c.drawImage(img, l, t, r - l, b - t, x - (ax - l) * sc, y - (ay - t) * sc, w, h);
+    return true;
+  }
   const LOOKS = [
     { id: 'cedar', label: 'Cedar-roof villa', type: 'cedar' }, { id: 'tower', label: 'Watchtower house', type: 'tower' }, { id: 'garden', label: 'Garden house', type: 'garden' },
-    { id: 'art-keeper', label: 'Painted riad', art: 'keeper' }, { id: 'art-scholar', label: 'Painted archive', art: 'scholar' }, { id: 'art-merchant', label: 'Painted merchant house', art: 'merchant' },
-    { id: 'art-engineer', label: 'Painted forge', art: 'engineer' }, { id: 'art-librarian', label: 'Painted observatory', art: 'librarian' },
+    { id: 'art-keeper', label: 'Painted riad', art: 'painted-keeper' }, { id: 'art-scholar', label: 'Painted archive', art: 'painted-scholar' }, { id: 'art-merchant', label: 'Painted merchant house', art: 'painted-merchant' },
+    { id: 'art-engineer', label: 'Painted forge', art: 'painted-engineer' }, { id: 'art-librarian', label: 'Painted observatory', art: 'painted-librarian' },
+    ...Object.entries(MT_B).map(([k, m]) => ({ id: 'mt-' + k, label: m[0], art: 'mt-' + k })),
   ];
   const plotName = (k) => (window.__world ? window.__world.agentName(k) : '') || (RES.find((r) => r.key === k) || {}).name || k;
   const BUILD_COLOURS = ['#1f6f8b', '#3f7d5a', '#c98a2b', '#b5523b', '#2b8a8a', '#7a4fa0'];
@@ -1210,14 +1244,25 @@
   // Each sprite is cut out of its magenta background by tools/cutout.ps1. door: the door's centre and the
   // bottom of the front wall as fractions of the sprite; width: the sprite's width in tiles. A villa with
   // no sprite (or one that hasn't loaded) is still drawn in code.
-  const VILLA_ART = {
-    keeper: { src: 'art/villa-keeper.png', doorX: 0.369, doorY: 0.904, width: 8.25 },
-    scholar: { src: 'art/villa-scholar.png', doorX: 0.307, doorY: 0.87, width: 7.5 },
-    merchant: { src: 'art/villa-merchant.png', doorX: 0.26, doorY: 0.858, width: 8 },
-    engineer: { src: 'art/villa-engineer.png', doorX: 0.29, doorY: 0.906, width: 7.4 },
-    librarian: { src: 'art/villa-librarian.png', doorX: 0.277, doorY: 0.877, width: 7.2 },
+  const VILLA_ART = {  // the first painted houses: still offered as looks in the build menu
+    'painted-keeper': { src: 'art/villa-keeper.png', doorX: 0.369, doorY: 0.904, width: 8.25 },
+    'painted-scholar': { src: 'art/villa-scholar.png', doorX: 0.307, doorY: 0.87, width: 7.5 },
+    'painted-merchant': { src: 'art/villa-merchant.png', doorX: 0.26, doorY: 0.858, width: 8 },
+    'painted-engineer': { src: 'art/villa-engineer.png', doorX: 0.29, doorY: 0.906, width: 7.4 },
+    'painted-librarian': { src: 'art/villa-librarian.png', doorX: 0.277, doorY: 0.877, width: 7.2 },
   };
   for (const a of Object.values(VILLA_ART)) { a.img = new Image(); a.img.onload = () => { a.ok = true; }; a.img.src = a.src; }
+  // everyone's house from the new pack (the Chief's choice: "re-house everyone"), with each door measured on the art
+  const HOUSE_ART = {
+    keeper: ['cedar-riad', 0.33, 0.92], scholar: ['cistern-court-house', 0.25, 0.91], librarian: ['medina-reading-loggia', 0.45, 0.92],
+    merchant: ['saffron-merchants-inn', 0.49, 0.9], engineer: ['coppersmith-fondouk', 0.49, 0.86], steward: ['green-pool-pavilion', 0.31, 0.92],
+    youtube: ['lantern-makers-lane', 0.45, 0.9], scout: ['sea-wall-watch', 0.27, 0.8], media: ['calligraphers-court', 0.29, 0.94],
+    inbox: ['harbor-customs-house', 0.41, 0.88], money: ['registry-gatehouse', 0.31, 0.9],
+  };
+  for (const [k, [sprite, doorX, doorY]] of Object.entries(HOUSE_ART)) VILLA_ART[k] = { sprite, doorX, doorY };
+  for (const k of Object.keys(MT_B)) if (!VILLA_ART['mt-' + k]) VILLA_ART['mt-' + k] = { sprite: k, doorX: 0.4, doorY: 0.9 };  // build-menu looks
+  for (const a of Object.values(VILLA_ART)) if (a.sprite) a.src = `art/moroccan/buildings/${a.sprite}.png`;
+  const HALL_ART = { sprite: 'zellij-council-room', doorX: 0.66, doorY: 0.92, tiles: 12.6 };
   // feedback round 7: a wooden name plaque over every door, so you can tell what each building is
   function drawPlaque(c, x, y, line1, line2, accent) {
     c.save(); c.textAlign = 'center'; c.textBaseline = 'middle';
@@ -1240,9 +1285,20 @@
     else drawPlaque(c, x, y, relabel(b.name), relabel(b.role || ''), b.accent);
   }
   function drawVilla(c, b, t) { drawVillaBody(c, b, t); plaqueFor(c, b); }
+  // a building from the pack: about 7.8 tiles wide on a 7-tile plot (shorter if it's tall), its door on the building's door
+  function drawSpriteHouse(c, art, doorPx, groundY, wTiles = 7.8, hTiles = 9) {
+    const m = MT_B[art.sprite], img = m && mtImg('b', art.sprite); if (!img) return false;
+    const [, , l, t, r, bt] = m, sw = r - l, shh = bt - t;
+    const sc = art.tiles ? art.tiles * T / sw : Math.min(wTiles * T / sw, hTiles * T / shh), w = sw * sc, h = shh * sc;
+    const left = doorPx - art.doorX * w, top = groundY - art.doorY * h;
+    c.fillStyle = SHADOW; ellipse(c, left + w * 0.55, top + h * 0.97, w * 0.48, 9);
+    c.drawImage(img, l, t, sw, shh, left, top, w, h);
+    return true;
+  }
   function drawVillaBody(c, b, t) {
     const art = VILLA_ART[b.art || b.key];
-    if (art && art.ok) {
+    if (art && art.sprite && drawSpriteHouse(c, art, (b.door.x + 0.5) * T, (b.y + b.h) * T)) return;
+    if (art && art.ok && !art.sprite) {
       const w = art.width * T, h = w * art.img.height / art.img.width;
       const left = (b.door.x + 0.5) * T - art.doorX * w, top = (b.y + b.h) * T - art.doorY * h;
       c.fillStyle = SHADOW; ellipse(c, left + w * 0.55, top + h * 0.97, w * 0.5, 9);

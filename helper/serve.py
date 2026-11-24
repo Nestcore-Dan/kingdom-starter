@@ -57,6 +57,10 @@ def conns(items):
 
 
 LOOKS = {"tower", "cedar", "garden", "art-keeper", "art-scholar", "art-merchant", "art-engineer", "art-librarian"}
+try:  # the Moroccan building pack (2026-11-24): every one of its buildings is a look you can build
+    LOOKS |= {"mt-" + k for k in json.loads((pathlib.Path(__file__).resolve().parent.parent / "art" / "moroccan" / "buildings.json").read_text(encoding="utf-8"))}
+except (OSError, ValueError):
+    pass
 COLOUR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 PLOT_RE = re.compile(r"^p[0-9]{1,2}$")
 

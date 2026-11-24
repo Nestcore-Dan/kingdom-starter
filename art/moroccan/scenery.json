@@ -1,0 +1,896 @@
+{
+  "hexagonal-brass-lamp": {
+    "name": "Hexagonal Brass Lamp",
+    "family": "lanterns-and-street",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      128,
+      224
+    ],
+    "art_bounds_ltrb": [
+      110,
+      99,
+      145,
+      225
+    ],
+    "suggested_light_anchors_px": [
+      [
+        128,
+        119
+      ]
+    ]
+  },
+  "short-wall-sconce": {
+    "name": "Short Wall Sconce",
+    "family": "lanterns-and-street",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      132,
+      224
+    ],
+    "art_bounds_ltrb": [
+      117,
+      194,
+      138,
+      224
+    ],
+    "suggested_light_anchors_px": [
+      [
+        128,
+        212
+      ]
+    ]
+  },
+  "cedar-cafe-bench": {
+    "name": "Cedar Café Bench",
+    "family": "lanterns-and-street",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      151,
+      224
+    ],
+    "art_bounds_ltrb": [
+      87,
+      173,
+      169,
+      224
+    ]
+  },
+  "zellij-bollard": {
+    "name": "Zellij Bollard",
+    "family": "lanterns-and-street",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      128,
+      224
+    ],
+    "art_bounds_ltrb": [
+      114,
+      173,
+      141,
+      224
+    ]
+  },
+  "blue-door-sign": {
+    "name": "Blue Door Sign",
+    "family": "lanterns-and-street",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      140,
+      224
+    ],
+    "art_bounds_ltrb": [
+      104,
+      159,
+      151,
+      224
+    ]
+  },
+  "round-brass-lantern": {
+    "name": "Round Brass Lantern",
+    "family": "lanterns-and-street",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      128,
+      224
+    ],
+    "art_bounds_ltrb": [
+      112,
+      182,
+      143,
+      224
+    ],
+    "suggested_light_anchors_px": [
+      [
+        128,
+        205
+      ]
+    ]
+  },
+  "tall-copper-lantern": {
+    "name": "Tall Copper Lantern",
+    "family": "lanterns-and-street",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      125,
+      224
+    ],
+    "art_bounds_ltrb": [
+      117,
+      166,
+      139,
+      224
+    ],
+    "suggested_light_anchors_px": [
+      [
+        128,
+        197
+      ]
+    ]
+  },
+  "iron-courtyard-lantern": {
+    "name": "Iron Courtyard Lantern",
+    "family": "lanterns-and-street",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      128,
+      224
+    ],
+    "art_bounds_ltrb": [
+      111,
+      169,
+      144,
+      224
+    ],
+    "suggested_light_anchors_px": [
+      [
+        128,
+        199
+      ]
+    ]
+  },
+  "spice-measures": {
+    "name": "Spice Measures",
+    "family": "craft-and-market",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      140,
+      224
+    ],
+    "art_bounds_ltrb": [
+      102,
+      180,
+      153,
+      224
+    ]
+  },
+  "medina-tea-service": {
+    "name": "Medina Tea Service",
+    "family": "craft-and-market",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      126,
+      224
+    ],
+    "art_bounds_ltrb": [
+      111,
+      189,
+      144,
+      224
+    ]
+  },
+  "folded-kilims": {
+    "name": "Folded Kilims",
+    "family": "craft-and-market",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      138,
+      224
+    ],
+    "art_bounds_ltrb": [
+      102,
+      182,
+      153,
+      224
+    ]
+  },
+  "cedar-textile-stand": {
+    "name": "Cedar Textile Stand",
+    "family": "craft-and-market",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      147,
+      224
+    ],
+    "art_bounds_ltrb": [
+      95,
+      153,
+      160,
+      224
+    ]
+  },
+  "leather-slipper-rack": {
+    "name": "Leather Slipper Rack",
+    "family": "craft-and-market",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      147,
+      224
+    ],
+    "art_bounds_ltrb": [
+      98,
+      173,
+      158,
+      224
+    ]
+  },
+  "copperware-display": {
+    "name": "Copperware Display",
+    "family": "craft-and-market",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      135,
+      224
+    ],
+    "art_bounds_ltrb": [
+      107,
+      169,
+      149,
+      224
+    ]
+  },
+  "harbor-fish-basket": {
+    "name": "Harbor Fish Basket",
+    "family": "craft-and-market",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      126,
+      224
+    ],
+    "art_bounds_ltrb": [
+      102,
+      185,
+      154,
+      224
+    ]
+  },
+  "saffron-counter": {
+    "name": "Saffron Counter",
+    "family": "craft-and-market",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      142,
+      224
+    ],
+    "art_bounds_ltrb": [
+      100,
+      161,
+      156,
+      224
+    ]
+  },
+  "fez-blue-jar": {
+    "name": "Fez Blue Jar",
+    "family": "ceramics-and-water",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      128,
+      224
+    ],
+    "art_bounds_ltrb": [
+      109,
+      166,
+      147,
+      224
+    ]
+  },
+  "tamegroute-bowl": {
+    "name": "Tamegroute Bowl",
+    "family": "ceramics-and-water",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      128,
+      224
+    ],
+    "art_bounds_ltrb": [
+      106,
+      195,
+      149,
+      224
+    ]
+  },
+  "twin-terracotta-amphorae": {
+    "name": "Twin Terracotta Amphorae",
+    "family": "ceramics-and-water",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      138,
+      224
+    ],
+    "art_bounds_ltrb": [
+      104,
+      167,
+      152,
+      224
+    ]
+  },
+  "copper-wash-basin": {
+    "name": "Copper Wash Basin",
+    "family": "ceramics-and-water",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      131,
+      224
+    ],
+    "art_bounds_ltrb": [
+      109,
+      190,
+      146,
+      224
+    ]
+  },
+  "zellij-octagon-fountain": {
+    "name": "Zellij Octagon Fountain",
+    "family": "ceramics-and-water",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      127,
+      224
+    ],
+    "art_bounds_ltrb": [
+      58,
+      116,
+      197,
+      225
+    ]
+  },
+  "riad-marble-basin": {
+    "name": "Riad Marble Basin",
+    "family": "ceramics-and-water",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      142,
+      224
+    ],
+    "art_bounds_ltrb": [
+      85,
+      156,
+      171,
+      224
+    ]
+  },
+  "horseshoe-wall-fountain": {
+    "name": "Horseshoe Wall Fountain",
+    "family": "ceramics-and-water",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      147,
+      224
+    ],
+    "art_bounds_ltrb": [
+      98,
+      138,
+      157,
+      224
+    ]
+  },
+  "terracotta-water-stand": {
+    "name": "Terracotta Water Stand",
+    "family": "ceramics-and-water",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      137,
+      224
+    ],
+    "art_bounds_ltrb": [
+      105,
+      157,
+      150,
+      224
+    ]
+  },
+  "bitter-orange-tree": {
+    "name": "Bitter Orange Tree",
+    "family": "planting",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      128,
+      224
+    ],
+    "art_bounds_ltrb": [
+      83,
+      126,
+      173,
+      225
+    ]
+  },
+  "atlas-olive-tree": {
+    "name": "Atlas Olive Tree",
+    "family": "planting",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      112,
+      224
+    ],
+    "art_bounds_ltrb": [
+      75,
+      146,
+      181,
+      225
+    ]
+  },
+  "slender-date-palm": {
+    "name": "Slender Date Palm",
+    "family": "planting",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      128,
+      224
+    ],
+    "art_bounds_ltrb": [
+      85,
+      113,
+      171,
+      225
+    ]
+  },
+  "pomegranate-tub": {
+    "name": "Pomegranate Tub",
+    "family": "planting",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      128,
+      224
+    ],
+    "art_bounds_ltrb": [
+      99,
+      150,
+      156,
+      224
+    ]
+  },
+  "jasmine-trellis": {
+    "name": "Jasmine Trellis",
+    "family": "planting",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      144,
+      224
+    ],
+    "art_bounds_ltrb": [
+      102,
+      140,
+      154,
+      224
+    ]
+  },
+  "prickly-pear-cluster": {
+    "name": "Prickly Pear Cluster",
+    "family": "planting",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      128,
+      224
+    ],
+    "art_bounds_ltrb": [
+      106,
+      163,
+      149,
+      224
+    ]
+  },
+  "aloe-in-green-pot": {
+    "name": "Aloe in Green Pot",
+    "family": "planting",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      127,
+      224
+    ],
+    "art_bounds_ltrb": [
+      106,
+      164,
+      149,
+      224
+    ]
+  },
+  "rosemary-planter": {
+    "name": "Rosemary Planter",
+    "family": "planting",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      142,
+      224
+    ],
+    "art_bounds_ltrb": [
+      101,
+      179,
+      155,
+      224
+    ]
+  },
+  "cedar-mashrabiya-panel": {
+    "name": "Cedar Mashrabiya Panel",
+    "family": "courtyard-modules",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      158,
+      224
+    ],
+    "art_bounds_ltrb": [
+      83,
+      98,
+      173,
+      225
+    ]
+  },
+  "zellij-screen-wall": {
+    "name": "Zellij Screen Wall",
+    "family": "courtyard-modules",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      175,
+      224
+    ],
+    "art_bounds_ltrb": [
+      61,
+      129,
+      194,
+      225
+    ]
+  },
+  "horseshoe-garden-portal": {
+    "name": "Horseshoe Garden Portal",
+    "family": "courtyard-modules",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      162,
+      224
+    ],
+    "art_bounds_ltrb": [
+      77,
+      91,
+      178,
+      225
+    ]
+  },
+  "carved-cedar-arch": {
+    "name": "Carved Cedar Arch",
+    "family": "courtyard-modules",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      164,
+      224
+    ],
+    "art_bounds_ltrb": [
+      78,
+      95,
+      178,
+      225
+    ]
+  },
+  "low-earthen-wall": {
+    "name": "Low Earthen Wall",
+    "family": "courtyard-modules",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      170,
+      224
+    ],
+    "art_bounds_ltrb": [
+      71,
+      153,
+      185,
+      225
+    ]
+  },
+  "right-angle-garden-wall": {
+    "name": "Right Angle Garden Wall",
+    "family": "courtyard-modules",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      82,
+      224
+    ],
+    "art_bounds_ltrb": [
+      69,
+      133,
+      187,
+      225
+    ]
+  },
+  "three-tread-stone-steps": {
+    "name": "Three Tread Stone Steps",
+    "family": "courtyard-modules",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      144,
+      224
+    ],
+    "art_bounds_ltrb": [
+      83,
+      159,
+      172,
+      225
+    ]
+  },
+  "niche-seat-module": {
+    "name": "Niche Seat Module",
+    "family": "courtyard-modules",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      150,
+      224
+    ],
+    "art_bounds_ltrb": [
+      84,
+      140,
+      171,
+      225
+    ]
+  },
+  "harbor-coil": {
+    "name": "Harbor Coil",
+    "family": "harbor-and-caravan",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      137,
+      224
+    ],
+    "art_bounds_ltrb": [
+      107,
+      199,
+      148,
+      224
+    ]
+  },
+  "reed-cargo-pair": {
+    "name": "Reed Cargo Pair",
+    "family": "harbor-and-caravan",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      142,
+      224
+    ],
+    "art_bounds_ltrb": [
+      102,
+      173,
+      153,
+      224
+    ]
+  },
+  "cedar-cargo-sledge": {
+    "name": "Cedar Cargo Sledge",
+    "family": "harbor-and-caravan",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      121,
+      224
+    ],
+    "art_bounds_ltrb": [
+      97,
+      175,
+      159,
+      224
+    ]
+  },
+  "blue-quay-post": {
+    "name": "Blue Quay Post",
+    "family": "harbor-and-caravan",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      128,
+      224
+    ],
+    "art_bounds_ltrb": [
+      116,
+      177,
+      140,
+      224
+    ]
+  },
+  "folded-pack-saddle": {
+    "name": "Folded Pack Saddle",
+    "family": "harbor-and-caravan",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      125,
+      224
+    ],
+    "art_bounds_ltrb": [
+      98,
+      173,
+      158,
+      224
+    ]
+  },
+  "caravan-water-skins": {
+    "name": "Caravan Water Skins",
+    "family": "harbor-and-caravan",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      145,
+      224
+    ],
+    "art_bounds_ltrb": [
+      102,
+      168,
+      154,
+      224
+    ]
+  },
+  "woven-shade-stall": {
+    "name": "Woven Shade Stall",
+    "family": "harbor-and-caravan",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      146,
+      224
+    ],
+    "art_bounds_ltrb": [
+      83,
+      138,
+      172,
+      224
+    ]
+  },
+  "quayside-rain-barrel": {
+    "name": "Quayside Rain Barrel",
+    "family": "harbor-and-caravan",
+    "canvas_px": [
+      256,
+      256
+    ],
+    "placement_px_top_left": [
+      136,
+      224
+    ],
+    "art_bounds_ltrb": [
+      106,
+      166,
+      149,
+      224
+    ]
+  }
+}

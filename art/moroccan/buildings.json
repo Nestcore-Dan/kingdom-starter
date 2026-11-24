@@ -1,0 +1,1442 @@
+{
+  "cedar-riad": {
+    "name": "Cedar Riad",
+    "family": "riads",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      310,
+      457
+    ],
+    "art_bounds_ltrb": [
+      53,
+      69,
+      458,
+      459
+    ]
+  },
+  "jasmine-dar": {
+    "name": "Jasmine Dar",
+    "family": "riads",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      246,
+      457
+    ],
+    "art_bounds_ltrb": [
+      94,
+      18,
+      417,
+      459
+    ]
+  },
+  "orange-court-riad": {
+    "name": "Orange Court Riad",
+    "family": "riads",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      333,
+      457
+    ],
+    "art_bounds_ltrb": [
+      45,
+      107,
+      467,
+      458
+    ]
+  },
+  "carved-plaster-house": {
+    "name": "Carved Plaster House",
+    "family": "riads",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      249,
+      457
+    ],
+    "art_bounds_ltrb": [
+      72,
+      70,
+      439,
+      459
+    ]
+  },
+  "blue-door-dar": {
+    "name": "Blue Door Dar",
+    "family": "riads",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      258,
+      457
+    ],
+    "art_bounds_ltrb": [
+      136,
+      18,
+      376,
+      459
+    ]
+  },
+  "zellij-courtyard-house": {
+    "name": "Zellij Courtyard House",
+    "family": "riads",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      351,
+      457
+    ],
+    "art_bounds_ltrb": [
+      47,
+      61,
+      465,
+      459
+    ]
+  },
+  "limewash-lane-house": {
+    "name": "Limewash Lane House",
+    "family": "riads",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      174,
+      457
+    ],
+    "art_bounds_ltrb": [
+      97,
+      67,
+      415,
+      459
+    ]
+  },
+  "mint-patio-house": {
+    "name": "Mint Patio House",
+    "family": "riads",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      372,
+      457
+    ],
+    "art_bounds_ltrb": [
+      71,
+      138,
+      441,
+      459
+    ]
+  },
+  "cedar-fondouk": {
+    "name": "Cedar Fondouk",
+    "family": "fondouks",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      296,
+      457
+    ],
+    "art_bounds_ltrb": [
+      35,
+      69,
+      477,
+      459
+    ]
+  },
+  "mule-gate-fondouk": {
+    "name": "Mule Gate Fondouk",
+    "family": "fondouks",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      389,
+      457
+    ],
+    "art_bounds_ltrb": [
+      41,
+      103,
+      471,
+      459
+    ]
+  },
+  "saffron-merchants-inn": {
+    "name": "Saffron Merchants' Inn",
+    "family": "fondouks",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      363,
+      457
+    ],
+    "art_bounds_ltrb": [
+      49,
+      93,
+      462,
+      459
+    ]
+  },
+  "three-bay-caravan-lodge": {
+    "name": "Three-Bay Caravan Lodge",
+    "family": "fondouks",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      385,
+      457
+    ],
+    "art_bounds_ltrb": [
+      48,
+      152,
+      464,
+      459
+    ]
+  },
+  "ring-court-inn": {
+    "name": "Ring Court Inn",
+    "family": "fondouks",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      255,
+      457
+    ],
+    "art_bounds_ltrb": [
+      40,
+      73,
+      471,
+      459
+    ]
+  },
+  "coppersmith-fondouk": {
+    "name": "Coppersmith Fondouk",
+    "family": "fondouks",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      394,
+      457
+    ],
+    "art_bounds_ltrb": [
+      47,
+      161,
+      465,
+      459
+    ]
+  },
+  "roof-walk-inn": {
+    "name": "Roof Walk Inn",
+    "family": "fondouks",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      369,
+      457
+    ],
+    "art_bounds_ltrb": [
+      59,
+      98,
+      452,
+      459
+    ]
+  },
+  "dyers-lodging": {
+    "name": "Dyers' Lodging",
+    "family": "fondouks",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      262,
+      457
+    ],
+    "art_bounds_ltrb": [
+      58,
+      148,
+      453,
+      459
+    ]
+  },
+  "attarine-spice-arcade": {
+    "name": "Attarine Spice Arcade",
+    "family": "souks",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      153,
+      457
+    ],
+    "art_bounds_ltrb": [
+      45,
+      98,
+      466,
+      461
+    ]
+  },
+  "lantern-makers-lane": {
+    "name": "Lantern Makers' Lane",
+    "family": "souks",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      328,
+      457
+    ],
+    "art_bounds_ltrb": [
+      67,
+      105,
+      444,
+      459
+    ]
+  },
+  "booksellers-passage": {
+    "name": "Booksellers' Passage",
+    "family": "souks",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      264,
+      457
+    ],
+    "art_bounds_ltrb": [
+      50,
+      67,
+      462,
+      459
+    ]
+  },
+  "cedar-lattice-souk": {
+    "name": "Cedar Lattice Souk",
+    "family": "souks",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      131,
+      457
+    ],
+    "art_bounds_ltrb": [
+      58,
+      172,
+      453,
+      458
+    ]
+  },
+  "blue-pottery-row": {
+    "name": "Blue Pottery Row",
+    "family": "souks",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      116,
+      457
+    ],
+    "art_bounds_ltrb": [
+      46,
+      168,
+      466,
+      458
+    ]
+  },
+  "basketmakers-corner": {
+    "name": "Basketmakers' Corner",
+    "family": "souks",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      260,
+      457
+    ],
+    "art_bounds_ltrb": [
+      76,
+      162,
+      436,
+      459
+    ]
+  },
+  "leather-souk-steps": {
+    "name": "Leather Souk Steps",
+    "family": "souks",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      246,
+      457
+    ],
+    "art_bounds_ltrb": [
+      59,
+      119,
+      453,
+      459
+    ]
+  },
+  "guild-canopy-hall": {
+    "name": "Guild Canopy Hall",
+    "family": "souks",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      200,
+      457
+    ],
+    "art_bounds_ltrb": [
+      40,
+      125,
+      472,
+      459
+    ]
+  },
+  "red-earth-kasbah": {
+    "name": "Red Earth Kasbah",
+    "family": "kasbahs",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      246,
+      457
+    ],
+    "art_bounds_ltrb": [
+      49,
+      67,
+      463,
+      459
+    ]
+  },
+  "valley-ksar-gate": {
+    "name": "Valley Ksar Gate",
+    "family": "kasbahs",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      399,
+      457
+    ],
+    "art_bounds_ltrb": [
+      42,
+      133,
+      469,
+      459
+    ]
+  },
+  "palm-gorge-watch": {
+    "name": "Palm Gorge Watch",
+    "family": "kasbahs",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      223,
+      457
+    ],
+    "art_bounds_ltrb": [
+      116,
+      106,
+      395,
+      458
+    ]
+  },
+  "atlas-granary": {
+    "name": "Atlas Granary",
+    "family": "kasbahs",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      163,
+      457
+    ],
+    "art_bounds_ltrb": [
+      47,
+      134,
+      464,
+      459
+    ]
+  },
+  "terraced-ksar-homes": {
+    "name": "Terraced Ksar Homes",
+    "family": "kasbahs",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      155,
+      457
+    ],
+    "art_bounds_ltrb": [
+      38,
+      94,
+      473,
+      459
+    ]
+  },
+  "south-ramp-kasbah": {
+    "name": "South Ramp Kasbah",
+    "family": "kasbahs",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      352,
+      457
+    ],
+    "art_bounds_ltrb": [
+      46,
+      79,
+      466,
+      458
+    ]
+  },
+  "oasis-gate-lodge": {
+    "name": "Oasis Gate Lodge",
+    "family": "kasbahs",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      371,
+      457
+    ],
+    "art_bounds_ltrb": [
+      78,
+      150,
+      434,
+      459
+    ]
+  },
+  "hill-granary-court": {
+    "name": "Hill Granary Court",
+    "family": "kasbahs",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      258,
+      457
+    ],
+    "art_bounds_ltrb": [
+      47,
+      144,
+      465,
+      459
+    ]
+  },
+  "cedar-school-court": {
+    "name": "Cedar School Court",
+    "family": "civic",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      301,
+      457
+    ],
+    "art_bounds_ltrb": [
+      46,
+      56,
+      466,
+      459
+    ]
+  },
+  "green-eaves-hall": {
+    "name": "Green Eaves Hall",
+    "family": "civic",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      337,
+      457
+    ],
+    "art_bounds_ltrb": [
+      53,
+      132,
+      459,
+      459
+    ]
+  },
+  "zellij-council-room": {
+    "name": "Zellij Council Room",
+    "family": "civic",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      320,
+      457
+    ],
+    "art_bounds_ltrb": [
+      68,
+      153,
+      443,
+      459
+    ]
+  },
+  "calligraphers-court": {
+    "name": "Calligrapher's Court",
+    "family": "civic",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      315,
+      457
+    ],
+    "art_bounds_ltrb": [
+      67,
+      105,
+      445,
+      459
+    ]
+  },
+  "medina-reading-loggia": {
+    "name": "Medina Reading Loggia",
+    "family": "civic",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      377,
+      457
+    ],
+    "art_bounds_ltrb": [
+      48,
+      68,
+      464,
+      460
+    ]
+  },
+  "registry-gatehouse": {
+    "name": "Registry Gatehouse",
+    "family": "civic",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      310,
+      457
+    ],
+    "art_bounds_ltrb": [
+      66,
+      151,
+      446,
+      459
+    ]
+  },
+  "civic-water-lodge": {
+    "name": "Civic Water Lodge",
+    "family": "civic",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      375,
+      457
+    ],
+    "art_bounds_ltrb": [
+      64,
+      203,
+      448,
+      459
+    ]
+  },
+  "garden-school-annex": {
+    "name": "Garden School Annex",
+    "family": "civic",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      287,
+      457
+    ],
+    "art_bounds_ltrb": [
+      59,
+      148,
+      452,
+      459
+    ]
+  },
+  "three-dome-hammam": {
+    "name": "Three Dome Hammam",
+    "family": "baths-and-water",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      157,
+      457
+    ],
+    "art_bounds_ltrb": [
+      39,
+      117,
+      473,
+      459
+    ]
+  },
+  "cool-room-hammam": {
+    "name": "Cool Room Hammam",
+    "family": "baths-and-water",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      260,
+      457
+    ],
+    "art_bounds_ltrb": [
+      57,
+      112,
+      454,
+      459
+    ]
+  },
+  "cistern-court-house": {
+    "name": "Cistern Court House",
+    "family": "baths-and-water",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      266,
+      457
+    ],
+    "art_bounds_ltrb": [
+      40,
+      82,
+      472,
+      459
+    ]
+  },
+  "atlas-spring-hall": {
+    "name": "Atlas Spring Hall",
+    "family": "baths-and-water",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      168,
+      457
+    ],
+    "art_bounds_ltrb": [
+      64,
+      149,
+      448,
+      459
+    ]
+  },
+  "water-clock-pavilion": {
+    "name": "Water Clock Pavilion",
+    "family": "baths-and-water",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      241,
+      457
+    ],
+    "art_bounds_ltrb": [
+      149,
+      18,
+      363,
+      459
+    ]
+  },
+  "stone-canal-house": {
+    "name": "Stone Canal House",
+    "family": "baths-and-water",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      347,
+      457
+    ],
+    "art_bounds_ltrb": [
+      49,
+      171,
+      462,
+      459
+    ]
+  },
+  "olive-aqueduct-lodge": {
+    "name": "Olive Aqueduct Lodge",
+    "family": "baths-and-water",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      379,
+      457
+    ],
+    "art_bounds_ltrb": [
+      49,
+      174,
+      463,
+      459
+    ]
+  },
+  "blue-vault-bath": {
+    "name": "Blue Vault Bath",
+    "family": "baths-and-water",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      177,
+      457
+    ],
+    "art_bounds_ltrb": [
+      76,
+      152,
+      435,
+      459
+    ]
+  },
+  "harbor-customs-house": {
+    "name": "Harbor Customs House",
+    "family": "coastal",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      319,
+      457
+    ],
+    "art_bounds_ltrb": [
+      44,
+      83,
+      467,
+      459
+    ]
+  },
+  "sea-wall-watch": {
+    "name": "Sea Wall Watch",
+    "family": "coastal",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      171,
+      457
+    ],
+    "art_bounds_ltrb": [
+      71,
+      117,
+      440,
+      458
+    ]
+  },
+  "blue-shutter-row": {
+    "name": "Blue Shutter Row",
+    "family": "coastal",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      374,
+      457
+    ],
+    "art_bounds_ltrb": [
+      51,
+      155,
+      461,
+      459
+    ]
+  },
+  "net-loft": {
+    "name": "Net Loft",
+    "family": "coastal",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      364,
+      457
+    ],
+    "art_bounds_ltrb": [
+      67,
+      160,
+      444,
+      459
+    ]
+  },
+  "salt-quay-arcade": {
+    "name": "Salt Quay Arcade",
+    "family": "coastal",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      373,
+      457
+    ],
+    "art_bounds_ltrb": [
+      42,
+      141,
+      470,
+      460
+    ]
+  },
+  "harbor-wind-house": {
+    "name": "Harbor Wind House",
+    "family": "coastal",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      252,
+      457
+    ],
+    "art_bounds_ltrb": [
+      68,
+      60,
+      443,
+      460
+    ]
+  },
+  "sea-gate-store": {
+    "name": "Sea Gate Store",
+    "family": "coastal",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      386,
+      457
+    ],
+    "art_bounds_ltrb": [
+      50,
+      139,
+      461,
+      459
+    ]
+  },
+  "tidekeepers-house": {
+    "name": "Tidekeepers' House",
+    "family": "coastal",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      317,
+      457
+    ],
+    "art_bounds_ltrb": [
+      83,
+      102,
+      428,
+      459
+    ]
+  },
+  "slate-roof-weavers-house": {
+    "name": "Slate Roof Weavers' House",
+    "family": "atlas-villages",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      268,
+      457
+    ],
+    "art_bounds_ltrb": [
+      75,
+      18,
+      436,
+      459
+    ]
+  },
+  "highland-press-house": {
+    "name": "Highland Press House",
+    "family": "atlas-villages",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      354,
+      457
+    ],
+    "art_bounds_ltrb": [
+      58,
+      103,
+      453,
+      459
+    ]
+  },
+  "mountain-courtyard": {
+    "name": "Mountain Courtyard",
+    "family": "atlas-villages",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      296,
+      457
+    ],
+    "art_bounds_ltrb": [
+      44,
+      153,
+      468,
+      459
+    ]
+  },
+  "rammas-lookout": {
+    "name": "Rammas Lookout",
+    "family": "atlas-villages",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      270,
+      457
+    ],
+    "art_bounds_ltrb": [
+      115,
+      18,
+      396,
+      459
+    ]
+  },
+  "almond-farmhouse": {
+    "name": "Almond Farmhouse",
+    "family": "atlas-villages",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      341,
+      457
+    ],
+    "art_bounds_ltrb": [
+      58,
+      164,
+      454,
+      459
+    ]
+  },
+  "stepped-herd-lodge": {
+    "name": "Stepped Herd Lodge",
+    "family": "atlas-villages",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      231,
+      457
+    ],
+    "art_bounds_ltrb": [
+      47,
+      173,
+      464,
+      459
+    ]
+  },
+  "high-pass-granary": {
+    "name": "High Pass Granary",
+    "family": "atlas-villages",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      383,
+      457
+    ],
+    "art_bounds_ltrb": [
+      47,
+      168,
+      465,
+      459
+    ]
+  },
+  "stone-terrace-cottage": {
+    "name": "Stone Terrace Cottage",
+    "family": "atlas-villages",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      242,
+      457
+    ],
+    "art_bounds_ltrb": [
+      78,
+      114,
+      433,
+      459
+    ]
+  },
+  "green-pool-pavilion": {
+    "name": "Green Pool Pavilion",
+    "family": "gardens-and-palaces",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      310,
+      457
+    ],
+    "art_bounds_ltrb": [
+      48,
+      86,
+      463,
+      459
+    ]
+  },
+  "royal-orange-court": {
+    "name": "Royal Orange Court",
+    "family": "gardens-and-palaces",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      332,
+      457
+    ],
+    "art_bounds_ltrb": [
+      38,
+      70,
+      473,
+      459
+    ]
+  },
+  "cedar-garden-belvedere": {
+    "name": "Cedar Garden Belvedere",
+    "family": "gardens-and-palaces",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      315,
+      457
+    ],
+    "art_bounds_ltrb": [
+      69,
+      27,
+      443,
+      459
+    ]
+  },
+  "palm-court-gallery": {
+    "name": "Palm Court Gallery",
+    "family": "gardens-and-palaces",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      328,
+      457
+    ],
+    "art_bounds_ltrb": [
+      46,
+      87,
+      466,
+      459
+    ]
+  },
+  "eight-point-garden-room": {
+    "name": "Eight-Point Garden Room",
+    "family": "gardens-and-palaces",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      241,
+      457
+    ],
+    "art_bounds_ltrb": [
+      80,
+      59,
+      431,
+      459
+    ]
+  },
+  "sunken-rose-court": {
+    "name": "Sunken Rose Court",
+    "family": "gardens-and-palaces",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      268,
+      457
+    ],
+    "art_bounds_ltrb": [
+      44,
+      149,
+      468,
+      459
+    ]
+  },
+  "mosaic-reception-court": {
+    "name": "Mosaic Reception Court",
+    "family": "gardens-and-palaces",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      344,
+      457
+    ],
+    "art_bounds_ltrb": [
+      48,
+      102,
+      464,
+      459
+    ]
+  },
+  "twin-garden-gate": {
+    "name": "Twin Garden Gate",
+    "family": "gardens-and-palaces",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      389,
+      457
+    ],
+    "art_bounds_ltrb": [
+      63,
+      104,
+      448,
+      459
+    ]
+  },
+  "cedar-roof-passage": {
+    "name": "Cedar Roof Passage",
+    "family": "infrastructure",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      348,
+      457
+    ],
+    "art_bounds_ltrb": [
+      61,
+      64,
+      450,
+      458
+    ]
+  },
+  "kasbah-switchback-stairs": {
+    "name": "Kasbah Switchback Stairs",
+    "family": "infrastructure",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      220,
+      457
+    ],
+    "art_bounds_ltrb": [
+      44,
+      57,
+      467,
+      459
+    ]
+  },
+  "market-wall-fountain-house": {
+    "name": "Market Wall Fountain House",
+    "family": "infrastructure",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      293,
+      457
+    ],
+    "art_bounds_ltrb": [
+      73,
+      129,
+      438,
+      459
+    ]
+  },
+  "pilgrim-footbridge": {
+    "name": "Pilgrim Footbridge",
+    "family": "infrastructure",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      108,
+      457
+    ],
+    "art_bounds_ltrb": [
+      47,
+      239,
+      465,
+      459
+    ]
+  },
+  "raised-olive-store": {
+    "name": "Raised Olive Store",
+    "family": "infrastructure",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      125,
+      457
+    ],
+    "art_bounds_ltrb": [
+      55,
+      124,
+      456,
+      459
+    ]
+  },
+  "bent-medina-gate": {
+    "name": "Bent Medina Gate",
+    "family": "infrastructure",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      107,
+      457
+    ],
+    "art_bounds_ltrb": [
+      59,
+      103,
+      453,
+      459
+    ]
+  },
+  "corner-ramparts": {
+    "name": "Corner Ramparts",
+    "family": "infrastructure",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      254,
+      457
+    ],
+    "art_bounds_ltrb": [
+      49,
+      122,
+      462,
+      459
+    ]
+  },
+  "long-arcaded-wall": {
+    "name": "Long Arcaded Wall",
+    "family": "infrastructure",
+    "canvas_px": [
+      512,
+      512
+    ],
+    "placement_px_top_left": [
+      76,
+      457
+    ],
+    "art_bounds_ltrb": [
+      40,
+      195,
+      471,
+      459
+    ]
+  }
+}
