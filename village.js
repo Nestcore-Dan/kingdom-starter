@@ -387,7 +387,7 @@
       if (b.doors.some(d => d.x === xx && d.y === yy)) continue;
       solidify(s, xx, yy);
     }
-    addObj(s, { sortY: (y + b.h) * T, bx: x * T - 40, by: y * T - 120, bw: b.w * T + 80, bh: b.h * T + 130, draw: (c, t) => drawHall(c, b, t) });
+    addObj(s, { sortY: (y + b.h) * T, bx: x * T - 40, by: y * T - 120, bw: b.w * T + 80, bh: b.h * T + 130, draw: (c, t) => { drawHall(c, b, t); drawPlaque(c, (x + 6) * T, (y + b.h - 1) * T - 40, 'Town Hall', `${relabel('Vizier')}, Chief of Staff`, LAGOON); } });
     for (const d of b.doors) s.doors.push({ x: d.x, y: d.y, to: 'hall-in', label: 'Town Hall · Vizier, Chief of Staff', building: b });
     return b;
   }
@@ -1218,7 +1218,29 @@
     scholar: { src: 'art/villa-scholar.png', doorX: 0.277, doorY: 0.877, width: 7.2 },
   };
   for (const a of Object.values(VILLA_ART)) { a.img = new Image(); a.img.onload = () => { a.ok = true; }; a.img.src = a.src; }
-  function drawVilla(c, b, t) {
+  // feedback round 7: a wooden name plaque over every door, so you can tell what each building is
+  function drawPlaque(c, x, y, line1, line2, accent) {
+    c.save(); c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.font = '700 10px system-ui, sans-serif'; const w1 = c.measureText(line1).width;
+    c.font = '600 7.5px system-ui, sans-serif'; const w2 = line2 ? c.measureText(line2).width : 0;
+    const w = Math.max(w1, w2) + 14, h = line2 ? 25 : 16, X = x - w / 2, Y = y - h;
+    c.fillStyle = 'rgba(0,0,0,.25)'; c.fillRect(X + 2, Y + 2, w, h);
+    c.fillStyle = '#5a3220'; c.fillRect(X, Y, w, h);
+    c.fillStyle = '#7a4b2a'; c.fillRect(X + 2, Y + 2, w - 4, h - 4);
+    c.fillStyle = accent || BRASS; c.fillRect(X, Y, w, 2); c.fillRect(X, Y + h - 2, w, 2);
+    c.fillStyle = BRASS; for (const px of [X + 4, X + w - 4]) { c.beginPath(); c.arc(px, Y + h / 2, 1.4, 0, Math.PI * 2); c.fill(); }
+    c.fillStyle = '#fbf1d8'; c.font = '700 10px system-ui, sans-serif'; c.fillText(line1, x, Y + (line2 ? 8.5 : h / 2));
+    if (line2) { c.fillStyle = '#e8c46a'; c.font = '600 7.5px system-ui, sans-serif'; c.fillText(line2, x, Y + 18); }
+    c.restore();
+  }
+  function plaqueFor(c, b) {
+    if (b.key === 'preview') return;
+    const x = (b.door.x + 0.5) * T, y = (b.y + b.h - 1) * T - 34;
+    if (b.custom) drawPlaque(c, x, y, relabel(b.custom.name), b.custom.head ? `${relabel(b.custom.head.name)}, head` : 'Project building', b.accent);
+    else drawPlaque(c, x, y, relabel(b.name), relabel(b.role || ''), b.accent);
+  }
+  function drawVilla(c, b, t) { drawVillaBody(c, b, t); plaqueFor(c, b); }
+  function drawVillaBody(c, b, t) {
     const art = VILLA_ART[b.art || b.key];
     if (art && art.ok) {
       const w = art.width * T, h = w * art.img.height / art.img.width;
@@ -2670,6 +2692,11 @@
       return desk.side ? { scene: d.room, tile: desk.side, then: 'sit' } : null;
     }
     if (d.scene !== 'town') return { scene: 'town', tile: d.yard[Math.floor(Math.random() * d.yard.length)], then: 'idle' };
+    if (!d.worker && ['available', 'ready'].includes(questState(d.key))) {  // feedback round 7: a quest giver waits at home, where the map shows them
+      const [tx, ty] = tileOf(d.x, d.y), near = d.yard.filter(([x, y]) => Math.abs(x - tx) + Math.abs(y - ty) <= 2);
+      const list = near.length ? near : d.yard;
+      return list.length ? { scene: 'town', tile: list[Math.floor(Math.random() * list.length)], then: 'idle' } : null;
+    }
     const og = officeGoal(d); if (og) return og;  // office time: sit at their desk or workstation for a while
     const pg = plantedGoal(d); if (pg) return pg;  // a building they were planted in
     if (!d.worker || Math.random() < 0.25) {  // directors pace a little in their own yard; workers drop home now and then
@@ -3628,7 +3655,7 @@
     const r = opts.to ? { to: opts.to, reply: null } : placeOrder(text);  // Vizier records it and phones the director who owns it
     const by = ownerOf(r.to), t = { id: Date.now().toString(36), text, title: shortName(text), to: r.to, by, status: 'waiting', at: new Date().toISOString(), from: opts.from || null, direct: !!opts.direct, context: opts.context || '' };
     todos.push(t); saveTodos();
-    if (!opts.from) questEvent('task');  // one you added yourself
+    questEvent('task');  // any task you give, however you give it (feedback round 7: Vizier's chat didn't count before)
     const personal = r.to === 'steward';
     if (by !== 'vizier' && !opts.logged) { logSay('vizier', `To ${nameOf(by)}: ${personal ? 'a personal task from the Chief (kept private).' : `a task from the Chief's list: "${text}"`}`); logSay(by, "On it. I'll report back when it's done."); renderLog(); }
     if (r.reply) toast(r.reply, 'vizier');
@@ -4155,6 +4182,7 @@
       return;
     }
     const named = mentionsIn(text), who = whoAnswers(text);
+    if (named.includes('librarian')) questEvent('ask-librarian');
     const routed = (brainOn() || named.length) && isOrder(text) ? routeAndLog(text) : null;  // scripted room replies record their own order
     if (routed) {
       const t = addTodo(text, { to: routed.r.to, from: 'the council meeting', logged: true });
@@ -4839,7 +4867,18 @@
   ];
   let quests = {};
   try { quests = JSON.parse(localStorage.getItem(QUEST_KEY) || '{}') || {}; } catch (e) { quests = {}; }
-  const saveQuests = () => { store(QUEST_KEY, quests); renderQuestTracker(); };
+  delete quests._seen;  // only what you do after accepting a quest counts (feedback round 7)
+  // Feedback round 7: with the village open in two windows, each used to save its own copy and undo the other's
+  // progress. Now saving keeps whichever is further along for each quest, and the other window picks it up at once.
+  const QRANK = { available: 0, active: 1, ready: 2, done: 3 };
+  function mergeQuests(other) {
+    for (const [k, v] of Object.entries(other || {})) if (QRANK[v] != null && (QRANK[quests[k]] == null || QRANK[v] > QRANK[quests[k]])) quests[k] = v;
+  }
+  const saveQuests = () => {
+    try { mergeQuests(JSON.parse(localStorage.getItem(QUEST_KEY) || '{}')); } catch (e) { /* nothing saved yet */ }
+    store(QUEST_KEY, quests); renderQuestTracker();
+  };
+  addEventListener('storage', (e) => { if (e.key === QUEST_KEY) { try { mergeQuests(JSON.parse(e.newValue || '{}')); } catch (err) { /* ignore */ } } });
   const questOf = (key) => QUESTS.find((q) => q.key === key);
   const questsDone = () => QUESTS.filter((q) => quests[q.key] === 'done').length;
   // quests open only after onboarding: setup, then the guide (feedback round 3)
@@ -4923,7 +4962,7 @@
     if (questState('steward') === 'active' && state.scene.id === 'town') { const [tx, ty] = feetTile(state.player); if (inGarden(tx, ty)) questEvent('garden'); }
     if (questState('vizier') === 'active' && BUILT.length) questEvent('build');
   }, 500);
-  window.__quests = { state: questState, event: questEvent, reset: () => { quests = {}; saveQuests(); }, all: () => ({ ...quests }), set: (k, st) => { quests[k] = st; saveQuests(); } };
+  window.__quests = { state: questState, event: questEvent, reset: () => { quests = {}; store(QUEST_KEY, quests); renderQuestTracker(); }, all: () => ({ ...quests }), set: (k, st) => { quests[k] = st; store(QUEST_KEY, quests); renderQuestTracker(); } };  // testing only: these write exactly what they're given
 
   // ---------- team and usage (feedback round 3): who is free, working or waiting on you, and what the AI used ----------
   // Usage comes from the AI helper's own log (counts and tokens only, never what was said). Your Claude plan's own
@@ -5190,7 +5229,8 @@
         parts.push(sec('MEET THE DIRECTORS'));
         const waitingQ = meet.filter((q) => questState(q.key) === 'available');
         if (waitingQ.length) parts.push(row('!', '#f6ca33', `${waitingQ.length} director${waitingQ.length > 1 ? 's have' : ' has'} a quest for you`, 'Look for the gold ! over their heads', () => toast(`Quests waiting with ${waitingQ.map((q) => relabel(nameOf(q.key))).join(', ')}. Walk up and talk to them.`, 'vizier'), false));
-        for (const q of meet.filter((x) => questState(x.key) !== 'available')) { const st = questState(q.key); parts.push(row(st === 'ready' ? '?' : '!', st === 'active' ? '#cfd4dc' : '#f6ca33', q.title, st === 'available' ? `Talk to ${relabel(nameOf(q.key))} to start` : st === 'ready' ? `Hand it in to ${relabel(nameOf(q.key))}` : relabel(q.how), () => showQuestCard(q.key), false)); }
+        for (const q of meet.filter((x) => !['available', 'done'].includes(questState(x.key)))) { const st = questState(q.key); parts.push(row(st === 'ready' ? '?' : '!', st === 'active' ? '#cfd4dc' : '#f6ca33', q.title, st === 'available' ? `Talk to ${relabel(nameOf(q.key))} to start` : st === 'ready' ? `Hand it in to ${relabel(nameOf(q.key))}` : relabel(q.how), () => showQuestCard(q.key), false)); }
+        for (const q of meet.filter((x) => questState(x.key) === 'done')) parts.push(row('\u2714', '#8fc27a', q.title, `Handed in to ${relabel(nameOf(q.key))}`, () => toast(`${q.title}: done and handed in to ${relabel(nameOf(q.key))}.`, q.key), false));
       }
     }
     qlog.replaceChildren(...parts);
